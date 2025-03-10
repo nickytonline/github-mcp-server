@@ -178,4 +178,26 @@ GitHub MCP Server running on stdio
 }
 
 ```
+## TODO
+
+Lots of things!
+
+Missing tools:
+
+- push_files (files array)
+- create_issue (assignees and labels arrays)
+- list_issues (labels array)
+- update_issue (labels and assignees arrays)
+- create_pull_request_review (comments array)
+
+
+Testing 
+
+- Unit tests
+- Integration tests
+- Blackbox testing: ideally comparing output to Anthromorphic's server to make sure that this is fully compatible drop-in replacement.
+
+And some other stuff:
+- ...
+
 
