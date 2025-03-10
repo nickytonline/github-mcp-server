@@ -10,15 +10,141 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
 
 ## Tools
 
-1. `get_me`
-    - Return information about the authenticated user
-2. `get_issue`
-    - Get the contents of an issue within a repository.
-    - Inputs
-        - `owner` (string): Repository owner
-        - `repo` (string): Repository name
-        - `issue_number` (number): Issue number to retrieve
-    - Returns: Github Issue object & details
+### Users
+- **get_me** - Get details of the authenticated user
+   - No parameters required
+
+### Issues
+- **get_issue** - Gets the contents of an issue within a repository
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `issue_number`: Issue number (number, required)
+
+- **add_issue_comment** - Add a comment to an issue
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `issue_number`: Issue number (number, required)
+   - `body`: Comment text (string, required)
+
+- **search_issues** - Search for issues and pull requests
+   - `query`: Search query (string, required)
+   - `sort`: Sort field (string, optional)
+   - `order`: Sort order (string, optional)
+   - `page`: Page number (number, optional)
+   - `per_page`: Results per page (number, optional)
+
+### Pull Requests
+- **get_pull_request** - Get details of a specific pull request
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `pull_number`: Pull request number (number, required)
+
+- **list_pull_requests** - List and filter repository pull requests
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `state`: PR state (string, optional)
+   - `sort`: Sort field (string, optional)
+   - `direction`: Sort direction (string, optional)
+   - `per_page`: Results per page (number, optional)
+   - `page`: Page number (number, optional)
+
+- **merge_pull_request** - Merge a pull request
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `pull_number`: Pull request number (number, required)
+   - `commit_title`: Title for the merge commit (string, optional)
+   - `commit_message`: Message for the merge commit (string, optional)
+   - `merge_method`: Merge method (string, optional)
+
+- **get_pull_request_files** - Get the list of files changed in a pull request
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `pull_number`: Pull request number (number, required)
+
+- **get_pull_request_status** - Get the combined status of all status checks for a pull request
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `pull_number`: Pull request number (number, required)
+
+- **update_pull_request_branch** - Update a pull request branch with the latest changes from the base branch
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `pull_number`: Pull request number (number, required)
+   - `expected_head_sha`: The expected SHA of the pull request's HEAD ref (string, optional)
+
+- **get_pull_request_comments** - Get the review comments on a pull request
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `pull_number`: Pull request number (number, required)
+
+- **get_pull_request_reviews** - Get the reviews on a pull request
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `pull_number`: Pull request number (number, required)
+
+### Repositories
+- **create_or_update_file** - Create or update a single file in a repository
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `path`: File path (string, required)
+   - `message`: Commit message (string, required)
+   - `content`: File content (string, required)
+   - `branch`: Branch name (string, optional)
+   - `sha`: File SHA if updating (string, optional)
+
+- **search_repositories** - Search for GitHub repositories
+   - `query`: Search query (string, required)
+   - `sort`: Sort field (string, optional)
+   - `order`: Sort order (string, optional)
+   - `page`: Page number (number, optional)
+   - `per_page`: Results per page (number, optional)
+
+- **create_repository** - Create a new GitHub repository
+   - `name`: Repository name (string, required)
+   - `description`: Repository description (string, optional)
+   - `private`: Whether the repository is private (boolean, optional)
+   - `auto_init`: Auto-initialize with README (boolean, optional)
+   - `gitignore_template`: Gitignore template name (string, optional)
+
+- **get_file_contents** - Get contents of a file or directory
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `path`: File path (string, required)
+   - `ref`: Git reference (string, optional)
+
+- **fork_repository** - Fork a repository
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `organization`: Target organization name (string, optional)
+
+- **create_branch** - Create a new branch
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `branch`: New branch name (string, required)
+   - `sha`: SHA to create branch from (string, required)
+
+- **list_commits** - Gets commits of a branch in a repository
+   - `owner`: Repository owner (string, required)
+   - `repo`: Repository name (string, required)
+   - `sha`: Branch name, tag, or commit SHA (string, optional)
+   - `path`: Only commits containing this file path (string, optional)
+   - `page`: Page number (number, optional)
+   - `per_page`: Results per page (number, optional)
+
+### Search
+- **search_code** - Search for code across GitHub repositories
+   - `query`: Search query (string, required)
+   - `sort`: Sort field (string, optional)
+   - `order`: Sort order (string, optional)
+   - `page`: Page number (number, optional)
+   - `per_page`: Results per page (number, optional)
+
+- **search_users** - Search for GitHub users
+   - `query`: Search query (string, required)
+   - `sort`: Sort field (string, optional)
+   - `order`: Sort order (string, optional)
+   - `page`: Page number (number, optional)
+   - `per_page`: Results per page (number, optional)
 
 ## Standard input/output server
 

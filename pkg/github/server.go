@@ -20,56 +20,38 @@ func NewServer(client *github.Client) *server.MCPServer {
 		server.WithResourceCapabilities(true, true),
 		server.WithLogging())
 
-	// Add GitHub tools
+	// Add GitHub tools - Issues
 	s.AddTool(getIssue(client))
+	s.AddTool(addIssueComment(client))
+	s.AddTool(searchIssues(client))
+
+	// Add GitHub tools - Pull Requests
+	s.AddTool(getPullRequest(client))
+	s.AddTool(listPullRequests(client))
+	s.AddTool(mergePullRequest(client))
+	s.AddTool(getPullRequestFiles(client))
+	s.AddTool(getPullRequestStatus(client))
+	s.AddTool(updatePullRequestBranch(client))
+	s.AddTool(getPullRequestComments(client))
+	s.AddTool(getPullRequestReviews(client))
+
+	// Add GitHub tools - Repositories
+	s.AddTool(createOrUpdateFile(client))
+	s.AddTool(searchRepositories(client))
+	s.AddTool(createRepository(client))
+	s.AddTool(getFileContents(client))
+	s.AddTool(forkRepository(client))
+	s.AddTool(createBranch(client))
+	s.AddTool(listCommits(client))
+
+	// Add GitHub tools - Search
+	s.AddTool(searchCode(client))
+	s.AddTool(searchUsers(client))
+
+	// Add GitHub tools - Users
 	s.AddTool(getMe(client))
 
 	return s
-}
-
-// getIssue creates a tool to get details of a specific issue in a GitHub repository.
-func getIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
-	return mcp.NewTool("get_issue",
-			mcp.WithDescription("Get details of a specific issue in a GitHub repository."),
-			mcp.WithString("owner",
-				mcp.Required(),
-				mcp.Description("The owner of the repository."),
-			),
-			mcp.WithString("repo",
-				mcp.Required(),
-				mcp.Description("The name of the repository."),
-			),
-			mcp.WithNumber("issue_number",
-				mcp.Required(),
-				mcp.Description("The number of the issue."),
-			),
-		),
-		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			issueNumber := int(request.Params.Arguments["issue_number"].(float64))
-
-			issue, resp, err := client.Issues.Get(ctx, owner, repo, issueNumber)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get issue: %w", err)
-			}
-			defer func() { _ = resp.Body.Close() }()
-
-			if resp.StatusCode != 200 {
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return nil, fmt.Errorf("failed to read response body: %w", err)
-				}
-				return mcp.NewToolResultError(fmt.Sprintf("failed to get issue: %s", string(body))), nil
-			}
-
-			r, err := json.Marshal(issue)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal issue: %w", err)
-			}
-
-			return mcp.NewToolResultText(string(r)), nil
-		}
 }
 
 // getMe creates a tool to get details of the authenticated user.
