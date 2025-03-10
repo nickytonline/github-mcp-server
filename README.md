@@ -195,7 +195,7 @@ Testing
 
 - Unit tests
 - Integration tests
-- Blackbox testing: ideally comparing output to Anthromorphic's server to make sure that this is fully compatible drop-in replacement.
+- Blackbox testing: ideally comparing output to Anthromorphic's server to make sure that this is a fully compatible drop-in replacement.
 
 And some other stuff:
 - ...
