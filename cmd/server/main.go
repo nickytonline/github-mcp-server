@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/github/mcp-server-playground/pkg/github"
+	"github.com/github/github-mcp-server/pkg/github"
 	gogithub "github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
