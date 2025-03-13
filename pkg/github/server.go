@@ -58,6 +58,9 @@ func NewServer(client *github.Client) *server.MCPServer {
 func getMe(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_me",
 			mcp.WithDescription("Get details of the authenticated user."),
+			mcp.WithString("reason",
+				mcp.Description("Optional: reason the session was created"),
+			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			user, resp, err := client.Users.Get(ctx, "")
