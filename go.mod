@@ -1,6 +1,6 @@
 module github.com/github/mcp-server-playground
 
-go 1.23
+go 1.23.7
 
 require (
 	github.com/google/go-github/v69 v69.2.0
