@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/aws/smithy-go/ptr"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -125,14 +126,14 @@ func createOrUpdateFile(client *github.Client) (tool mcp.Tool, handler server.To
 
 			// Create the file options
 			opts := &github.RepositoryContentFileOptions{
-				Message: github.String(message),
+				Message: ptr.String(message),
 				Content: contentBytes,
-				Branch:  github.String(branch),
+				Branch:  ptr.String(branch),
 			}
 
 			// If SHA is provided, set it (for updates)
 			if sha, ok := request.Params.Arguments["sha"].(string); ok && sha != "" {
-				opts.SHA = github.String(sha)
+				opts.SHA = ptr.String(sha)
 			}
 
 			// Create or update the file

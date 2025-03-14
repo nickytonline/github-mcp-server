@@ -3,6 +3,7 @@ module github.com/github/github-mcp-server
 go 1.23.7
 
 require (
+	github.com/aws/smithy-go v1.22.3
 	github.com/google/go-github/v69 v69.2.0
 	github.com/mark3labs/mcp-go v0.11.2
 	github.com/sirupsen/logrus v1.9.3

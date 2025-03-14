@@ -51,6 +51,10 @@ func NewServer(client *github.Client) *server.MCPServer {
 	// Add GitHub tools - Users
 	s.AddTool(getMe(client))
 
+	// Add GitHub tools - Code Scanning
+	s.AddTool(getCodeScanningAlert(client))
+	s.AddTool(listCodeScanningAlerts(client))
+
 	return s
 }
 
