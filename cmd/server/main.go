@@ -21,10 +21,6 @@ var (
 		Use:   "server",
 		Short: "GitHub MCP Server",
 		Long:  `A GitHub MCP server that handles various tools and resources.`,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// Bind flag to viper
-			viper.BindPFlag("log-file", cmd.PersistentFlags().Lookup("log-file"))
-		},
 	}
 
 	stdioCmd = &cobra.Command{
@@ -49,6 +45,9 @@ func init() {
 
 	// Add global flags that will be shared by all commands
 	rootCmd.PersistentFlags().String("log-file", "", "Path to log file")
+
+	// Bind flag to viper
+	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
 
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)

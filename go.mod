@@ -3,12 +3,13 @@ module github.com/github/github-mcp-server
 go 1.23.7
 
 require (
+	github.com/aws/smithy-go v1.22.3
 	github.com/google/go-github/v69 v69.2.0
 	github.com/mark3labs/mcp-go v0.11.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
-	github.com/aws/smithy-go v1.22.3
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 
 require (
@@ -29,7 +30,6 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
