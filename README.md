@@ -166,6 +166,21 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `page`: Page number (number, optional)
   - `per_page`: Results per page (number, optional)
 
+### Code Scanning
+
+- **get_code_scanning_alert** - Get a code scanning alert
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `alert_number`: Alert number (number, required)
+
+- **list_code_scanning_alerts** - List code scanning alerts for a repository
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `ref`: Git reference (string, optional)
+  - `state`: Alert state (string, optional)
+  - `severity`: Alert severity (string, optional)
+
 ## Standard input/output server
 
 ```sh
