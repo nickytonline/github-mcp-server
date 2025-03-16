@@ -3,8 +3,10 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -73,7 +75,7 @@ func getMe(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -88,4 +90,10 @@ func getMe(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc
 
 			return mcp.NewToolResultText(string(r)), nil
 		}
+}
+
+// isAcceptedError checks if the error is an accepted error.
+func isAcceptedError(err error) bool {
+	var acceptedError *github.AcceptedError
+	return errors.As(err, &acceptedError)
 }
