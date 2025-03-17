@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	stdlog "log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/github/github-mcp-server/pkg/github"
+	iolog "github.com/github/github-mcp-server/pkg/log"
 	gogithub "github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
@@ -33,7 +35,8 @@ var (
 			if err != nil {
 				stdlog.Fatal("Failed to initialize logger:", err)
 			}
-			if err := runStdioServer(logger); err != nil {
+			logCommands := viper.GetBool("enable-command-logging")
+			if err := runStdioServer(logger, logCommands); err != nil {
 				stdlog.Fatal("failed to run stdio server:", err)
 			}
 		},
@@ -45,9 +48,11 @@ func init() {
 
 	// Add global flags that will be shared by all commands
 	rootCmd.PersistentFlags().String("log-file", "", "Path to log file")
+	rootCmd.PersistentFlags().Bool("enable-command-logging", false, "When enabled, the server will log all command requests and responses to the log file")
 
 	// Bind flag to viper
 	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
+	viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
 
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)
@@ -70,12 +75,13 @@ func initLogger(outPath string) (*log.Logger, error) {
 	}
 
 	logger := log.New()
+	logger.SetLevel(log.DebugLevel)
 	logger.SetOutput(file)
 
 	return logger, nil
 }
 
-func runStdioServer(logger *log.Logger) error {
+func runStdioServer(logger *log.Logger, logCommands bool) error {
 	// Create app context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -97,7 +103,14 @@ func runStdioServer(logger *log.Logger) error {
 	// Start listening for messages
 	errC := make(chan error, 1)
 	go func() {
-		errC <- stdioServer.Listen(ctx, os.Stdin, os.Stdout)
+		in, out := io.Reader(os.Stdin), io.Writer(os.Stdout)
+
+		if logCommands {
+			loggedIO := iolog.NewIOLogger(in, out, logger)
+			in, out = loggedIO, loggedIO
+		}
+
+		errC <- stdioServer.Listen(ctx, in, out)
 	}()
 
 	// Output github-mcp-server string
