@@ -22,6 +22,15 @@ func NewServer(client *github.Client) *server.MCPServer {
 		server.WithResourceCapabilities(true, true),
 		server.WithLogging())
 
+	// Add GitHub Resources
+	defaultTemplate, branchTemplate, tagTemplate, shaTemplate, prTemplate, handler := getRepositoryContent(client)
+
+	s.AddResourceTemplate(defaultTemplate, handler)
+	s.AddResourceTemplate(branchTemplate, handler)
+	s.AddResourceTemplate(tagTemplate, handler)
+	s.AddResourceTemplate(shaTemplate, handler)
+	s.AddResourceTemplate(prTemplate, handler)
+
 	// Add GitHub tools - Issues
 	s.AddTool(getIssue(client))
 	s.AddTool(addIssueComment(client))
