@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -39,7 +40,7 @@ func getIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerF
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -93,7 +94,7 @@ func addIssueComment(client *github.Client) (tool mcp.Tool, handler server.ToolH
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 201 {
+			if resp.StatusCode != http.StatusCreated {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -165,7 +166,7 @@ func searchIssues(client *github.Client) (tool mcp.Tool, handler server.ToolHand
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)

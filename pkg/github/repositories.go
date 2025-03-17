@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/aws/smithy-go/ptr"
 	"github.com/google/go-github/v69/github"
@@ -206,7 +207,7 @@ func createRepository(client *github.Client) (tool mcp.Tool, handler server.Tool
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 201 {
+			if resp.StatusCode != http.StatusCreated {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -314,11 +315,16 @@ func forkRepository(client *github.Client) (tool mcp.Tool, handler server.ToolHa
 
 			forkedRepo, resp, err := client.Repositories.CreateFork(ctx, owner, repo, opts)
 			if err != nil {
+				// Check if it's an acceptedError. An acceptedError indicates that the update is in progress,
+				// and it's not a real error.
+				if resp != nil && resp.StatusCode == http.StatusAccepted && isAcceptedError(err) {
+					return mcp.NewToolResultText("Fork is in progress"), nil
+				}
 				return nil, fmt.Errorf("failed to fork repository: %w", err)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 202 {
+			if resp.StatusCode != http.StatusAccepted {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)

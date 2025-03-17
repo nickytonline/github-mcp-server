@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -39,7 +40,7 @@ func getPullRequest(client *github.Client) (tool mcp.Tool, handler server.ToolHa
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -140,7 +141,7 @@ func listPullRequests(client *github.Client) (tool mcp.Tool, handler server.Tool
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -211,7 +212,7 @@ func mergePullRequest(client *github.Client) (tool mcp.Tool, handler server.Tool
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -257,7 +258,7 @@ func getPullRequestFiles(client *github.Client) (tool mcp.Tool, handler server.T
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -303,7 +304,7 @@ func getPullRequestStatus(client *github.Client) (tool mcp.Tool, handler server.
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -318,7 +319,7 @@ func getPullRequestStatus(client *github.Client) (tool mcp.Tool, handler server.
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -371,11 +372,16 @@ func updatePullRequestBranch(client *github.Client) (tool mcp.Tool, handler serv
 
 			result, resp, err := client.PullRequests.UpdateBranch(ctx, owner, repo, pullNumber, opts)
 			if err != nil {
+				// Check if it's an acceptedError. An acceptedError indicates that the update is in progress,
+				// and it's not a real error.
+				if resp != nil && resp.StatusCode == http.StatusAccepted && isAcceptedError(err) {
+					return mcp.NewToolResultText("Pull request branch update is in progress"), nil
+				}
 				return nil, fmt.Errorf("failed to update pull request branch: %w", err)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 202 {
+			if resp.StatusCode != http.StatusAccepted {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -426,7 +432,7 @@ func getPullRequestComments(client *github.Client) (tool mcp.Tool, handler serve
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
@@ -471,7 +477,7 @@ func getPullRequestReviews(client *github.Client) (tool mcp.Tool, handler server
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					return nil, fmt.Errorf("failed to read response body: %w", err)
