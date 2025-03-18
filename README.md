@@ -231,7 +231,7 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - **Parameters**:
     - `owner`: Repository owner (string, required)
     - `repo`: Repository name (string, required)
-    - `pr_number`: Pull request number (number, required)
+    - `pr_number`: Pull request number (string, required)
     - `path`: File or directory path (string, optional)
 
 ## Standard input/output server
