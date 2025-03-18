@@ -181,6 +181,59 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `state`: Alert state (string, optional)
   - `severity`: Alert severity (string, optional)
 
+## Resources
+
+### Repository Content
+
+- **Get Repository Content**  
+  Retrieves the content of a repository at a specific path.
+
+  - **Template**: `repo://{owner}/{repo}/contents{/path*}`
+  - **Parameters**:
+    - `owner`: Repository owner (string, required)
+    - `repo`: Repository name (string, required)
+    - `path`: File or directory path (string, optional)
+
+- **Get Repository Content for a Specific Branch**  
+  Retrieves the content of a repository at a specific path for a given branch.
+
+  - **Template**: `repo://{owner}/{repo}/refs/heads/{branch}/contents{/path*}`
+  - **Parameters**:
+    - `owner`: Repository owner (string, required)
+    - `repo`: Repository name (string, required)
+    - `branch`: Branch name (string, required)
+    - `path`: File or directory path (string, optional)
+
+- **Get Repository Content for a Specific Commit**  
+  Retrieves the content of a repository at a specific path for a given commit.
+
+  - **Template**: `repo://{owner}/{repo}/sha/{sha}/contents{/path*}`
+  - **Parameters**:
+    - `owner`: Repository owner (string, required)
+    - `repo`: Repository name (string, required)
+    - `sha`: Commit SHA (string, required)
+    - `path`: File or directory path (string, optional)
+
+- **Get Repository Content for a Specific Tag**  
+  Retrieves the content of a repository at a specific path for a given tag.
+
+  - **Template**: `repo://{owner}/{repo}/refs/tags/{tag}/contents{/path*}`
+  - **Parameters**:
+    - `owner`: Repository owner (string, required)
+    - `repo`: Repository name (string, required)
+    - `tag`: Tag name (string, required)
+    - `path`: File or directory path (string, optional)
+
+- **Get Repository Content for a Specific Pull Request**  
+  Retrieves the content of a repository at a specific path for a given pull request.
+
+  - **Template**: `repo://{owner}/{repo}/refs/pull/{pr_number}/head/contents{/path*}`
+  - **Parameters**:
+    - `owner`: Repository owner (string, required)
+    - `repo`: Repository name (string, required)
+    - `pr_number`: Pull request number (number, required)
+    - `path`: File or directory path (string, optional)
+
 ## Standard input/output server
 
 ```sh
@@ -216,7 +269,7 @@ GitHub MCP Server running on stdio
 
 ## Testing on VS Code Insiders
 
-First of all, install `github-mcp-server`  with:
+First of all, install `github-mcp-server` with:
 
 ```bash
 go install ./cmd/github-mcp-server
@@ -231,18 +284,16 @@ Go to settings, find the MCP related settings, and set them to:
 
 ```json
 {
-    "mcp": {
-        "inputs": [],
-        "servers": {
-            "mcp-github-server": {
-                "command": "path-to-your/github-mcp-server",
-                "args": [
-                    "stdio"
-                ],
-                "env": {}
-            }
-        }
+  "mcp": {
+    "inputs": [],
+    "servers": {
+      "mcp-github-server": {
+        "command": "path-to-your/github-mcp-server",
+        "args": ["stdio"],
+        "env": {}
+      }
     }
+  }
 }
 ```
 
@@ -254,7 +305,6 @@ Try something like the following prompt to verify that it works:
 ```
 I'd like to know more about my GitHub profile.
 ```
-
 
 ## TODO
 
