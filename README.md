@@ -184,7 +184,7 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
 ## Standard input/output server
 
 ```sh
-go run cmd/server/main.go stdio
+go run cmd/github-mcp-server/main.go stdio
 ```
 
 E.g:
@@ -213,6 +213,48 @@ GitHub MCP Server running on stdio
 }
 
 ```
+
+## Testing on VS Code Insiders
+
+First of all, install `github-mcp-server`  with:
+
+```bash
+go install ./cmd/github-mcp-server
+```
+
+Make sure you:
+
+1. Set your `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable and ensure VS Code has access to it.
+2. VS Code Insiders has access to the `github-mcp-server` binary
+
+Go to settings, find the MCP related settings, and set them to:
+
+```json
+{
+    "mcp": {
+        "inputs": [],
+        "servers": {
+            "mcp-github-server": {
+                "command": "path-to-your/github-mcp-server",
+                "args": [
+                    "stdio"
+                ],
+                "env": {}
+            }
+        }
+    }
+}
+```
+
+In `Copilot Edits`, you should now see an option to reload the available `tools`.
+Reload, and you should be good to go.
+
+Try something like the following prompt to verify that it works:
+
+```
+I'd like like to know more about my GitHub profile.
+```
+
 
 ## TODO
 
