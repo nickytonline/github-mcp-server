@@ -252,7 +252,7 @@ Reload, and you should be good to go.
 Try something like the following prompt to verify that it works:
 
 ```
-I'd like like to know more about my GitHub profile.
+I'd like to know more about my GitHub profile.
 ```
 
 
