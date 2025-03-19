@@ -60,7 +60,7 @@ func getIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerF
 // addIssueComment creates a tool to add a comment to an issue.
 func addIssueComment(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("add_issue_comment",
-			mcp.WithDescription("Add a comment to an issue"),
+			mcp.WithDescription("Add a comment to an existing issue"),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -114,7 +114,7 @@ func addIssueComment(client *github.Client) (tool mcp.Tool, handler server.ToolH
 // searchIssues creates a tool to search for issues and pull requests.
 func searchIssues(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_issues",
-			mcp.WithDescription("Search for issues and pull requests"),
+			mcp.WithDescription("Search for issues and pull requests across GitHub repositories"),
 			mcp.WithString("q",
 				mcp.Required(),
 				mcp.Description("Search query using GitHub issues search syntax"),
