@@ -6,15 +6,16 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // searchRepositories creates a tool to search for GitHub repositories.
-func searchRepositories(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func searchRepositories(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_repositories",
-			mcp.WithDescription("Search for GitHub repositories"),
+			mcp.WithDescription(t("TOOL_SEARCH_REPOSITORIES_DESCRIPTION", "Search for GitHub repositories")),
 			mcp.WithString("query",
 				mcp.Required(),
 				mcp.Description("Search query"),
@@ -68,9 +69,9 @@ func searchRepositories(client *github.Client) (tool mcp.Tool, handler server.To
 }
 
 // searchCode creates a tool to search for code across GitHub repositories.
-func searchCode(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func searchCode(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_code",
-			mcp.WithDescription("Search for code across GitHub repositories"),
+			mcp.WithDescription(t("TOOL_SEARCH_CODE_DESCRIPTION", "Search for code across GitHub repositories")),
 			mcp.WithString("q",
 				mcp.Required(),
 				mcp.Description("Search query using GitHub code search syntax"),
@@ -140,9 +141,9 @@ func searchCode(client *github.Client) (tool mcp.Tool, handler server.ToolHandle
 }
 
 // searchUsers creates a tool to search for GitHub users.
-func searchUsers(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func searchUsers(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_users",
-			mcp.WithDescription("Search for GitHub users"),
+			mcp.WithDescription(t("TOOL_SEARCH_USERS_DESCRIPTION", "Search for GitHub users")),
 			mcp.WithString("q",
 				mcp.Required(),
 				mcp.Description("Search query using GitHub users search syntax"),

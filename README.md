@@ -288,6 +288,36 @@ GitHub MCP Server running on stdio
 
 ```
 
+## i18n / Overriding descriptions
+
+The descriptions of the tools can be overridden by creating a github-mcp-server.json file in the same directory as the binary.
+The file should contain a JSON object with the tool names as keys and the new descriptions as values.
+For example:
+
+```json
+{
+  "TOOL_ADD_ISSUE_COMMENT_DESCRIPTION": "an alternative description",
+  "TOOL_CREATE_BRANCH_DESCRIPTION": "Create a new branch in a GitHub repository"
+}
+```
+
+You can create an export of the current translations by running the binary with the `--export-translations` flag.
+This flag will preserve any translations/overrides you have made, while adding any new translations that have been added to the binary since the last time you exported.
+
+```sh
+./github-mcp-server --export-translations
+cat github-mcp-server.json
+```
+
+You can also use ENV vars to override the descriptions. The environment variable names are the same as the keys in the JSON file,
+prefixed with `GITHUB_MCP_` and all uppercase.
+
+For example, to override the `TOOL_ADD_ISSUE_COMMENT_DESCRIPTION` tool, you can set the following environment variable:
+
+```sh
+export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description"
+```
+
 ## Testing on VS Code Insiders
 
 First of all, install `github-mcp-server` with:

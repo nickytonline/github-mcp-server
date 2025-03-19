@@ -8,15 +8,16 @@ import (
 	"net/http"
 
 	"github.com/aws/smithy-go/ptr"
+	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // listCommits creates a tool to get commits of a branch in a repository.
-func listCommits(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func listCommits(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_commits",
-			mcp.WithDescription("Get list of commits of a branch in a GitHub repository"),
+			mcp.WithDescription(t("TOOL_LIST_COMMITS_DESCRIPTION", "Get list of commits of a branch in a GitHub repository")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -83,9 +84,9 @@ func listCommits(client *github.Client) (tool mcp.Tool, handler server.ToolHandl
 }
 
 // createOrUpdateFile creates a tool to create or update a file in a GitHub repository.
-func createOrUpdateFile(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func createOrUpdateFile(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("create_or_update_file",
-			mcp.WithDescription("Create or update a single file in a GitHub repository"),
+			mcp.WithDescription(t("TOOL_CREATE_OR_UPDATE_FILE_DESCRIPTION", "Create or update a single file in a GitHub repository")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner (username or organization)"),
@@ -162,9 +163,9 @@ func createOrUpdateFile(client *github.Client) (tool mcp.Tool, handler server.To
 }
 
 // createRepository creates a tool to create a new GitHub repository.
-func createRepository(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func createRepository(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("create_repository",
-			mcp.WithDescription("Create a new GitHub repository in your account"),
+			mcp.WithDescription(t("TOOL_CREATE_REPOSITORY_DESCRIPTION", "Create a new GitHub repository in your account")),
 			mcp.WithString("name",
 				mcp.Required(),
 				mcp.Description("Repository name"),
@@ -225,9 +226,9 @@ func createRepository(client *github.Client) (tool mcp.Tool, handler server.Tool
 }
 
 // getFileContents creates a tool to get the contents of a file or directory from a GitHub repository.
-func getFileContents(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getFileContents(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_file_contents",
-			mcp.WithDescription("Get the contents of a file or directory from a GitHub repository"),
+			mcp.WithDescription(t("TOOL_GET_FILE_CONTENTS_DESCRIPTION", "Get the contents of a file or directory from a GitHub repository")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner (username or organization)"),
@@ -285,9 +286,9 @@ func getFileContents(client *github.Client) (tool mcp.Tool, handler server.ToolH
 }
 
 // forkRepository creates a tool to fork a repository.
-func forkRepository(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func forkRepository(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("fork_repository",
-			mcp.WithDescription("Fork a GitHub repository to your account or specified organization"),
+			mcp.WithDescription(t("TOOL_FORK_REPOSITORY_DESCRIPTION", "Fork a GitHub repository to your account or specified organization")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -342,9 +343,9 @@ func forkRepository(client *github.Client) (tool mcp.Tool, handler server.ToolHa
 }
 
 // createBranch creates a tool to create a new branch.
-func createBranch(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func createBranch(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("create_branch",
-			mcp.WithDescription("Create a new branch in a GitHub repository"),
+			mcp.WithDescription(t("TOOL_CREATE_BRANCH_DESCRIPTION", "Create a new branch in a GitHub repository")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),

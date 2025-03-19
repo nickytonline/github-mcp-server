@@ -8,15 +8,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // getIssue creates a tool to get details of a specific issue in a GitHub repository.
-func getIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getIssue(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_issue",
-			mcp.WithDescription("Get details of a specific issue in a GitHub repository."),
+			mcp.WithDescription(t("TOOL_GET_ISSUE_DESCRIPTION", "Get details of a specific issue in a GitHub repository.")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("The owner of the repository."),
@@ -59,9 +60,9 @@ func getIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerF
 }
 
 // addIssueComment creates a tool to add a comment to an issue.
-func addIssueComment(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func addIssueComment(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("add_issue_comment",
-			mcp.WithDescription("Add a comment to an existing issue"),
+			mcp.WithDescription(t("TOOL_ADD_ISSUE_COMMENT_DESCRIPTION", "Add a comment to an existing issue")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -113,9 +114,9 @@ func addIssueComment(client *github.Client) (tool mcp.Tool, handler server.ToolH
 }
 
 // searchIssues creates a tool to search for issues and pull requests.
-func searchIssues(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_issues",
-			mcp.WithDescription("Search for issues and pull requests across GitHub repositories"),
+			mcp.WithDescription(t("TOOL_SEARCH_ISSUES_DESCRIPTION", "Search for issues and pull requests across GitHub repositories")),
 			mcp.WithString("q",
 				mcp.Required(),
 				mcp.Description("Search query using GitHub issues search syntax"),
@@ -185,9 +186,9 @@ func searchIssues(client *github.Client) (tool mcp.Tool, handler server.ToolHand
 }
 
 // createIssue creates a tool to create a new issue in a GitHub repository.
-func createIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func createIssue(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("create_issue",
-			mcp.WithDescription("Create a new issue in a GitHub repository"),
+			mcp.WithDescription(t("TOOL_CREATE_ISSUE_DESCRIPTION", "Create a new issue in a GitHub repository")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -265,9 +266,9 @@ func createIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandl
 }
 
 // listIssues creates a tool to list and filter repository issues
-func listIssues(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func listIssues(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_issues",
-			mcp.WithDescription("List issues in a GitHub repository with filtering options"),
+			mcp.WithDescription(t("TOOL_LIST_ISSUES_DESCRIPTION", "List issues in a GitHub repository with filtering options")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),

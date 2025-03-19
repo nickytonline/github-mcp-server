@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 func Test_GetCodeScanningAlert(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := getCodeScanningAlert(mockClient)
+	tool, _ := getCodeScanningAlert(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "get_code_scanning_alert", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -81,7 +82,7 @@ func Test_GetCodeScanningAlert(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := getCodeScanningAlert(client)
+			_, handler := getCodeScanningAlert(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -117,7 +118,7 @@ func Test_GetCodeScanningAlert(t *testing.T) {
 func Test_ListCodeScanningAlerts(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := listCodeScanningAlerts(mockClient)
+	tool, _ := listCodeScanningAlerts(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "list_code_scanning_alerts", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -194,7 +195,7 @@ func Test_ListCodeScanningAlerts(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := listCodeScanningAlerts(client)
+			_, handler := listCodeScanningAlerts(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)

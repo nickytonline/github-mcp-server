@@ -7,29 +7,30 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // getRepositoryContent defines the resource template and handler for the Repository Content API.
-func getRepositoryContent(client *github.Client) (mainTemplate mcp.ResourceTemplate, reftemplate mcp.ResourceTemplate, shaTemplate mcp.ResourceTemplate, tagTemplate mcp.ResourceTemplate, prTemplate mcp.ResourceTemplate, handler server.ResourceTemplateHandlerFunc) {
+func getRepositoryContent(client *github.Client, t translations.TranslationHelperFunc) (mainTemplate mcp.ResourceTemplate, reftemplate mcp.ResourceTemplate, shaTemplate mcp.ResourceTemplate, tagTemplate mcp.ResourceTemplate, prTemplate mcp.ResourceTemplate, handler server.ResourceTemplateHandlerFunc) {
 
 	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/contents{/path*}", // Resource template
-			"Repository Content",                     // Description
+			t("RESOURCE_REPOSITORY_CONTENT_DESCRIPTION", "Repository Content"),
 		), mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/heads/{branch}/contents{/path*}", // Resource template
-			"Repository Content for specific branch",                     // Description
+			t("RESOURCE_REPOSITORY_CONTENT_BRANCH_DESCRIPTION", "Repository Content for specific branch"),
 		), mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/sha/{sha}/contents{/path*}", // Resource template
-			"Repository Content for specific commit",           // Description
+			t("RESOURCE_REPOSITORY_CONTENT_COMMIT_DESCRIPTION", "Repository Content for specific commit"),
 		), mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/tags/{tag}/contents{/path*}", // Resource template
-			"Repository Content for specific tag",                    // Description
+			t("RESOURCE_REPOSITORY_CONTENT_TAG_DESCRIPTION", "Repository Content for specific tag"),
 		), mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/pull/{pr_number}/head/contents{/path*}", // Resource template
-			"Repository Content for specific pull request",                      // Description
+			t("RESOURCE_REPOSITORY_CONTENT_PR_DESCRIPTION", "Repository Content for specific pull request"),
 		), func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 			// Extract parameters from request.Params.URI
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/github/github-mcp-server/pkg/github"
 	iolog "github.com/github/github-mcp-server/pkg/log"
+	"github.com/github/github-mcp-server/pkg/translations"
 	gogithub "github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
@@ -36,7 +37,7 @@ var (
 				stdlog.Fatal("Failed to initialize logger:", err)
 			}
 			logCommands := viper.GetBool("enable-command-logging")
-			if err := runStdioServer(logger, logCommands); err != nil {
+			if err := runStdioServer(logger, logCommands, viper.GetBool("export-translations")); err != nil {
 				stdlog.Fatal("failed to run stdio server:", err)
 			}
 		},
@@ -49,10 +50,12 @@ func init() {
 	// Add global flags that will be shared by all commands
 	rootCmd.PersistentFlags().String("log-file", "", "Path to log file")
 	rootCmd.PersistentFlags().Bool("enable-command-logging", false, "When enabled, the server will log all command requests and responses to the log file")
+	rootCmd.PersistentFlags().Bool("export-translations", false, "Save translations to a JSON file")
 
 	// Bind flag to viper
 	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
 	viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
+	viper.BindPFlag("export-translations", rootCmd.PersistentFlags().Lookup("export-translations"))
 
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)
@@ -81,7 +84,7 @@ func initLogger(outPath string) (*log.Logger, error) {
 	return logger, nil
 }
 
-func runStdioServer(logger *log.Logger, logCommands bool) error {
+func runStdioServer(logger *log.Logger, logCommands bool, exportTranslations bool) error {
 	// Create app context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -93,12 +96,19 @@ func runStdioServer(logger *log.Logger, logCommands bool) error {
 	}
 	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
 
+	t, dumpTranslations := translations.TranslationHelper()
+
 	// Create server
-	ghServer := github.NewServer(ghClient)
+	ghServer := github.NewServer(ghClient, t)
 	stdioServer := server.NewStdioServer(ghServer)
 
 	stdLogger := stdlog.New(logger.Writer(), "stdioserver", 0)
 	stdioServer.SetErrorLogger(stdLogger)
+
+	if exportTranslations {
+		// Once server is initialized, all translations are loaded
+		dumpTranslations()
+	}
 
 	// Start listening for messages
 	errC := make(chan error, 1)

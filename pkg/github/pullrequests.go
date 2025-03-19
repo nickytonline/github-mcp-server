@@ -7,15 +7,16 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // getPullRequest creates a tool to get details of a specific pull request.
-func getPullRequest(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getPullRequest(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_pull_request",
-			mcp.WithDescription("Get details of a specific pull request"),
+			mcp.WithDescription(t("TOOL_GET_PULL_REQUEST_DESCRIPTION", "Get details of a specific pull request")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -58,9 +59,9 @@ func getPullRequest(client *github.Client) (tool mcp.Tool, handler server.ToolHa
 }
 
 // listPullRequests creates a tool to list and filter repository pull requests.
-func listPullRequests(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func listPullRequests(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_pull_requests",
-			mcp.WithDescription("List and filter repository pull requests"),
+			mcp.WithDescription(t("TOOL_LIST_PULL_REQUESTS_DESCRIPTION", "List and filter repository pull requests")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -159,9 +160,9 @@ func listPullRequests(client *github.Client) (tool mcp.Tool, handler server.Tool
 }
 
 // mergePullRequest creates a tool to merge a pull request.
-func mergePullRequest(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func mergePullRequest(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("merge_pull_request",
-			mcp.WithDescription("Merge a pull request"),
+			mcp.WithDescription(t("TOOL_MERGE_PULL_REQUEST_DESCRIPTION", "Merge a pull request")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -230,9 +231,9 @@ func mergePullRequest(client *github.Client) (tool mcp.Tool, handler server.Tool
 }
 
 // getPullRequestFiles creates a tool to get the list of files changed in a pull request.
-func getPullRequestFiles(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getPullRequestFiles(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_pull_request_files",
-			mcp.WithDescription("Get the list of files changed in a pull request"),
+			mcp.WithDescription(t("TOOL_GET_PULL_REQUEST_FILES_DESCRIPTION", "Get the list of files changed in a pull request")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -276,9 +277,9 @@ func getPullRequestFiles(client *github.Client) (tool mcp.Tool, handler server.T
 }
 
 // getPullRequestStatus creates a tool to get the combined status of all status checks for a pull request.
-func getPullRequestStatus(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getPullRequestStatus(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_pull_request_status",
-			mcp.WithDescription("Get the combined status of all status checks for a pull request"),
+			mcp.WithDescription(t("TOOL_GET_PULL_REQUEST_STATUS_DESCRIPTION", "Get the combined status of all status checks for a pull request")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -337,9 +338,9 @@ func getPullRequestStatus(client *github.Client) (tool mcp.Tool, handler server.
 }
 
 // updatePullRequestBranch creates a tool to update a pull request branch with the latest changes from the base branch.
-func updatePullRequestBranch(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func updatePullRequestBranch(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("update_pull_request_branch",
-			mcp.WithDescription("Update a pull request branch with the latest changes from the base branch"),
+			mcp.WithDescription(t("TOOL_UPDATE_PULL_REQUEST_BRANCH_DESCRIPTION", "Update a pull request branch with the latest changes from the base branch")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -399,9 +400,9 @@ func updatePullRequestBranch(client *github.Client) (tool mcp.Tool, handler serv
 }
 
 // getPullRequestComments creates a tool to get the review comments on a pull request.
-func getPullRequestComments(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getPullRequestComments(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_pull_request_comments",
-			mcp.WithDescription("Get the review comments on a pull request"),
+			mcp.WithDescription(t("TOOL_GET_PULL_REQUEST_COMMENTS_DESCRIPTION", "Get the review comments on a pull request")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -450,9 +451,9 @@ func getPullRequestComments(client *github.Client) (tool mcp.Tool, handler serve
 }
 
 // getPullRequestReviews creates a tool to get the reviews on a pull request.
-func getPullRequestReviews(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getPullRequestReviews(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_pull_request_reviews",
-			mcp.WithDescription("Get the reviews on a pull request"),
+			mcp.WithDescription(t("TOOL_GET_PULL_REQUEST_REVIEWS_DESCRIPTION", "Get the reviews on a pull request")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),

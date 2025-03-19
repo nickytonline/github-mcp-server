@@ -7,14 +7,15 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func getCodeScanningAlert(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func getCodeScanningAlert(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_code_scanning_alert",
-			mcp.WithDescription("Get details of a specific code scanning alert in a GitHub repository."),
+			mcp.WithDescription(t("TOOL_GET_CODE_SCANNING_ALERT_DESCRIPTION", "Get details of a specific code scanning alert in a GitHub repository.")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("The owner of the repository."),
@@ -56,9 +57,9 @@ func getCodeScanningAlert(client *github.Client) (tool mcp.Tool, handler server.
 		}
 }
 
-func listCodeScanningAlerts(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func listCodeScanningAlerts(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_code_scanning_alerts",
-			mcp.WithDescription("List code scanning alerts in a GitHub repository."),
+			mcp.WithDescription(t("TOOL_LIST_CODE_SCANNING_ALERTS_DESCRIPTION", "List code scanning alerts in a GitHub repository.")),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("The owner of the repository."),
