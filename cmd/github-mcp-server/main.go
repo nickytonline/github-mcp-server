@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	stdlog "log"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -54,12 +55,14 @@ func init() {
 	rootCmd.PersistentFlags().String("log-file", "", "Path to log file")
 	rootCmd.PersistentFlags().Bool("enable-command-logging", false, "When enabled, the server will log all command requests and responses to the log file")
 	rootCmd.PersistentFlags().Bool("export-translations", false, "Save translations to a JSON file")
+	rootCmd.PersistentFlags().String("gh-host", "", "Specify the GitHub hostname (for GitHub Enterprise etc.)")
 
 	// Bind flag to viper
 	viper.BindPFlag("read-only", rootCmd.PersistentFlags().Lookup("read-only"))
 	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
 	viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
 	viper.BindPFlag("export-translations", rootCmd.PersistentFlags().Lookup("export-translations"))
+	viper.BindPFlag("gh-host", rootCmd.PersistentFlags().Lookup("gh-host"))
 
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)
@@ -99,6 +102,20 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 		logger.Fatal("GITHUB_PERSONAL_ACCESS_TOKEN not set")
 	}
 	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
+	if host := viper.GetString("gh-host"); host != "" {
+		parsedURL, err := url.Parse(fmt.Sprintf("https://api.%s/", host))
+		if err != nil {
+			return fmt.Errorf("failed to parse provided GitHub host URL: %w", err)
+		}
+
+		uploadURL, err := url.Parse(fmt.Sprintf("https://uploads.%s/", host))
+		if err != nil {
+			return fmt.Errorf("failed to parse provided GitHub host URL: %w", err)
+		}
+
+		ghClient.BaseURL = parsedURL
+		ghClient.UploadURL = uploadURL
+	}
 
 	t, dumpTranslations := translations.TranslationHelper()
 
