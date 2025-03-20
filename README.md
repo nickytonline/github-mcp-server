@@ -326,22 +326,26 @@ First of all, install `github-mcp-server` with:
 go install ./cmd/github-mcp-server
 ```
 
-Make sure you:
-
-1. Set your `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable and ensure VS Code has access to it.
-2. VS Code Insiders has access to the `github-mcp-server` binary
-
-Go to settings, find the MCP related settings, and set them to:
+Run **Preferences: Open User Settings (JSON)**, and create or append to the `mcp` setting:
 
 ```json
 {
   "mcp": {
-    "inputs": [],
+    "inputs": [
+      {
+        "type": "promptString",
+        "id": "githubpat",
+        "description": "GitHub Personal Access Token",
+        "password": true
+      }
+    ],
     "servers": {
       "mcp-github-server": {
         "command": "path-to-your/github-mcp-server",
         "args": ["stdio"],
-        "env": {}
+        "env": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:githubpat}"
+        },
       }
     }
   }
