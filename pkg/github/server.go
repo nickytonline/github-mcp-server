@@ -37,6 +37,7 @@ func NewServer(client *github.Client) *server.MCPServer {
 	s.AddTool(addIssueComment(client))
 	s.AddTool(createIssue(client))
 	s.AddTool(searchIssues(client))
+	s.AddTool(listIssues(client))
 
 	// Add GitHub tools - Pull Requests
 	s.AddTool(getPullRequest(client))

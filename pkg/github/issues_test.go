@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -520,6 +521,222 @@ func Test_CreateIssue(t *testing.T) {
 				for i, label := range returnedIssue.Labels {
 					assert.Equal(t, *tc.expectedIssue.Labels[i].Name, *label.Name)
 				}
+			}
+		})
+	}
+}
+
+func Test_ListIssues(t *testing.T) {
+	// Verify tool definition
+	mockClient := github.NewClient(nil)
+	tool, _ := listIssues(mockClient)
+
+	assert.Equal(t, "list_issues", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "state")
+	assert.Contains(t, tool.InputSchema.Properties, "labels")
+	assert.Contains(t, tool.InputSchema.Properties, "sort")
+	assert.Contains(t, tool.InputSchema.Properties, "direction")
+	assert.Contains(t, tool.InputSchema.Properties, "since")
+	assert.Contains(t, tool.InputSchema.Properties, "page")
+	assert.Contains(t, tool.InputSchema.Properties, "per_page")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
+
+	// Setup mock issues for success case
+	mockIssues := []*github.Issue{
+		{
+			Number:    github.Ptr(123),
+			Title:     github.Ptr("First Issue"),
+			Body:      github.Ptr("This is the first test issue"),
+			State:     github.Ptr("open"),
+			HTMLURL:   github.Ptr("https://github.com/owner/repo/issues/123"),
+			CreatedAt: &github.Timestamp{Time: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)},
+		},
+		{
+			Number:    github.Ptr(456),
+			Title:     github.Ptr("Second Issue"),
+			Body:      github.Ptr("This is the second test issue"),
+			State:     github.Ptr("open"),
+			HTMLURL:   github.Ptr("https://github.com/owner/repo/issues/456"),
+			Labels:    []*github.Label{{Name: github.Ptr("bug")}},
+			CreatedAt: &github.Timestamp{Time: time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC)},
+		},
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedIssues []*github.Issue
+		expectedErrMsg string
+	}{
+		{
+			name: "list issues with minimal parameters",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.GetReposIssuesByOwnerByRepo,
+					mockIssues,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+			},
+			expectError:    false,
+			expectedIssues: mockIssues,
+		},
+		{
+			name: "list issues with all parameters",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.GetReposIssuesByOwnerByRepo,
+					mockIssues,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":     "owner",
+				"repo":      "repo",
+				"state":     "open",
+				"labels":    "bug,enhancement",
+				"sort":      "created",
+				"direction": "desc",
+				"since":     "2023-01-01T00:00:00Z",
+				"page":      float64(1),
+				"per_page":  float64(30),
+			},
+			expectError:    false,
+			expectedIssues: mockIssues,
+		},
+		{
+			name: "invalid since parameter",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.GetReposIssuesByOwnerByRepo,
+					mockIssues,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"since": "invalid-date",
+			},
+			expectError:    true,
+			expectedErrMsg: "invalid ISO 8601 timestamp",
+		},
+		{
+			name: "list issues fails with error",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetReposIssuesByOwnerByRepo,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusNotFound)
+						_, _ = w.Write([]byte(`{"message": "Repository not found"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "nonexistent",
+				"repo":  "repo",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to list issues",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := listIssues(client)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				if err != nil {
+					assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				} else {
+					// For errors returned as part of the result, not as an error
+					assert.NotNil(t, result)
+					textContent := getTextResult(t, result)
+					assert.Contains(t, textContent.Text, tc.expectedErrMsg)
+				}
+				return
+			}
+
+			require.NoError(t, err)
+
+			// Parse the result and get the text content if no error
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedIssues []*github.Issue
+			err = json.Unmarshal([]byte(textContent.Text), &returnedIssues)
+			require.NoError(t, err)
+
+			assert.Len(t, returnedIssues, len(tc.expectedIssues))
+			for i, issue := range returnedIssues {
+				assert.Equal(t, *tc.expectedIssues[i].Number, *issue.Number)
+				assert.Equal(t, *tc.expectedIssues[i].Title, *issue.Title)
+				assert.Equal(t, *tc.expectedIssues[i].State, *issue.State)
+				assert.Equal(t, *tc.expectedIssues[i].HTMLURL, *issue.HTMLURL)
+			}
+		})
+	}
+}
+
+func Test_ParseISOTimestamp(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        string
+		expectedErr  bool
+		expectedTime time.Time
+	}{
+		{
+			name:         "valid RFC3339 format",
+			input:        "2023-01-15T14:30:00Z",
+			expectedErr:  false,
+			expectedTime: time.Date(2023, 1, 15, 14, 30, 0, 0, time.UTC),
+		},
+		{
+			name:         "valid date only format",
+			input:        "2023-01-15",
+			expectedErr:  false,
+			expectedTime: time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:        "empty timestamp",
+			input:       "",
+			expectedErr: true,
+		},
+		{
+			name:        "invalid format",
+			input:       "15/01/2023",
+			expectedErr: true,
+		},
+		{
+			name:        "invalid date",
+			input:       "2023-13-45",
+			expectedErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			parsedTime, err := parseISOTimestamp(tc.input)
+
+			if tc.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedTime, parsedTime)
 			}
 		})
 	}

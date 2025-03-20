@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -261,4 +262,124 @@ func createIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandl
 
 			return mcp.NewToolResultText(string(r)), nil
 		}
+}
+
+// listIssues creates a tool to list and filter repository issues
+func listIssues(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("list_issues",
+			mcp.WithDescription("List issues in a GitHub repository with filtering options"),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithString("state",
+				mcp.Description("Filter by state ('open', 'closed', 'all')"),
+			),
+			mcp.WithString("labels",
+				mcp.Description("Comma-separated list of labels to filter by"),
+			),
+			mcp.WithString("sort",
+				mcp.Description("Sort by ('created', 'updated', 'comments')"),
+			),
+			mcp.WithString("direction",
+				mcp.Description("Sort direction ('asc', 'desc')"),
+			),
+			mcp.WithString("since",
+				mcp.Description("Filter by date (ISO 8601 timestamp)"),
+			),
+			mcp.WithNumber("page",
+				mcp.Description("Page number"),
+			),
+			mcp.WithNumber("per_page",
+				mcp.Description("Results per page"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner := request.Params.Arguments["owner"].(string)
+			repo := request.Params.Arguments["repo"].(string)
+
+			opts := &github.IssueListByRepoOptions{}
+
+			// Set optional parameters if provided
+			if state, ok := request.Params.Arguments["state"].(string); ok && state != "" {
+				opts.State = state
+			}
+
+			if labels, ok := request.Params.Arguments["labels"].(string); ok && labels != "" {
+				opts.Labels = parseCommaSeparatedList(labels)
+			}
+
+			if sort, ok := request.Params.Arguments["sort"].(string); ok && sort != "" {
+				opts.Sort = sort
+			}
+
+			if direction, ok := request.Params.Arguments["direction"].(string); ok && direction != "" {
+				opts.Direction = direction
+			}
+
+			if since, ok := request.Params.Arguments["since"].(string); ok && since != "" {
+				timestamp, err := parseISOTimestamp(since)
+				if err != nil {
+					return mcp.NewToolResultError(fmt.Sprintf("failed to list issues: %s", err.Error())), nil
+				}
+				opts.Since = timestamp
+			}
+
+			if page, ok := request.Params.Arguments["page"].(float64); ok {
+				opts.Page = int(page)
+			}
+
+			if perPage, ok := request.Params.Arguments["per_page"].(float64); ok {
+				opts.PerPage = int(perPage)
+			}
+
+			issues, resp, err := client.Issues.ListByRepo(ctx, owner, repo, opts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to list issues: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to list issues: %s", string(body))), nil
+			}
+
+			r, err := json.Marshal(issues)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal issues: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}
+
+// parseISOTimestamp parses an ISO 8601 timestamp string into a time.Time object.
+// Returns the parsed time or an error if parsing fails.
+// Example formats supported: "2023-01-15T14:30:00Z", "2023-01-15"
+func parseISOTimestamp(timestamp string) (time.Time, error) {
+	if timestamp == "" {
+		return time.Time{}, fmt.Errorf("empty timestamp")
+	}
+
+	// Try RFC3339 format (standard ISO 8601 with time)
+	t, err := time.Parse(time.RFC3339, timestamp)
+	if err == nil {
+		return t, nil
+	}
+
+	// Try simple date format (YYYY-MM-DD)
+	t, err = time.Parse("2006-01-02", timestamp)
+	if err == nil {
+		return t, nil
+	}
+
+	// Return error with supported formats
+	return time.Time{}, fmt.Errorf("invalid ISO 8601 timestamp: %s (supported formats: YYYY-MM-DDThh:mm:ssZ or YYYY-MM-DD)", timestamp)
 }

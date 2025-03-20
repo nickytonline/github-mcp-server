@@ -38,6 +38,18 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `issue_number`: Issue number (number, required)
   - `body`: Comment text (string, required)
 
+- **list_issues** - List and filter repository issues
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `state`: Filter by state ('open', 'closed', 'all') (string, optional)
+  - `labels`: Comma-separated list of labels to filter by (string, optional)
+  - `sort`: Sort by ('created', 'updated', 'comments') (string, optional)
+  - `direction`: Sort direction ('asc', 'desc') (string, optional)
+  - `since`: Filter by date (ISO 8601 timestamp) (string, optional)
+  - `page`: Page number (number, optional)
+  - `per_page`: Results per page (number, optional)
+
 - **search_issues** - Search for issues and pull requests
   - `query`: Search query (string, required)
   - `sort`: Sort field (string, optional)
