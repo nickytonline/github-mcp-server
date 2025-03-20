@@ -22,6 +22,15 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `repo`: Repository name (string, required)
   - `issue_number`: Issue number (number, required)
 
+- **create_issue** - Create a new issue in a GitHub repository
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `title`: Issue title (string, required)
+  - `body`: Issue body content (string, optional)
+  - `assignees`: Comma-separated list of usernames to assign to this issue (string, optional)
+  - `labels`: Comma-separated list of labels to apply to this issue (string, optional)
+
 - **add_issue_comment** - Add a comment to an issue
 
   - `owner`: Repository owner (string, required)
@@ -313,16 +322,14 @@ Lots of things!
 Missing tools:
 
 - push_files (files array)
-- create_issue (assignees and labels arrays)
 - list_issues (labels array)
 - update_issue (labels and assignees arrays)
 - create_pull_request_review (comments array)
 
 Testing
 
-- Unit tests
 - Integration tests
-- Blackbox testing: ideally comparing output to Anthromorphic's server to make sure that this is a fully compatible drop-in replacement.
+- Blackbox testing: ideally comparing output to Anthropic's server to make sure that this is a fully compatible drop-in replacement.
 
 And some other stuff:
 

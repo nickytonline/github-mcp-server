@@ -369,3 +369,158 @@ func Test_SearchIssues(t *testing.T) {
 		})
 	}
 }
+
+func Test_CreateIssue(t *testing.T) {
+	// Verify tool definition once
+	mockClient := github.NewClient(nil)
+	tool, _ := createIssue(mockClient)
+
+	assert.Equal(t, "create_issue", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "title")
+	assert.Contains(t, tool.InputSchema.Properties, "body")
+	assert.Contains(t, tool.InputSchema.Properties, "assignees")
+	assert.Contains(t, tool.InputSchema.Properties, "labels")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "title"})
+
+	// Setup mock issue for success case
+	mockIssue := &github.Issue{
+		Number:    github.Ptr(123),
+		Title:     github.Ptr("Test Issue"),
+		Body:      github.Ptr("This is a test issue"),
+		State:     github.Ptr("open"),
+		HTMLURL:   github.Ptr("https://github.com/owner/repo/issues/123"),
+		Assignees: []*github.User{{Login: github.Ptr("user1")}, {Login: github.Ptr("user2")}},
+		Labels:    []*github.Label{{Name: github.Ptr("bug")}, {Name: github.Ptr("help wanted")}},
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedIssue  *github.Issue
+		expectedErrMsg string
+	}{
+		{
+			name: "successful issue creation with all fields",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposIssuesByOwnerByRepo,
+					mockResponse(t, http.StatusCreated, mockIssue),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":     "owner",
+				"repo":      "repo",
+				"title":     "Test Issue",
+				"body":      "This is a test issue",
+				"assignees": []interface{}{"user1", "user2"},
+				"labels":    []interface{}{"bug", "help wanted"},
+			},
+			expectError:   false,
+			expectedIssue: mockIssue,
+		},
+		{
+			name: "successful issue creation with minimal fields",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposIssuesByOwnerByRepo,
+					mockResponse(t, http.StatusCreated, &github.Issue{
+						Number:  github.Ptr(124),
+						Title:   github.Ptr("Minimal Issue"),
+						HTMLURL: github.Ptr("https://github.com/owner/repo/issues/124"),
+						State:   github.Ptr("open"),
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"title": "Minimal Issue",
+			},
+			expectError: false,
+			expectedIssue: &github.Issue{
+				Number:  github.Ptr(124),
+				Title:   github.Ptr("Minimal Issue"),
+				HTMLURL: github.Ptr("https://github.com/owner/repo/issues/124"),
+				State:   github.Ptr("open"),
+			},
+		},
+		{
+			name: "issue creation fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposIssuesByOwnerByRepo,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						_, _ = w.Write([]byte(`{"message": "Validation failed"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"title": "",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to create issue",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := createIssue(client)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedIssue github.Issue
+			err = json.Unmarshal([]byte(textContent.Text), &returnedIssue)
+			require.NoError(t, err)
+
+			assert.Equal(t, *tc.expectedIssue.Number, *returnedIssue.Number)
+			assert.Equal(t, *tc.expectedIssue.Title, *returnedIssue.Title)
+			assert.Equal(t, *tc.expectedIssue.State, *returnedIssue.State)
+			assert.Equal(t, *tc.expectedIssue.HTMLURL, *returnedIssue.HTMLURL)
+
+			if tc.expectedIssue.Body != nil {
+				assert.Equal(t, *tc.expectedIssue.Body, *returnedIssue.Body)
+			}
+
+			// Check assignees if expected
+			if len(tc.expectedIssue.Assignees) > 0 {
+				assert.Equal(t, len(tc.expectedIssue.Assignees), len(returnedIssue.Assignees))
+				for i, assignee := range returnedIssue.Assignees {
+					assert.Equal(t, *tc.expectedIssue.Assignees[i].Login, *assignee.Login)
+				}
+			}
+
+			// Check labels if expected
+			if len(tc.expectedIssue.Labels) > 0 {
+				assert.Equal(t, len(tc.expectedIssue.Labels), len(returnedIssue.Labels))
+				for i, label := range returnedIssue.Labels {
+					assert.Equal(t, *tc.expectedIssue.Labels[i].Name, *label.Name)
+				}
+			}
+		})
+	}
+}

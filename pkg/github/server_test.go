@@ -166,3 +166,64 @@ func Test_IsAcceptedError(t *testing.T) {
 		})
 	}
 }
+
+func Test_ParseCommaSeparatedList(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "simple comma separated values",
+			input:    "one,two,three",
+			expected: []string{"one", "two", "three"},
+		},
+		{
+			name:     "values with spaces",
+			input:    "one, two, three",
+			expected: []string{"one", "two", "three"},
+		},
+		{
+			name:     "values with extra spaces",
+			input:    "  one  ,  two  ,  three  ",
+			expected: []string{"one", "two", "three"},
+		},
+		{
+			name:     "empty values in between",
+			input:    "one,,three",
+			expected: []string{"one", "three"},
+		},
+		{
+			name:     "only spaces",
+			input:    " , , ",
+			expected: []string{},
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: nil,
+		},
+		{
+			name:     "single value",
+			input:    "one",
+			expected: []string{"one"},
+		},
+		{
+			name:     "trailing comma",
+			input:    "one,two,",
+			expected: []string{"one", "two"},
+		},
+		{
+			name:     "leading comma",
+			input:    ",one,two",
+			expected: []string{"one", "two"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := parseCommaSeparatedList(tc.input)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}

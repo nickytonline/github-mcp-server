@@ -182,3 +182,83 @@ func searchIssues(client *github.Client) (tool mcp.Tool, handler server.ToolHand
 			return mcp.NewToolResultText(string(r)), nil
 		}
 }
+
+// createIssue creates a tool to create a new issue in a GitHub repository.
+func createIssue(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("create_issue",
+			mcp.WithDescription("Create a new issue in a GitHub repository"),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithString("title",
+				mcp.Required(),
+				mcp.Description("Issue title"),
+			),
+			mcp.WithString("body",
+				mcp.Description("Issue body content"),
+			),
+			mcp.WithString("assignees",
+				mcp.Description("Comma-separate list of usernames to assign to this issue"),
+			),
+			mcp.WithString("labels",
+				mcp.Description("Comma-separate list of labels to apply to this issue"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner := request.Params.Arguments["owner"].(string)
+			repo := request.Params.Arguments["repo"].(string)
+			title := request.Params.Arguments["title"].(string)
+
+			// Optional parameters
+			var body string
+			if b, ok := request.Params.Arguments["body"].(string); ok {
+				body = b
+			}
+
+			// Parse assignees if present
+			assignees := []string{} // default to empty slice, can't be nil
+			if a, ok := request.Params.Arguments["assignees"].(string); ok && a != "" {
+				assignees = parseCommaSeparatedList(a)
+			}
+
+			// Parse labels if present
+			labels := []string{} // default to empty slice, can't be nil
+			if l, ok := request.Params.Arguments["labels"].(string); ok && l != "" {
+				labels = parseCommaSeparatedList(l)
+			}
+
+			// Create the issue request
+			issueRequest := &github.IssueRequest{
+				Title:     github.Ptr(title),
+				Body:      github.Ptr(body),
+				Assignees: &assignees,
+				Labels:    &labels,
+			}
+
+			issue, resp, err := client.Issues.Create(ctx, owner, repo, issueRequest)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create issue: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusCreated {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to create issue: %s", string(body))), nil
+			}
+
+			r, err := json.Marshal(issue)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}

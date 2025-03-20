@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -34,6 +35,7 @@ func NewServer(client *github.Client) *server.MCPServer {
 	// Add GitHub tools - Issues
 	s.AddTool(getIssue(client))
 	s.AddTool(addIssueComment(client))
+	s.AddTool(createIssue(client))
 	s.AddTool(searchIssues(client))
 
 	// Add GitHub tools - Pull Requests
@@ -105,4 +107,23 @@ func getMe(client *github.Client) (tool mcp.Tool, handler server.ToolHandlerFunc
 func isAcceptedError(err error) bool {
 	var acceptedError *github.AcceptedError
 	return errors.As(err, &acceptedError)
+}
+
+// parseCommaSeparatedList is a helper function that parses a comma-separated list of strings from the input string.
+func parseCommaSeparatedList(input string) []string {
+	if input == "" {
+		return nil
+	}
+
+	parts := strings.Split(input, ",")
+	result := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	return result
 }
