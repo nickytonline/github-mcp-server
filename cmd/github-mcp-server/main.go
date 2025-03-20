@@ -32,12 +32,14 @@ var (
 		Long:  `Start a server that communicates via standard input/output streams using JSON-RPC messages.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			logFile := viper.GetString("log-file")
+			readOnly := viper.GetBool("read-only")
+			exportTranslations := viper.GetBool("export-translations")
 			logger, err := initLogger(logFile)
 			if err != nil {
 				stdlog.Fatal("Failed to initialize logger:", err)
 			}
 			logCommands := viper.GetBool("enable-command-logging")
-			if err := runStdioServer(logger, logCommands, viper.GetBool("export-translations")); err != nil {
+			if err := runStdioServer(readOnly, logger, logCommands, exportTranslations); err != nil {
 				stdlog.Fatal("failed to run stdio server:", err)
 			}
 		},
@@ -48,11 +50,13 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Add global flags that will be shared by all commands
+	rootCmd.PersistentFlags().Bool("read-only", false, "Restrict the server to read-only operations")
 	rootCmd.PersistentFlags().String("log-file", "", "Path to log file")
 	rootCmd.PersistentFlags().Bool("enable-command-logging", false, "When enabled, the server will log all command requests and responses to the log file")
 	rootCmd.PersistentFlags().Bool("export-translations", false, "Save translations to a JSON file")
 
 	// Bind flag to viper
+	viper.BindPFlag("read-only", rootCmd.PersistentFlags().Lookup("read-only"))
 	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
 	viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
 	viper.BindPFlag("export-translations", rootCmd.PersistentFlags().Lookup("export-translations"))
@@ -84,7 +88,7 @@ func initLogger(outPath string) (*log.Logger, error) {
 	return logger, nil
 }
 
-func runStdioServer(logger *log.Logger, logCommands bool, exportTranslations bool) error {
+func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportTranslations bool) error {
 	// Create app context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -98,8 +102,8 @@ func runStdioServer(logger *log.Logger, logCommands bool, exportTranslations boo
 
 	t, dumpTranslations := translations.TranslationHelper()
 
-	// Create server
-	ghServer := github.NewServer(ghClient, t)
+	// Create
+	ghServer := github.NewServer(ghClient, readOnly, t)
 	stdioServer := server.NewStdioServer(ghServer)
 
 	stdLogger := stdlog.New(logger.Writer(), "stdioserver", 0)

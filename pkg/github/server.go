@@ -16,7 +16,7 @@ import (
 )
 
 // NewServer creates a new GitHub MCP server with the specified GH client and logger.
-func NewServer(client *github.Client, t translations.TranslationHelperFunc) *server.MCPServer {
+func NewServer(client *github.Client, readOnly bool, t translations.TranslationHelperFunc) *server.MCPServer {
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"github-mcp-server",
@@ -35,29 +35,36 @@ func NewServer(client *github.Client, t translations.TranslationHelperFunc) *ser
 
 	// Add GitHub tools - Issues
 	s.AddTool(getIssue(client, t))
-	s.AddTool(addIssueComment(client, t))
-	s.AddTool(createIssue(client, t))
 	s.AddTool(searchIssues(client, t))
 	s.AddTool(listIssues(client, t))
+	if !readOnly {
+		s.AddTool(createIssue(client, t))
+		s.AddTool(addIssueComment(client, t))
+		s.AddTool(createIssue(client, t))
+	}
 
 	// Add GitHub tools - Pull Requests
 	s.AddTool(getPullRequest(client, t))
 	s.AddTool(listPullRequests(client, t))
-	s.AddTool(mergePullRequest(client, t))
 	s.AddTool(getPullRequestFiles(client, t))
 	s.AddTool(getPullRequestStatus(client, t))
-	s.AddTool(updatePullRequestBranch(client, t))
 	s.AddTool(getPullRequestComments(client, t))
 	s.AddTool(getPullRequestReviews(client, t))
+	if !readOnly {
+		s.AddTool(mergePullRequest(client, t))
+		s.AddTool(updatePullRequestBranch(client, t))
+	}
 
 	// Add GitHub tools - Repositories
-	s.AddTool(createOrUpdateFile(client, t))
 	s.AddTool(searchRepositories(client, t))
-	s.AddTool(createRepository(client, t))
 	s.AddTool(getFileContents(client, t))
-	s.AddTool(forkRepository(client, t))
-	s.AddTool(createBranch(client, t))
 	s.AddTool(listCommits(client, t))
+	if !readOnly {
+		s.AddTool(createOrUpdateFile(client, t))
+		s.AddTool(createRepository(client, t))
+		s.AddTool(forkRepository(client, t))
+		s.AddTool(createBranch(client, t))
+	}
 
 	// Add GitHub tools - Search
 	s.AddTool(searchCode(client, t))
