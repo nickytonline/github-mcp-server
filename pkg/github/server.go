@@ -85,7 +85,7 @@ func NewServer(client *github.Client, readOnly bool, t translations.TranslationH
 // getMe creates a tool to get details of the authenticated user.
 func getMe(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_me",
-			mcp.WithDescription(t("TOOL_GET_ME_DESCRIPTION", "Get details of the authenticated GitHub user")),
+			mcp.WithDescription(t("TOOL_GET_ME_DESCRIPTION", "Get details of the authenticated GitHub user. Use this when a request include \"me\", \"my\"...")),
 			mcp.WithString("reason",
 				mcp.Description("Optional: reason the session was created"),
 			),
