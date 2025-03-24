@@ -591,7 +591,9 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 			mcp.WithArray("comments",
 				mcp.Items(
 					map[string]interface{}{
-						"type": "object",
+						"type":                 "object",
+						"additionalProperties": false,
+						"required":             []string{"path", "position", "body"},
 						"properties": map[string]interface{}{
 							"path": map[string]interface{}{
 								"type":        "string",

@@ -488,7 +488,9 @@ func pushFiles(client *github.Client, t translations.TranslationHelperFunc) (too
 				mcp.Required(),
 				mcp.Items(
 					map[string]interface{}{
-						"type": "object",
+						"type":                 "object",
+						"additionalProperties": false,
+						"required":             []string{"path", "content"},
 						"properties": map[string]interface{}{
 							"path": map[string]interface{}{
 								"type":        "string",
