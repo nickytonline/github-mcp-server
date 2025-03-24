@@ -376,7 +376,7 @@ Run **Preferences: Open User Settings (JSON)**, and create or append to the `mcp
         "args": ["stdio"],
         "env": {
           "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:githubpat}"
-        }
+        },
       }
     }
   }
