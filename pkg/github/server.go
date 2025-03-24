@@ -138,3 +138,118 @@ func parseCommaSeparatedList(input string) []string {
 
 	return result
 }
+
+// requiredStringParam checks if the parameter is present in the request and is of type string.
+func requiredStringParam(r mcp.CallToolRequest, p string) (string, error) {
+	// Check if the parameter is present in the request
+	if _, ok := r.Params.Arguments[p]; !ok {
+		return "", fmt.Errorf("missing required parameter: %s", p)
+	}
+
+	// Check if the parameter is of the expected type
+	if _, ok := r.Params.Arguments[p].(string); !ok {
+		return "", fmt.Errorf("parameter %s is not of type string", p)
+	}
+
+	// Check if the parameter is not the zero value
+	v := r.Params.Arguments[p].(string)
+	if v == "" {
+		return v, fmt.Errorf("missing required parameter: %s", p)
+	}
+
+	return v, nil
+}
+
+// requiredNumberParam checks if the parameter is present in the request and is of type number.
+func requiredNumberParam(r mcp.CallToolRequest, p string) (int, error) {
+	// Check if the parameter is present in the request
+	if _, ok := r.Params.Arguments[p]; !ok {
+		return 0, fmt.Errorf("missing required parameter: %s", p)
+	}
+
+	// Check if the parameter is of the expected type
+	if _, ok := r.Params.Arguments[p].(float64); !ok {
+		return 0, fmt.Errorf("parameter %s is not of type number", p)
+	}
+
+	return int(r.Params.Arguments[p].(float64)), nil
+}
+
+// optionalStringParam checks if an optional parameter is present in the request and is of type string.
+func optionalStringParam(r mcp.CallToolRequest, p string) (value string, err error) {
+	// Check if the parameter is present in the request
+	if _, ok := r.Params.Arguments[p]; !ok {
+		return "", nil
+	}
+
+	// Check if the parameter is of the expected type
+	if _, ok := r.Params.Arguments[p].(string); !ok {
+		return "", fmt.Errorf("parameter %s is not of type string", p)
+	}
+
+	return r.Params.Arguments[p].(string), nil
+}
+
+// optionalNumberParam checks if an optional parameter is present in the request and is of type number.
+func optionalNumberParam(r mcp.CallToolRequest, p string) (int, error) {
+	// Check if the parameter is present in the request
+	if _, ok := r.Params.Arguments[p]; !ok {
+		return 0, nil
+	}
+
+	// Check if the parameter is of the expected type
+	if _, ok := r.Params.Arguments[p].(float64); !ok {
+		return 0, fmt.Errorf("parameter %s is not of type number", p)
+	}
+
+	return int(r.Params.Arguments[p].(float64)), nil
+}
+
+// optionalNumberParamWithDefault checks if an optional parameter is present in the request and is of type number.
+// If the parameter is not present or is zero, it returns the default value.
+func optionalNumberParamWithDefault(r mcp.CallToolRequest, p string, d int) (int, error) {
+	v, err := optionalNumberParam(r, p)
+	if err != nil {
+		return 0, err
+	}
+	if v == 0 {
+		return d, nil
+	}
+	return v, nil
+}
+
+// optionalCommaSeparatedListParam checks if an optional parameter is present in the request and is of type string.
+// If the parameter is presents, it uses parseCommaSeparatedList to parse the string into a list of strings.
+// If the parameter is not present or is empty, it returns an empty list.
+func optionalCommaSeparatedListParam(r mcp.CallToolRequest, p string) ([]string, error) {
+	// Check if the parameter is present in the request
+	if _, ok := r.Params.Arguments[p]; !ok {
+		return []string{}, nil //default to empty list, not nil
+	}
+
+	// Check if the parameter is of the expected type
+	if _, ok := r.Params.Arguments[p].(string); !ok {
+		return nil, fmt.Errorf("parameter %s is not of type string", p)
+	}
+
+	l := parseCommaSeparatedList(r.Params.Arguments[p].(string))
+	if len(l) == 0 {
+		return []string{}, nil // default to empty list, not nil
+	}
+	return l, nil
+}
+
+// optionalBooleanParam checks if an optional parameter is present in the request and is of type boolean.
+func optionalBooleanParam(r mcp.CallToolRequest, p string) (bool, error) {
+	// Check if the parameter is present in the request
+	if _, ok := r.Params.Arguments[p]; !ok {
+		return false, nil
+	}
+
+	// Check if the parameter is of the expected type
+	if _, ok := r.Params.Arguments[p].(bool); !ok {
+		return false, fmt.Errorf("parameter %s is not of type bool", p)
+	}
+
+	return r.Params.Arguments[p].(bool), nil
+}

@@ -32,9 +32,18 @@ func getIssue(client *github.Client, t translations.TranslationHelperFunc) (tool
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			issueNumber := int(request.Params.Arguments["issue_number"].(float64))
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			issueNumber, err := requiredNumberParam(request, "issue_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			issue, resp, err := client.Issues.Get(ctx, owner, repo, issueNumber)
 			if err != nil {
@@ -81,10 +90,22 @@ func addIssueComment(client *github.Client, t translations.TranslationHelperFunc
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			issueNumber := int(request.Params.Arguments["issue_number"].(float64))
-			body := request.Params.Arguments["body"].(string)
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			issueNumber, err := requiredNumberParam(request, "issue_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			body, err := requiredStringParam(request, "body")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			comment := &github.IssueComment{
 				Body: github.Ptr(body),
@@ -135,22 +156,25 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query := request.Params.Arguments["q"].(string)
-			sort := ""
-			if s, ok := request.Params.Arguments["sort"].(string); ok {
-				sort = s
+			query, err := requiredStringParam(request, "q")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order := ""
-			if o, ok := request.Params.Arguments["order"].(string); ok {
-				order = o
+			sort, err := optionalStringParam(request, "sort")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage := 30
-			if pp, ok := request.Params.Arguments["per_page"].(float64); ok {
-				perPage = int(pp)
+			order, err := optionalStringParam(request, "order")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page := 1
-			if p, ok := request.Params.Arguments["page"].(float64); ok {
-				page = int(p)
+			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			opts := &github.SearchOptions{
@@ -212,26 +236,34 @@ func createIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			title := request.Params.Arguments["title"].(string)
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			title, err := requiredStringParam(request, "title")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			// Optional parameters
-			var body string
-			if b, ok := request.Params.Arguments["body"].(string); ok {
-				body = b
+			body, err := optionalStringParam(request, "body")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			// Parse assignees if present
-			assignees := []string{} // default to empty slice, can't be nil
-			if a, ok := request.Params.Arguments["assignees"].(string); ok && a != "" {
-				assignees = parseCommaSeparatedList(a)
+			// Get assignees
+			assignees, err := optionalCommaSeparatedListParam(request, "assignees")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-
-			// Parse labels if present
-			labels := []string{} // default to empty slice, can't be nil
-			if l, ok := request.Params.Arguments["labels"].(string); ok && l != "" {
-				labels = parseCommaSeparatedList(l)
+			// Get labels
+			labels, err := optionalCommaSeparatedListParam(request, "labels")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			// Create the issue request
@@ -300,29 +332,43 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			opts := &github.IssueListByRepoOptions{}
 
 			// Set optional parameters if provided
-			if state, ok := request.Params.Arguments["state"].(string); ok && state != "" {
-				opts.State = state
+			opts.State, err = optionalStringParam(request, "state")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			if labels, ok := request.Params.Arguments["labels"].(string); ok && labels != "" {
-				opts.Labels = parseCommaSeparatedList(labels)
+			opts.Labels, err = optionalCommaSeparatedListParam(request, "labels")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			if sort, ok := request.Params.Arguments["sort"].(string); ok && sort != "" {
-				opts.Sort = sort
+			opts.Sort, err = optionalStringParam(request, "sort")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			if direction, ok := request.Params.Arguments["direction"].(string); ok && direction != "" {
-				opts.Direction = direction
+			opts.Direction, err = optionalStringParam(request, "direction")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			if since, ok := request.Params.Arguments["since"].(string); ok && since != "" {
+			since, err := optionalStringParam(request, "since")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if since != "" {
 				timestamp, err := parseISOTimestamp(since)
 				if err != nil {
 					return mcp.NewToolResultError(fmt.Sprintf("failed to list issues: %s", err.Error())), nil
@@ -397,38 +443,69 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			issueNumber := int(request.Params.Arguments["issue_number"].(float64))
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			issueNumber, err := requiredNumberParam(request, "issue_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			// Create the issue request with only provided fields
 			issueRequest := &github.IssueRequest{}
 
 			// Set optional parameters if provided
-			if title, ok := request.Params.Arguments["title"].(string); ok && title != "" {
+			title, err := optionalStringParam(request, "title")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if title != "" {
 				issueRequest.Title = github.Ptr(title)
 			}
 
-			if body, ok := request.Params.Arguments["body"].(string); ok && body != "" {
+			body, err := optionalStringParam(request, "body")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if body != "" {
 				issueRequest.Body = github.Ptr(body)
 			}
 
-			if state, ok := request.Params.Arguments["state"].(string); ok && state != "" {
+			state, err := optionalStringParam(request, "state")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if state != "" {
 				issueRequest.State = github.Ptr(state)
 			}
 
-			if labels, ok := request.Params.Arguments["labels"].(string); ok && labels != "" {
-				labelsList := parseCommaSeparatedList(labels)
-				issueRequest.Labels = &labelsList
+			labels, err := optionalCommaSeparatedListParam(request, "labels")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if len(labels) > 0 {
+				issueRequest.Labels = &labels
 			}
 
-			if assignees, ok := request.Params.Arguments["assignees"].(string); ok && assignees != "" {
-				assigneesList := parseCommaSeparatedList(assignees)
-				issueRequest.Assignees = &assigneesList
+			assignees, err := optionalCommaSeparatedListParam(request, "assignees")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if len(assignees) > 0 {
+				issueRequest.Assignees = &assignees
 			}
 
-			if milestone, ok := request.Params.Arguments["milestone"].(float64); ok {
-				milestoneNum := int(milestone)
+			milestone, err := optionalNumberParam(request, "milestone")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if milestone != 0 {
+				milestoneNum := milestone
 				issueRequest.Milestone = &milestoneNum
 			}
 

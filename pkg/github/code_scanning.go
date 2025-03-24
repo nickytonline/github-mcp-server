@@ -30,9 +30,18 @@ func getCodeScanningAlert(client *github.Client, t translations.TranslationHelpe
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, _ := request.Params.Arguments["owner"].(string)
-			repo, _ := request.Params.Arguments["repo"].(string)
-			alertNumber, _ := request.Params.Arguments["alert_number"].(float64)
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			alertNumber, err := requiredNumberParam(request, "alert_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			alert, resp, err := client.CodeScanning.GetAlert(ctx, owner, repo, int64(alertNumber))
 			if err != nil {
@@ -80,11 +89,26 @@ func listCodeScanningAlerts(client *github.Client, t translations.TranslationHel
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, _ := request.Params.Arguments["owner"].(string)
-			repo, _ := request.Params.Arguments["repo"].(string)
-			ref, _ := request.Params.Arguments["ref"].(string)
-			state, _ := request.Params.Arguments["state"].(string)
-			severity, _ := request.Params.Arguments["severity"].(string)
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			ref, err := optionalStringParam(request, "ref")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			state, err := optionalStringParam(request, "state")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			severity, err := optionalStringParam(request, "severity")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			alerts, resp, err := client.CodeScanning.ListAlertsForRepo(ctx, owner, repo, &github.AlertListOptions{Ref: ref, State: state, Severity: severity})
 			if err != nil {

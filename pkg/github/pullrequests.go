@@ -31,9 +31,18 @@ func getPullRequest(client *github.Client, t translations.TranslationHelperFunc)
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			pr, resp, err := client.PullRequests.Get(ctx, owner, repo, pullNumber)
 			if err != nil {
@@ -93,35 +102,41 @@ func listPullRequests(client *github.Client, t translations.TranslationHelperFun
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			state := ""
-			if s, ok := request.Params.Arguments["state"].(string); ok {
-				state = s
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			head := ""
-			if h, ok := request.Params.Arguments["head"].(string); ok {
-				head = h
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			base := ""
-			if b, ok := request.Params.Arguments["base"].(string); ok {
-				base = b
+			state, err := optionalStringParam(request, "state")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sort := ""
-			if s, ok := request.Params.Arguments["sort"].(string); ok {
-				sort = s
+			head, err := optionalStringParam(request, "head")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			direction := ""
-			if d, ok := request.Params.Arguments["direction"].(string); ok {
-				direction = d
+			base, err := optionalStringParam(request, "base")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage := 30
-			if pp, ok := request.Params.Arguments["per_page"].(float64); ok {
-				perPage = int(pp)
+			sort, err := optionalStringParam(request, "sort")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page := 1
-			if p, ok := request.Params.Arguments["page"].(float64); ok {
-				page = int(p)
+			direction, err := optionalStringParam(request, "direction")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			opts := &github.PullRequestListOptions{
@@ -186,20 +201,29 @@ func mergePullRequest(client *github.Client, t translations.TranslationHelperFun
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
-			commitTitle := ""
-			if ct, ok := request.Params.Arguments["commit_title"].(string); ok {
-				commitTitle = ct
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			commitMessage := ""
-			if cm, ok := request.Params.Arguments["commit_message"].(string); ok {
-				commitMessage = cm
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			mergeMethod := ""
-			if mm, ok := request.Params.Arguments["merge_method"].(string); ok {
-				mergeMethod = mm
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			commitTitle, err := optionalStringParam(request, "commit_title")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			commitMessage, err := optionalStringParam(request, "commit_message")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			mergeMethod, err := optionalStringParam(request, "merge_method")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			options := &github.PullRequestOptions{
@@ -248,9 +272,18 @@ func getPullRequestFiles(client *github.Client, t translations.TranslationHelper
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			opts := &github.ListOptions{}
 			files, resp, err := client.PullRequests.ListFiles(ctx, owner, repo, pullNumber, opts)
@@ -294,10 +327,18 @@ func getPullRequestStatus(client *github.Client, t translations.TranslationHelpe
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
-
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 			// First get the PR to find the head SHA
 			pr, resp, err := client.PullRequests.Get(ctx, owner, repo, pullNumber)
 			if err != nil {
@@ -358,14 +399,22 @@ func updatePullRequestBranch(client *github.Client, t translations.TranslationHe
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
-			expectedHeadSHA := ""
-			if sha, ok := request.Params.Arguments["expected_head_sha"].(string); ok {
-				expectedHeadSHA = sha
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			expectedHeadSHA, err := optionalStringParam(request, "expected_head_sha")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 			opts := &github.PullRequestBranchUpdateOptions{}
 			if expectedHeadSHA != "" {
 				opts.ExpectedHeadSHA = github.Ptr(expectedHeadSHA)
@@ -417,9 +466,18 @@ func getPullRequestComments(client *github.Client, t translations.TranslationHel
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			opts := &github.PullRequestListCommentsOptions{
 				ListOptions: github.ListOptions{
@@ -468,9 +526,18 @@ func getPullRequestReviews(client *github.Client, t translations.TranslationHelp
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			reviews, resp, err := client.PullRequests.ListReviews(ctx, owner, repo, pullNumber, nil)
 			if err != nil {
@@ -545,10 +612,22 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner := request.Params.Arguments["owner"].(string)
-			repo := request.Params.Arguments["repo"].(string)
-			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
-			event := request.Params.Arguments["event"].(string)
+			owner, err := requiredStringParam(request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredStringParam(request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			pullNumber, err := requiredNumberParam(request, "pull_number")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			event, err := requiredStringParam(request, "event")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			// Create review request
 			reviewRequest := &github.PullRequestReviewRequest{
@@ -556,12 +635,20 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 			}
 
 			// Add body if provided
-			if body, ok := request.Params.Arguments["body"].(string); ok && body != "" {
+			body, err := optionalStringParam(request, "body")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if body != "" {
 				reviewRequest.Body = github.Ptr(body)
 			}
 
 			// Add commit ID if provided
-			if commitID, ok := request.Params.Arguments["commit_id"].(string); ok && commitID != "" {
+			commitID, err := optionalStringParam(request, "commit_id")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			if commitID != "" {
 				reviewRequest.CommitID = github.Ptr(commitID)
 			}
 

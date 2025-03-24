@@ -228,3 +228,372 @@ func Test_ParseCommaSeparatedList(t *testing.T) {
 		})
 	}
 }
+
+func Test_RequiredStringParam(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		expected    string
+		expectError bool
+	}{
+		{
+			name:        "valid string parameter",
+			params:      map[string]interface{}{"name": "test-value"},
+			paramName:   "name",
+			expected:    "test-value",
+			expectError: false,
+		},
+		{
+			name:        "missing parameter",
+			params:      map[string]interface{}{},
+			paramName:   "name",
+			expected:    "",
+			expectError: true,
+		},
+		{
+			name:        "empty string parameter",
+			params:      map[string]interface{}{"name": ""},
+			paramName:   "name",
+			expected:    "",
+			expectError: true,
+		},
+		{
+			name:        "wrong type parameter",
+			params:      map[string]interface{}{"name": 123},
+			paramName:   "name",
+			expected:    "",
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := requiredStringParam(request, tc.paramName)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func Test_OptionalStringParam(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		expected    string
+		expectError bool
+	}{
+		{
+			name:        "valid string parameter",
+			params:      map[string]interface{}{"name": "test-value"},
+			paramName:   "name",
+			expected:    "test-value",
+			expectError: false,
+		},
+		{
+			name:        "missing parameter",
+			params:      map[string]interface{}{},
+			paramName:   "name",
+			expected:    "",
+			expectError: false,
+		},
+		{
+			name:        "empty string parameter",
+			params:      map[string]interface{}{"name": ""},
+			paramName:   "name",
+			expected:    "",
+			expectError: false,
+		},
+		{
+			name:        "wrong type parameter",
+			params:      map[string]interface{}{"name": 123},
+			paramName:   "name",
+			expected:    "",
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := optionalStringParam(request, tc.paramName)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func Test_RequiredNumberParam(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		expected    int
+		expectError bool
+	}{
+		{
+			name:        "valid number parameter",
+			params:      map[string]interface{}{"count": float64(42)},
+			paramName:   "count",
+			expected:    42,
+			expectError: false,
+		},
+		{
+			name:        "missing parameter",
+			params:      map[string]interface{}{},
+			paramName:   "count",
+			expected:    0,
+			expectError: true,
+		},
+		{
+			name:        "wrong type parameter",
+			params:      map[string]interface{}{"count": "not-a-number"},
+			paramName:   "count",
+			expected:    0,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := requiredNumberParam(request, tc.paramName)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func Test_OptionalNumberParam(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		expected    int
+		expectError bool
+	}{
+		{
+			name:        "valid number parameter",
+			params:      map[string]interface{}{"count": float64(42)},
+			paramName:   "count",
+			expected:    42,
+			expectError: false,
+		},
+		{
+			name:        "missing parameter",
+			params:      map[string]interface{}{},
+			paramName:   "count",
+			expected:    0,
+			expectError: false,
+		},
+		{
+			name:        "zero value",
+			params:      map[string]interface{}{"count": float64(0)},
+			paramName:   "count",
+			expected:    0,
+			expectError: false,
+		},
+		{
+			name:        "wrong type parameter",
+			params:      map[string]interface{}{"count": "not-a-number"},
+			paramName:   "count",
+			expected:    0,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := optionalNumberParam(request, tc.paramName)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func Test_OptionalNumberParamWithDefault(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		defaultVal  int
+		expected    int
+		expectError bool
+	}{
+		{
+			name:        "valid number parameter",
+			params:      map[string]interface{}{"count": float64(42)},
+			paramName:   "count",
+			defaultVal:  10,
+			expected:    42,
+			expectError: false,
+		},
+		{
+			name:        "missing parameter",
+			params:      map[string]interface{}{},
+			paramName:   "count",
+			defaultVal:  10,
+			expected:    10,
+			expectError: false,
+		},
+		{
+			name:        "zero value",
+			params:      map[string]interface{}{"count": float64(0)},
+			paramName:   "count",
+			defaultVal:  10,
+			expected:    10,
+			expectError: false,
+		},
+		{
+			name:        "wrong type parameter",
+			params:      map[string]interface{}{"count": "not-a-number"},
+			paramName:   "count",
+			defaultVal:  10,
+			expected:    0,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := optionalNumberParamWithDefault(request, tc.paramName, tc.defaultVal)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func Test_OptionalCommaSeparatedListParam(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		expected    []string
+		expectError bool
+	}{
+		{
+			name:        "valid comma-separated list",
+			params:      map[string]interface{}{"tags": "one,two,three"},
+			paramName:   "tags",
+			expected:    []string{"one", "two", "three"},
+			expectError: false,
+		},
+		{
+			name:        "empty list",
+			params:      map[string]interface{}{"tags": ""},
+			paramName:   "tags",
+			expected:    []string{},
+			expectError: false,
+		},
+		{
+			name:        "missing parameter",
+			params:      map[string]interface{}{},
+			paramName:   "tags",
+			expected:    []string{},
+			expectError: false,
+		},
+		{
+			name:        "wrong type parameter",
+			params:      map[string]interface{}{"tags": 123},
+			paramName:   "tags",
+			expected:    nil,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := optionalCommaSeparatedListParam(request, tc.paramName)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
+
+func Test_OptionalBooleanParam(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		expected    bool
+		expectError bool
+	}{
+		{
+			name:        "true value",
+			params:      map[string]interface{}{"flag": true},
+			paramName:   "flag",
+			expected:    true,
+			expectError: false,
+		},
+		{
+			name:        "false value",
+			params:      map[string]interface{}{"flag": false},
+			paramName:   "flag",
+			expected:    false,
+			expectError: false,
+		},
+		{
+			name:        "missing parameter",
+			params:      map[string]interface{}{},
+			paramName:   "flag",
+			expected:    false,
+			expectError: false,
+		},
+		{
+			name:        "wrong type parameter",
+			params:      map[string]interface{}{"flag": "not-a-boolean"},
+			paramName:   "flag",
+			expected:    false,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := optionalBooleanParam(request, tc.paramName)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}

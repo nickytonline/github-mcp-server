@@ -176,8 +176,8 @@ func Test_AddIssueComment(t *testing.T) {
 				"issue_number": float64(42),
 				"body":         "",
 			},
-			expectError:    true,
-			expectedErrMsg: "failed to create comment",
+			expectError:    false,
+			expectedErrMsg: "missing required parameter: body",
 		},
 	}
 
@@ -207,6 +207,13 @@ func Test_AddIssueComment(t *testing.T) {
 			if tc.expectError {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			if tc.expectedErrMsg != "" {
+				require.NotNil(t, result)
+				textContent := getTextResult(t, result)
+				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
 				return
 			}
 
@@ -419,8 +426,8 @@ func Test_CreateIssue(t *testing.T) {
 				"repo":      "repo",
 				"title":     "Test Issue",
 				"body":      "This is a test issue",
-				"assignees": []interface{}{"user1", "user2"},
-				"labels":    []interface{}{"bug", "help wanted"},
+				"assignees": "user1, user2",
+				"labels":    "bug, help wanted",
 			},
 			expectError:   false,
 			expectedIssue: mockIssue,
@@ -467,8 +474,8 @@ func Test_CreateIssue(t *testing.T) {
 				"repo":  "repo",
 				"title": "",
 			},
-			expectError:    true,
-			expectedErrMsg: "failed to create issue",
+			expectError:    false,
+			expectedErrMsg: "missing required parameter: title",
 		},
 	}
 
@@ -488,6 +495,13 @@ func Test_CreateIssue(t *testing.T) {
 			if tc.expectError {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			if tc.expectedErrMsg != "" {
+				require.NotNil(t, result)
+				textContent := getTextResult(t, result)
+				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
 				return
 			}
 

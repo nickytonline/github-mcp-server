@@ -28,14 +28,17 @@ func searchRepositories(client *github.Client, t translations.TranslationHelperF
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query := request.Params.Arguments["query"].(string)
-			page := 1
-			if p, ok := request.Params.Arguments["page"].(float64); ok {
-				page = int(p)
+			query, err := requiredStringParam(request, "query")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage := 30
-			if pp, ok := request.Params.Arguments["per_page"].(float64); ok {
-				perPage = int(pp)
+			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			opts := &github.SearchOptions{
@@ -90,22 +93,25 @@ func searchCode(client *github.Client, t translations.TranslationHelperFunc) (to
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query := request.Params.Arguments["q"].(string)
-			sort := ""
-			if s, ok := request.Params.Arguments["sort"].(string); ok {
-				sort = s
+			query, err := requiredStringParam(request, "q")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order := ""
-			if o, ok := request.Params.Arguments["order"].(string); ok {
-				order = o
+			sort, err := optionalStringParam(request, "sort")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage := 30
-			if pp, ok := request.Params.Arguments["per_page"].(float64); ok {
-				perPage = int(pp)
+			order, err := optionalStringParam(request, "order")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page := 1
-			if p, ok := request.Params.Arguments["page"].(float64); ok {
-				page = int(p)
+			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			opts := &github.SearchOptions{
@@ -162,22 +168,25 @@ func searchUsers(client *github.Client, t translations.TranslationHelperFunc) (t
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query := request.Params.Arguments["q"].(string)
-			sort := ""
-			if s, ok := request.Params.Arguments["sort"].(string); ok {
-				sort = s
+			query, err := requiredStringParam(request, "q")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order := ""
-			if o, ok := request.Params.Arguments["order"].(string); ok {
-				order = o
+			sort, err := optionalStringParam(request, "sort")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage := 30
-			if pp, ok := request.Params.Arguments["per_page"].(float64); ok {
-				perPage = int(pp)
+			order, err := optionalStringParam(request, "order")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page := 1
-			if p, ok := request.Params.Arguments["page"].(float64); ok {
-				page = int(p)
+			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			opts := &github.SearchOptions{
