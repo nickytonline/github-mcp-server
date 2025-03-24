@@ -126,6 +126,16 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `repo`: Repository name (string, required)
   - `pull_number`: Pull request number (number, required)
 
+- **create_pull_request_review** - Create a review on a pull request review
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `pull_number`: Pull request number (number, required)
+  - `body`: Review comment text (string, optional)
+  - `event`: Review action ('APPROVE', 'REQUEST_CHANGES', 'COMMENT') (string, required)
+  - `commit_id`: SHA of commit to review (string, optional)
+  - `comments`: Line-specific comments array of objects, each object with path (string), position (number), and body (string) (array, optional)
+
 ### Repositories
 
 - **create_or_update_file** - Create or update a single file in a repository
@@ -380,7 +390,6 @@ Lots of things!
 Missing tools:
 
 - push_files (files array)
-- create_pull_request_review (comments array)
 
 Testing
 

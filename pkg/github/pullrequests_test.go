@@ -989,3 +989,201 @@ func Test_GetPullRequestReviews(t *testing.T) {
 		})
 	}
 }
+
+func Test_CreatePullRequestReview(t *testing.T) {
+	// Verify tool definition once
+	mockClient := github.NewClient(nil)
+	tool, _ := createPullRequestReview(mockClient, translations.NullTranslationHelper)
+
+	assert.Equal(t, "create_pull_request_review", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
+	assert.Contains(t, tool.InputSchema.Properties, "body")
+	assert.Contains(t, tool.InputSchema.Properties, "event")
+	assert.Contains(t, tool.InputSchema.Properties, "commit_id")
+	assert.Contains(t, tool.InputSchema.Properties, "comments")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number", "event"})
+
+	// Setup mock review for success case
+	mockReview := &github.PullRequestReview{
+		ID:      github.Ptr(int64(301)),
+		State:   github.Ptr("APPROVED"),
+		Body:    github.Ptr("Looks good!"),
+		HTMLURL: github.Ptr("https://github.com/owner/repo/pull/42#pullrequestreview-301"),
+		User: &github.User{
+			Login: github.Ptr("reviewer"),
+		},
+		CommitID:    github.Ptr("abcdef123456"),
+		SubmittedAt: &github.Timestamp{Time: time.Now()},
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedReview *github.PullRequestReview
+		expectedErrMsg string
+	}{
+		{
+			name: "successful review creation with body only",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					mockReview,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(42),
+				"body":        "Looks good!",
+				"event":       "APPROVE",
+			},
+			expectError:    false,
+			expectedReview: mockReview,
+		},
+		{
+			name: "successful review creation with commit_id",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					mockReview,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(42),
+				"body":        "Looks good!",
+				"event":       "APPROVE",
+				"commit_id":   "abcdef123456",
+			},
+			expectError:    false,
+			expectedReview: mockReview,
+		},
+		{
+			name: "successful review creation with comments",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					mockReview,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(42),
+				"body":        "Some issues to fix",
+				"event":       "REQUEST_CHANGES",
+				"comments": []interface{}{
+					map[string]interface{}{
+						"path":     "file1.go",
+						"position": float64(10),
+						"body":     "This needs to be fixed",
+					},
+					map[string]interface{}{
+						"path":     "file2.go",
+						"position": float64(20),
+						"body":     "Consider a different approach here",
+					},
+				},
+			},
+			expectError:    false,
+			expectedReview: mockReview,
+		},
+		{
+			name: "invalid comment format",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						_, _ = w.Write([]byte(`{"message": "Invalid comment format"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(42),
+				"event":       "REQUEST_CHANGES",
+				"comments": []interface{}{
+					map[string]interface{}{
+						"path": "file1.go",
+						// missing position
+						"body": "This needs to be fixed",
+					},
+				},
+			},
+			expectError:    false,
+			expectedErrMsg: "each comment must have a position",
+		},
+		{
+			name: "review creation fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						_, _ = w.Write([]byte(`{"message": "Invalid comment format"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(42),
+				"body":        "Looks good!",
+				"event":       "APPROVE",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to create pull request review",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := createPullRequestReview(client, translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+
+			// For error messages in the result
+			if tc.expectedErrMsg != "" {
+				textContent := getTextResult(t, result)
+				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
+				return
+			}
+
+			// Parse the result and get the text content if no error
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedReview github.PullRequestReview
+			err = json.Unmarshal([]byte(textContent.Text), &returnedReview)
+			require.NoError(t, err)
+			assert.Equal(t, *tc.expectedReview.ID, *returnedReview.ID)
+			assert.Equal(t, *tc.expectedReview.State, *returnedReview.State)
+			assert.Equal(t, *tc.expectedReview.Body, *returnedReview.Body)
+			assert.Equal(t, *tc.expectedReview.User.Login, *returnedReview.User.Login)
+			assert.Equal(t, *tc.expectedReview.HTMLURL, *returnedReview.HTMLURL)
+		})
+	}
+}

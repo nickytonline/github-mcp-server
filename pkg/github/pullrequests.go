@@ -494,3 +494,113 @@ func getPullRequestReviews(client *github.Client, t translations.TranslationHelp
 			return mcp.NewToolResultText(string(r)), nil
 		}
 }
+
+// createPullRequestReview creates a tool to submit a review on a pull request.
+func createPullRequestReview(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("create_pull_request_review",
+			mcp.WithDescription(t("TOOL_CREATE_PULL_REQUEST_REVIEW_DESCRIPTION", "Create a review on a pull request")),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithNumber("pull_number",
+				mcp.Required(),
+				mcp.Description("Pull request number"),
+			),
+			mcp.WithString("body",
+				mcp.Description("Review comment text"),
+			),
+			mcp.WithString("event",
+				mcp.Required(),
+				mcp.Description("Review action ('APPROVE', 'REQUEST_CHANGES', 'COMMENT')"),
+			),
+			mcp.WithString("commit_id",
+				mcp.Description("SHA of commit to review"),
+			),
+			mcp.WithArray("comments",
+				mcp.Description("Line-specific comments array of objects, each object with path (string), position (number), and body (string)"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner := request.Params.Arguments["owner"].(string)
+			repo := request.Params.Arguments["repo"].(string)
+			pullNumber := int(request.Params.Arguments["pull_number"].(float64))
+			event := request.Params.Arguments["event"].(string)
+
+			// Create review request
+			reviewRequest := &github.PullRequestReviewRequest{
+				Event: github.Ptr(event),
+			}
+
+			// Add body if provided
+			if body, ok := request.Params.Arguments["body"].(string); ok && body != "" {
+				reviewRequest.Body = github.Ptr(body)
+			}
+
+			// Add commit ID if provided
+			if commitID, ok := request.Params.Arguments["commit_id"].(string); ok && commitID != "" {
+				reviewRequest.CommitID = github.Ptr(commitID)
+			}
+
+			// Add comments if provided
+			if commentsObj, ok := request.Params.Arguments["comments"].([]interface{}); ok && len(commentsObj) > 0 {
+				comments := []*github.DraftReviewComment{}
+
+				for _, c := range commentsObj {
+					commentMap, ok := c.(map[string]interface{})
+					if !ok {
+						return mcp.NewToolResultError("each comment must be an object with path, position, and body"), nil
+					}
+
+					path, ok := commentMap["path"].(string)
+					if !ok || path == "" {
+						return mcp.NewToolResultError("each comment must have a path"), nil
+					}
+
+					positionFloat, ok := commentMap["position"].(float64)
+					if !ok {
+						return mcp.NewToolResultError("each comment must have a position"), nil
+					}
+					position := int(positionFloat)
+
+					body, ok := commentMap["body"].(string)
+					if !ok || body == "" {
+						return mcp.NewToolResultError("each comment must have a body"), nil
+					}
+
+					comments = append(comments, &github.DraftReviewComment{
+						Path:     github.Ptr(path),
+						Position: github.Ptr(position),
+						Body:     github.Ptr(body),
+					})
+				}
+
+				reviewRequest.Comments = comments
+			}
+
+			review, resp, err := client.PullRequests.CreateReview(ctx, owner, repo, pullNumber, reviewRequest)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create pull request review: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to create pull request review: %s", string(body))), nil
+			}
+
+			r, err := json.Marshal(review)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}

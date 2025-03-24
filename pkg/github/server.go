@@ -54,6 +54,7 @@ func NewServer(client *github.Client, readOnly bool, t translations.TranslationH
 	if !readOnly {
 		s.AddTool(mergePullRequest(client, t))
 		s.AddTool(updatePullRequestBranch(client, t))
+		s.AddTool(createPullRequestReview(client, t))
 	}
 
 	// Add GitHub tools - Repositories
