@@ -50,6 +50,18 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `page`: Page number (number, optional)
   - `per_page`: Results per page (number, optional)
 
+- **update_issue** - Update an existing issue in a GitHub repository
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `issue_number`: Issue number to update (number, required)
+  - `title`: New title (string, optional)
+  - `body`: New description (string, optional)
+  - `state`: New state ('open' or 'closed') (string, optional)
+  - `labels`: Comma-separated list of new labels (string, optional)
+  - `assignees`: Comma-separated list of new assignees (string, optional)
+  - `milestone`: New milestone number (number, optional)
+
 - **search_issues** - Search for issues and pull requests
   - `query`: Search query (string, required)
   - `sort`: Sort field (string, optional)
@@ -368,8 +380,6 @@ Lots of things!
 Missing tools:
 
 - push_files (files array)
-- list_issues (labels array)
-- update_issue (labels and assignees arrays)
 - create_pull_request_review (comments array)
 
 Testing

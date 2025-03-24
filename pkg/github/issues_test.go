@@ -693,6 +693,204 @@ func Test_ListIssues(t *testing.T) {
 	}
 }
 
+func Test_UpdateIssue(t *testing.T) {
+	// Verify tool definition
+	mockClient := github.NewClient(nil)
+	tool, _ := updateIssue(mockClient, translations.NullTranslationHelper)
+
+	assert.Equal(t, "update_issue", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "issue_number")
+	assert.Contains(t, tool.InputSchema.Properties, "title")
+	assert.Contains(t, tool.InputSchema.Properties, "body")
+	assert.Contains(t, tool.InputSchema.Properties, "state")
+	assert.Contains(t, tool.InputSchema.Properties, "labels")
+	assert.Contains(t, tool.InputSchema.Properties, "assignees")
+	assert.Contains(t, tool.InputSchema.Properties, "milestone")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "issue_number"})
+
+	// Setup mock issue for success case
+	mockIssue := &github.Issue{
+		Number:    github.Ptr(123),
+		Title:     github.Ptr("Updated Issue Title"),
+		Body:      github.Ptr("Updated issue description"),
+		State:     github.Ptr("closed"),
+		HTMLURL:   github.Ptr("https://github.com/owner/repo/issues/123"),
+		Assignees: []*github.User{{Login: github.Ptr("assignee1")}, {Login: github.Ptr("assignee2")}},
+		Labels:    []*github.Label{{Name: github.Ptr("bug")}, {Name: github.Ptr("priority")}},
+		Milestone: &github.Milestone{Number: github.Ptr(5)},
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedIssue  *github.Issue
+		expectedErrMsg string
+	}{
+		{
+			name: "update issue with all fields",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PatchReposIssuesByOwnerByRepoByIssueNumber,
+					mockResponse(t, http.StatusOK, mockIssue),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":        "owner",
+				"repo":         "repo",
+				"issue_number": float64(123),
+				"title":        "Updated Issue Title",
+				"body":         "Updated issue description",
+				"state":        "closed",
+				"labels":       "bug,priority",
+				"assignees":    "assignee1,assignee2",
+				"milestone":    float64(5),
+			},
+			expectError:   false,
+			expectedIssue: mockIssue,
+		},
+		{
+			name: "update issue with minimal fields",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PatchReposIssuesByOwnerByRepoByIssueNumber,
+					mockResponse(t, http.StatusOK, &github.Issue{
+						Number:  github.Ptr(123),
+						Title:   github.Ptr("Only Title Updated"),
+						HTMLURL: github.Ptr("https://github.com/owner/repo/issues/123"),
+						State:   github.Ptr("open"),
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":        "owner",
+				"repo":         "repo",
+				"issue_number": float64(123),
+				"title":        "Only Title Updated",
+			},
+			expectError: false,
+			expectedIssue: &github.Issue{
+				Number:  github.Ptr(123),
+				Title:   github.Ptr("Only Title Updated"),
+				HTMLURL: github.Ptr("https://github.com/owner/repo/issues/123"),
+				State:   github.Ptr("open"),
+			},
+		},
+		{
+			name: "update issue fails with not found",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PatchReposIssuesByOwnerByRepoByIssueNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusNotFound)
+						_, _ = w.Write([]byte(`{"message": "Issue not found"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":        "owner",
+				"repo":         "repo",
+				"issue_number": float64(999),
+				"title":        "This issue doesn't exist",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to update issue",
+		},
+		{
+			name: "update issue fails with validation error",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PatchReposIssuesByOwnerByRepoByIssueNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						_, _ = w.Write([]byte(`{"message": "Invalid state value"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":        "owner",
+				"repo":         "repo",
+				"issue_number": float64(123),
+				"state":        "invalid_state",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to update issue",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := updateIssue(client, translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				if err != nil {
+					assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				} else {
+					// For errors returned as part of the result, not as an error
+					require.NotNil(t, result)
+					textContent := getTextResult(t, result)
+					assert.Contains(t, textContent.Text, tc.expectedErrMsg)
+				}
+				return
+			}
+
+			require.NoError(t, err)
+
+			// Parse the result and get the text content if no error
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedIssue github.Issue
+			err = json.Unmarshal([]byte(textContent.Text), &returnedIssue)
+			require.NoError(t, err)
+
+			assert.Equal(t, *tc.expectedIssue.Number, *returnedIssue.Number)
+			assert.Equal(t, *tc.expectedIssue.Title, *returnedIssue.Title)
+			assert.Equal(t, *tc.expectedIssue.State, *returnedIssue.State)
+			assert.Equal(t, *tc.expectedIssue.HTMLURL, *returnedIssue.HTMLURL)
+
+			if tc.expectedIssue.Body != nil {
+				assert.Equal(t, *tc.expectedIssue.Body, *returnedIssue.Body)
+			}
+
+			// Check assignees if expected
+			if tc.expectedIssue.Assignees != nil && len(tc.expectedIssue.Assignees) > 0 {
+				assert.Len(t, returnedIssue.Assignees, len(tc.expectedIssue.Assignees))
+				for i, assignee := range returnedIssue.Assignees {
+					assert.Equal(t, *tc.expectedIssue.Assignees[i].Login, *assignee.Login)
+				}
+			}
+
+			// Check labels if expected
+			if tc.expectedIssue.Labels != nil && len(tc.expectedIssue.Labels) > 0 {
+				assert.Len(t, returnedIssue.Labels, len(tc.expectedIssue.Labels))
+				for i, label := range returnedIssue.Labels {
+					assert.Equal(t, *tc.expectedIssue.Labels[i].Name, *label.Name)
+				}
+			}
+
+			// Check milestone if expected
+			if tc.expectedIssue.Milestone != nil {
+				assert.NotNil(t, returnedIssue.Milestone)
+				assert.Equal(t, *tc.expectedIssue.Milestone.Number, *returnedIssue.Milestone.Number)
+			}
+		})
+	}
+}
+
 func Test_ParseISOTimestamp(t *testing.T) {
 	tests := []struct {
 		name         string

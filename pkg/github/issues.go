@@ -361,6 +361,100 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 		}
 }
 
+// updateIssue creates a tool to update an existing issue in a GitHub repository.
+func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("update_issue",
+			mcp.WithDescription(t("TOOL_UPDATE_ISSUE_DESCRIPTION", "Update an existing issue in a GitHub repository")),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithNumber("issue_number",
+				mcp.Required(),
+				mcp.Description("Issue number to update"),
+			),
+			mcp.WithString("title",
+				mcp.Description("New title"),
+			),
+			mcp.WithString("body",
+				mcp.Description("New description"),
+			),
+			mcp.WithString("state",
+				mcp.Description("New state ('open' or 'closed')"),
+			),
+			mcp.WithString("labels",
+				mcp.Description("Comma-separated list of new labels"),
+			),
+			mcp.WithString("assignees",
+				mcp.Description("Comma-separated list of new assignees"),
+			),
+			mcp.WithNumber("milestone",
+				mcp.Description("New milestone number"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner := request.Params.Arguments["owner"].(string)
+			repo := request.Params.Arguments["repo"].(string)
+			issueNumber := int(request.Params.Arguments["issue_number"].(float64))
+
+			// Create the issue request with only provided fields
+			issueRequest := &github.IssueRequest{}
+
+			// Set optional parameters if provided
+			if title, ok := request.Params.Arguments["title"].(string); ok && title != "" {
+				issueRequest.Title = github.Ptr(title)
+			}
+
+			if body, ok := request.Params.Arguments["body"].(string); ok && body != "" {
+				issueRequest.Body = github.Ptr(body)
+			}
+
+			if state, ok := request.Params.Arguments["state"].(string); ok && state != "" {
+				issueRequest.State = github.Ptr(state)
+			}
+
+			if labels, ok := request.Params.Arguments["labels"].(string); ok && labels != "" {
+				labelsList := parseCommaSeparatedList(labels)
+				issueRequest.Labels = &labelsList
+			}
+
+			if assignees, ok := request.Params.Arguments["assignees"].(string); ok && assignees != "" {
+				assigneesList := parseCommaSeparatedList(assignees)
+				issueRequest.Assignees = &assigneesList
+			}
+
+			if milestone, ok := request.Params.Arguments["milestone"].(float64); ok {
+				milestoneNum := int(milestone)
+				issueRequest.Milestone = &milestoneNum
+			}
+
+			updatedIssue, resp, err := client.Issues.Edit(ctx, owner, repo, issueNumber, issueRequest)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update issue: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to update issue: %s", string(body))), nil
+			}
+
+			r, err := json.Marshal(updatedIssue)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}
+
 // parseISOTimestamp parses an ISO 8601 timestamp string into a time.Time object.
 // Returns the parsed time or an error if parsing fails.
 // Example formats supported: "2023-01-15T14:30:00Z", "2023-01-15"

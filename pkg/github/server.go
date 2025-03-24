@@ -41,6 +41,7 @@ func NewServer(client *github.Client, readOnly bool, t translations.TranslationH
 		s.AddTool(createIssue(client, t))
 		s.AddTool(addIssueComment(client, t))
 		s.AddTool(createIssue(client, t))
+		s.AddTool(updateIssue(client, t))
 	}
 
 	// Add GitHub tools - Pull Requests
