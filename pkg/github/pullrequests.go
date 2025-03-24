@@ -522,6 +522,25 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 				mcp.Description("SHA of commit to review"),
 			),
 			mcp.WithArray("comments",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"path": map[string]interface{}{
+								"type":        "string",
+								"description": "path to the file",
+							},
+							"position": map[string]interface{}{
+								"type":        "number",
+								"description": "line number in the file",
+							},
+							"body": map[string]interface{}{
+								"type":        "string",
+								"description": "comment body",
+							},
+						},
+					},
+				),
 				mcp.Description("Line-specific comments array of objects, each object with path (string), position (number), and body (string)"),
 			),
 		),

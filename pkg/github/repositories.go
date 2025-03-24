@@ -432,6 +432,20 @@ func pushFiles(client *github.Client, t translations.TranslationHelperFunc) (too
 			),
 			mcp.WithArray("files",
 				mcp.Required(),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"path": map[string]interface{}{
+								"type":        "string",
+								"description": "path to the file",
+							},
+							"content": map[string]interface{}{
+								"type":        "string",
+								"description": "file content",
+							},
+						},
+					}),
 				mcp.Description("Array of file objects to push, each object with path (string) and content (string)"),
 			),
 			mcp.WithString("message",
