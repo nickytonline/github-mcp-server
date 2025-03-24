@@ -164,7 +164,7 @@ func Test_AddIssueComment(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PostReposIssuesCommentsByOwnerByRepoByIssueNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusUnprocessableEntity)
 						_, _ = w.Write([]byte(`{"message": "Invalid request"}`))
 					}),
@@ -323,7 +323,7 @@ func Test_SearchIssues(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetSearchIssues,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusBadRequest)
 						_, _ = w.Write([]byte(`{"message": "Validation Failed"}`))
 					}),
@@ -463,7 +463,7 @@ func Test_CreateIssue(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PostReposIssuesByOwnerByRepo,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusUnprocessableEntity)
 						_, _ = w.Write([]byte(`{"message": "Validation failed"}`))
 					}),
@@ -646,7 +646,7 @@ func Test_ListIssues(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetReposIssuesByOwnerByRepo,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusNotFound)
 						_, _ = w.Write([]byte(`{"message": "Repository not found"}`))
 					}),
@@ -799,7 +799,7 @@ func Test_UpdateIssue(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PatchReposIssuesByOwnerByRepoByIssueNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusNotFound)
 						_, _ = w.Write([]byte(`{"message": "Issue not found"}`))
 					}),
@@ -819,7 +819,7 @@ func Test_UpdateIssue(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PatchReposIssuesByOwnerByRepoByIssueNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusUnprocessableEntity)
 						_, _ = w.Write([]byte(`{"message": "Invalid state value"}`))
 					}),
@@ -881,7 +881,7 @@ func Test_UpdateIssue(t *testing.T) {
 			}
 
 			// Check assignees if expected
-			if tc.expectedIssue.Assignees != nil && len(tc.expectedIssue.Assignees) > 0 {
+			if len(tc.expectedIssue.Assignees) > 0 {
 				assert.Len(t, returnedIssue.Assignees, len(tc.expectedIssue.Assignees))
 				for i, assignee := range returnedIssue.Assignees {
 					assert.Equal(t, *tc.expectedIssue.Assignees[i].Login, *assignee.Login)
@@ -889,7 +889,7 @@ func Test_UpdateIssue(t *testing.T) {
 			}
 
 			// Check labels if expected
-			if tc.expectedIssue.Labels != nil && len(tc.expectedIssue.Labels) > 0 {
+			if len(tc.expectedIssue.Labels) > 0 {
 				assert.Len(t, returnedIssue.Labels, len(tc.expectedIssue.Labels))
 				for i, label := range returnedIssue.Labels {
 					assert.Equal(t, *tc.expectedIssue.Labels[i].Name, *label.Name)

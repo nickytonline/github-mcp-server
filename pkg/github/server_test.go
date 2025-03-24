@@ -80,7 +80,7 @@ func Test_GetMe(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetUser,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusUnauthorized)
 						_, _ = w.Write([]byte(`{"message": "Unauthorized"}`))
 					}),

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/exp/rand"
 	"io"
 	"os"
 	"os/exec"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/rand"
 )
 
 type (
@@ -99,7 +99,7 @@ var (
 		Use:   "mcpcurl",
 		Short: "CLI tool with dynamically generated commands",
 		Long:  "A CLI tool for interacting with MCP API based on dynamically loaded schemas",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// Skip validation for help and completion commands
 			if cmd.Name() == "help" || cmd.Name() == "completion" {
 				return nil
@@ -119,7 +119,7 @@ var (
 		Use:   "schema",
 		Short: "Fetch schema from MCP server",
 		Long:  "Fetches the tools schema from the MCP server specified by --stdio-server-cmd",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			serverCmd, _ := cmd.Flags().GetString("stdio-server-cmd")
 			if serverCmd == "" {
 				return fmt.Errorf("--stdio-server-cmd is required")
@@ -206,7 +206,7 @@ func addCommandFromTool(toolsCmd *cobra.Command, tool *Tool, prettyPrint bool) {
 	cmd := &cobra.Command{
 		Use:   tool.Name,
 		Short: tool.Description,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			// Build a map of arguments from flags
 			arguments, err := buildArgumentsMap(cmd, tool)
 			if err != nil {
@@ -257,7 +257,7 @@ func addCommandFromTool(toolsCmd *cobra.Command, tool *Tool, prettyPrint bool) {
 		// Enhance description to indicate if parameter is optional
 		description := prop.Description
 		if !isRequired {
-			description = description + " (optional)"
+			description += " (optional)"
 		}
 
 		switch prop.Type {
@@ -265,7 +265,7 @@ func addCommandFromTool(toolsCmd *cobra.Command, tool *Tool, prettyPrint bool) {
 			cmd.Flags().String(name, "", description)
 			if len(prop.Enum) > 0 {
 				// Add validation in PreRun for enum values
-				cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+				cmd.PreRunE = func(cmd *cobra.Command, _ []string) error {
 					for flagName, property := range tool.InputSchema.Properties {
 						if len(property.Enum) > 0 {
 							value, _ := cmd.Flags().GetString(flagName)
@@ -373,7 +373,7 @@ func executeServerCommand(cmdStr, jsonRequest string) (string, error) {
 		return "", fmt.Errorf("empty command")
 	}
 
-	cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
+	cmd := exec.Command(cmdParts[0], cmdParts[1:]...) //nolint:gosec //mcpcurl is a test command that needs to execute arbitrary shell commands
 
 	// Setup stdin pipe
 	stdin, err := cmd.StdinPipe()

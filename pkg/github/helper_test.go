@@ -2,19 +2,19 @@ package github
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // mockResponse is a helper function to create a mock HTTP response handler
-// that returns a specified status code and marshalled body.
+// that returns a specified status code and marshaled body.
 func mockResponse(t *testing.T, code int, body interface{}) http.HandlerFunc {
 	t.Helper()
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(code)
 		b, err := json.Marshal(body)
 		require.NoError(t, err)

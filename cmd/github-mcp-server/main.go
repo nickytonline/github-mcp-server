@@ -30,7 +30,7 @@ var (
 		Use:   "stdio",
 		Short: "Start stdio server",
 		Long:  `Start a server that communicates via standard input/output streams using JSON-RPC messages.`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			logFile := viper.GetString("log-file")
 			readOnly := viper.GetBool("read-only")
 			exportTranslations := viper.GetBool("export-translations")
@@ -57,11 +57,11 @@ func init() {
 	rootCmd.PersistentFlags().String("gh-host", "", "Specify the GitHub hostname (for GitHub Enterprise etc.)")
 
 	// Bind flag to viper
-	viper.BindPFlag("read-only", rootCmd.PersistentFlags().Lookup("read-only"))
-	viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
-	viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
-	viper.BindPFlag("export-translations", rootCmd.PersistentFlags().Lookup("export-translations"))
-	viper.BindPFlag("gh-host", rootCmd.PersistentFlags().Lookup("gh-host"))
+	_ = viper.BindPFlag("read-only", rootCmd.PersistentFlags().Lookup("read-only"))
+	_ = viper.BindPFlag("log-file", rootCmd.PersistentFlags().Lookup("log-file"))
+	_ = viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
+	_ = viper.BindPFlag("export-translations", rootCmd.PersistentFlags().Lookup("export-translations"))
+	_ = viper.BindPFlag("gh-host", rootCmd.PersistentFlags().Lookup("gh-host"))
 
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)

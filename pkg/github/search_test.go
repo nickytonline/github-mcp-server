@@ -92,7 +92,7 @@ func Test_SearchRepositories(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetSearchRepositories,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusBadRequest)
 						_, _ = w.Write([]byte(`{"message": "Invalid query"}`))
 					}),
@@ -229,7 +229,7 @@ func Test_SearchCode(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetSearchCode,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusBadRequest)
 						_, _ = w.Write([]byte(`{"message": "Validation Failed"}`))
 					}),
@@ -370,7 +370,7 @@ func Test_SearchUsers(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.GetSearchUsers,
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusBadRequest)
 						_, _ = w.Write([]byte(`{"message": "Validation Failed"}`))
 					}),

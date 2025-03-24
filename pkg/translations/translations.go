@@ -2,6 +2,7 @@ package translations
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -11,7 +12,7 @@ import (
 
 type TranslationHelperFunc func(key string, defaultValue string) string
 
-func NullTranslationHelper(key string, defaultValue string) string {
+func NullTranslationHelper(_ string, defaultValue string) string {
 	return defaultValue
 }
 
@@ -52,26 +53,30 @@ func TranslationHelper() (TranslationHelperFunc, func()) {
 			return translationKeyMap[key]
 		}, func() {
 			// dump the translationKeyMap to a json file
-			DumpTranslationKeyMap(translationKeyMap)
+			if err := DumpTranslationKeyMap(translationKeyMap); err != nil {
+				log.Fatalf("Could not dump translation key map: %v", err)
+			}
 		}
 }
 
 // dump translationKeyMap to a json file called github-mcp-server.json
-func DumpTranslationKeyMap(translationKeyMap map[string]string) {
+func DumpTranslationKeyMap(translationKeyMap map[string]string) error {
 	file, err := os.Create("github-mcp-server.json")
 	if err != nil {
-		log.Fatalf("Error creating file: %v", err)
+		return fmt.Errorf("error creating file: %v", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// marshal the map to json
 	jsonData, err := json.MarshalIndent(translationKeyMap, "", "  ")
 	if err != nil {
-		log.Fatalf("Error marshaling map to JSON: %v", err)
+		return fmt.Errorf("error marshaling map to JSON: %v", err)
 	}
 
 	// write the json data to the file
 	if _, err := file.Write(jsonData); err != nil {
-		log.Fatalf("Error writing to file: %v", err)
+		return fmt.Errorf("error writing to file: %v", err)
 	}
+
+	return nil
 }

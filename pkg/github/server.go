@@ -90,7 +90,7 @@ func getMe(client *github.Client, t translations.TranslationHelperFunc) (tool mc
 				mcp.Description("Optional: reason the session was created"),
 			),
 		),
-		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		func(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			user, resp, err := client.Users.Get(ctx, "")
 			if err != nil {
 				return nil, fmt.Errorf("failed to get user: %w", err)
