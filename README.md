@@ -148,6 +148,14 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `branch`: Branch name (string, optional)
   - `sha`: File SHA if updating (string, optional)
 
+- **push_files** - Push multiple files in a single commit
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `branch`: Branch to push to (string, required)
+  - `files`: Files to push, each with path and content (array, required)
+  - `message`: Commit message (string, required)
+
 - **search_repositories** - Search for GitHub repositories
 
   - `query`: Search query (string, required)
@@ -384,12 +392,6 @@ I'd like to know more about my GitHub profile.
 ```
 
 ## TODO
-
-Lots of things!
-
-Missing tools:
-
-- push_files (files array)
 
 Testing
 

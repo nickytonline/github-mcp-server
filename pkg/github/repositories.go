@@ -413,3 +413,118 @@ func createBranch(client *github.Client, t translations.TranslationHelperFunc) (
 			return mcp.NewToolResultText(string(r)), nil
 		}
 }
+
+// pushFiles creates a tool to push multiple files in a single commit to a GitHub repository.
+func pushFiles(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("push_files",
+			mcp.WithDescription(t("TOOL_PUSH_FILES_DESCRIPTION", "Push multiple files to a GitHub repository in a single commit")),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithString("branch",
+				mcp.Required(),
+				mcp.Description("Branch to push to"),
+			),
+			mcp.WithArray("files",
+				mcp.Required(),
+				mcp.Description("Array of file objects to push, each object with path (string) and content (string)"),
+			),
+			mcp.WithString("message",
+				mcp.Required(),
+				mcp.Description("Commit message"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner := request.Params.Arguments["owner"].(string)
+			repo := request.Params.Arguments["repo"].(string)
+			branch := request.Params.Arguments["branch"].(string)
+			message := request.Params.Arguments["message"].(string)
+
+			// Parse files parameter - this should be an array of objects with path and content
+			filesObj, ok := request.Params.Arguments["files"].([]interface{})
+			if !ok {
+				return mcp.NewToolResultError("files parameter must be an array of objects with path and content"), nil
+			}
+
+			// Get the reference for the branch
+			ref, resp, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+branch)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get branch reference: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			// Get the commit object that the branch points to
+			baseCommit, resp, err := client.Git.GetCommit(ctx, owner, repo, *ref.Object.SHA)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get base commit: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			// Create tree entries for all files
+			var entries []*github.TreeEntry
+
+			for _, file := range filesObj {
+				fileMap, ok := file.(map[string]interface{})
+				if !ok {
+					return mcp.NewToolResultError("each file must be an object with path and content"), nil
+				}
+
+				path, ok := fileMap["path"].(string)
+				if !ok || path == "" {
+					return mcp.NewToolResultError("each file must have a path"), nil
+				}
+
+				content, ok := fileMap["content"].(string)
+				if !ok {
+					return mcp.NewToolResultError("each file must have content"), nil
+				}
+
+				// Create a tree entry for the file
+				entries = append(entries, &github.TreeEntry{
+					Path:    github.Ptr(path),
+					Mode:    github.Ptr("100644"), // Regular file mode
+					Type:    github.Ptr("blob"),
+					Content: github.Ptr(content),
+				})
+			}
+
+			// Create a new tree with the file entries
+			newTree, resp, err := client.Git.CreateTree(ctx, owner, repo, *baseCommit.Tree.SHA, entries)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create tree: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			// Create a new commit
+			commit := &github.Commit{
+				Message: github.Ptr(message),
+				Tree:    newTree,
+				Parents: []*github.Commit{{SHA: baseCommit.SHA}},
+			}
+			newCommit, resp, err := client.Git.CreateCommit(ctx, owner, repo, commit, nil)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create commit: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			// Update the reference to point to the new commit
+			ref.Object.SHA = newCommit.SHA
+			updatedRef, resp, err := client.Git.UpdateRef(ctx, owner, repo, ref, false)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update reference: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			r, err := json.Marshal(updatedRef)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}

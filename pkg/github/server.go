@@ -66,6 +66,7 @@ func NewServer(client *github.Client, readOnly bool, t translations.TranslationH
 		s.AddTool(createRepository(client, t))
 		s.AddTool(forkRepository(client, t))
 		s.AddTool(createBranch(client, t))
+		s.AddTool(pushFiles(client, t))
 	}
 
 	// Add GitHub tools - Search
