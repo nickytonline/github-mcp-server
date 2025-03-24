@@ -122,6 +122,7 @@ and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
   - `pull_number`: Pull request number (number, required)
 
 - **get_pull_request_reviews** - Get the reviews on a pull request
+
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `pull_number`: Pull request number (number, required)
@@ -375,7 +376,7 @@ Run **Preferences: Open User Settings (JSON)**, and create or append to the `mcp
         "args": ["stdio"],
         "env": {
           "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:githubpat}"
-        },
+        }
       }
     }
   }
@@ -390,6 +391,10 @@ Try something like the following prompt to verify that it works:
 ```
 I'd like to know more about my GitHub profile.
 ```
+
+## GitHub Enterprise Server
+
+The flag `--gh-host` and the environment variable `GH_HOST` can be used to set the GitHub Enterprise Server hostname.
 
 ## TODO
 

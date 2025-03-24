@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	stdlog "log"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -110,17 +109,8 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 	}
 
 	if host != "" {
-		parsedURL, err := url.Parse(fmt.Sprintf("https://api.%s/", host))
-		if err != nil {
-			return fmt.Errorf("failed to parse provided GitHub host URL: %w", err)
-		}
-
-		uploadURL, err := url.Parse(fmt.Sprintf("https://uploads.%s/", host))
-		if err != nil {
-			return fmt.Errorf("failed to parse provided GitHub host URL: %w", err)
-		}
-
-		ghClient, err = ghClient.WithEnterpriseURLs(parsedURL.String(), uploadURL.String())
+		var err error
+		ghClient, err = ghClient.WithEnterpriseURLs(host, host)
 		if err != nil {
 			return fmt.Errorf("failed to create GitHub client with host: %w", err)
 		}
