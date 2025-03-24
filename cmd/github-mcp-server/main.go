@@ -102,7 +102,14 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 		logger.Fatal("GITHUB_PERSONAL_ACCESS_TOKEN not set")
 	}
 	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
-	if host := viper.GetString("gh-host"); host != "" {
+
+	// Check GH_HOST env var first, then fall back to viper config
+	host := os.Getenv("GH_HOST")
+	if host == "" {
+		host = viper.GetString("gh-host")
+	}
+
+	if host != "" {
 		parsedURL, err := url.Parse(fmt.Sprintf("https://api.%s/", host))
 		if err != nil {
 			return fmt.Errorf("failed to parse provided GitHub host URL: %w", err)
@@ -113,8 +120,10 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 			return fmt.Errorf("failed to parse provided GitHub host URL: %w", err)
 		}
 
-		ghClient.BaseURL = parsedURL
-		ghClient.UploadURL = uploadURL
+		ghClient, err = ghClient.WithEnterpriseURLs(parsedURL.String(), uploadURL.String())
+		if err != nil {
+			return fmt.Errorf("failed to create GitHub client with host: %w", err)
+		}
 	}
 
 	t, dumpTranslations := translations.TranslationHelper()
