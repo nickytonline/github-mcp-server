@@ -32,15 +32,15 @@ func getIssue(client *github.Client, t translations.TranslationHelperFunc) (tool
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, err := requiredStringParam(request, "owner")
+			owner, err := requiredParam[string](request, "owner")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := requiredStringParam(request, "repo")
+			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			issueNumber, err := requiredNumberParam(request, "issue_number")
+			issueNumber, err := requiredInt(request, "issue_number")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -90,19 +90,19 @@ func addIssueComment(client *github.Client, t translations.TranslationHelperFunc
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, err := requiredStringParam(request, "owner")
+			owner, err := requiredParam[string](request, "owner")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := requiredStringParam(request, "repo")
+			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			issueNumber, err := requiredNumberParam(request, "issue_number")
+			issueNumber, err := requiredInt(request, "issue_number")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			body, err := requiredStringParam(request, "body")
+			body, err := requiredParam[string](request, "body")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -156,23 +156,23 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := requiredStringParam(request, "q")
+			query, err := requiredParam[string](request, "q")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sort, err := optionalStringParam(request, "sort")
+			sort, err := optionalParam[string](request, "sort")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order, err := optionalStringParam(request, "order")
+			order, err := optionalParam[string](request, "order")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			perPage, err := optionalIntParamWithDefault(request, "per_page", 30)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			page, err := optionalIntParamWithDefault(request, "page", 1)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -236,21 +236,21 @@ func createIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, err := requiredStringParam(request, "owner")
+			owner, err := requiredParam[string](request, "owner")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := requiredStringParam(request, "repo")
+			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			title, err := requiredStringParam(request, "title")
+			title, err := requiredParam[string](request, "title")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			// Optional parameters
-			body, err := optionalStringParam(request, "body")
+			body, err := optionalParam[string](request, "body")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -332,11 +332,11 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, err := requiredStringParam(request, "owner")
+			owner, err := requiredParam[string](request, "owner")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := requiredStringParam(request, "repo")
+			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -344,7 +344,7 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 			opts := &github.IssueListByRepoOptions{}
 
 			// Set optional parameters if provided
-			opts.State, err = optionalStringParam(request, "state")
+			opts.State, err = optionalParam[string](request, "state")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -354,17 +354,17 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			opts.Sort, err = optionalStringParam(request, "sort")
+			opts.Sort, err = optionalParam[string](request, "sort")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			opts.Direction, err = optionalStringParam(request, "direction")
+			opts.Direction, err = optionalParam[string](request, "direction")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			since, err := optionalStringParam(request, "since")
+			since, err := optionalParam[string](request, "since")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -443,15 +443,15 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, err := requiredStringParam(request, "owner")
+			owner, err := requiredParam[string](request, "owner")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := requiredStringParam(request, "repo")
+			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			issueNumber, err := requiredNumberParam(request, "issue_number")
+			issueNumber, err := requiredInt(request, "issue_number")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -460,7 +460,7 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			issueRequest := &github.IssueRequest{}
 
 			// Set optional parameters if provided
-			title, err := optionalStringParam(request, "title")
+			title, err := optionalParam[string](request, "title")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -468,7 +468,7 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				issueRequest.Title = github.Ptr(title)
 			}
 
-			body, err := optionalStringParam(request, "body")
+			body, err := optionalParam[string](request, "body")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -476,7 +476,7 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				issueRequest.Body = github.Ptr(body)
 			}
 
-			state, err := optionalStringParam(request, "state")
+			state, err := optionalParam[string](request, "state")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -500,7 +500,7 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				issueRequest.Assignees = &assignees
 			}
 
-			milestone, err := optionalNumberParam(request, "milestone")
+			milestone, err := optionalIntParam(request, "milestone")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

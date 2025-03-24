@@ -270,7 +270,7 @@ func Test_RequiredStringParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := requiredStringParam(request, tc.paramName)
+			result, err := requiredParam[string](request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -323,7 +323,7 @@ func Test_OptionalStringParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalStringParam(request, tc.paramName)
+			result, err := optionalParam[string](request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -369,7 +369,7 @@ func Test_RequiredNumberParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := requiredNumberParam(request, tc.paramName)
+			result, err := requiredInt(request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -422,7 +422,7 @@ func Test_OptionalNumberParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalNumberParam(request, tc.paramName)
+			result, err := optionalIntParam(request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -480,7 +480,7 @@ func Test_OptionalNumberParamWithDefault(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalNumberParamWithDefault(request, tc.paramName, tc.defaultVal)
+			result, err := optionalIntParamWithDefault(request, tc.paramName, tc.defaultVal)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -586,7 +586,7 @@ func Test_OptionalBooleanParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalBooleanParam(request, tc.paramName)
+			result, err := optionalParam[bool](request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)

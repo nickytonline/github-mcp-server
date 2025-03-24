@@ -139,76 +139,81 @@ func parseCommaSeparatedList(input string) []string {
 	return result
 }
 
-// requiredStringParam checks if the parameter is present in the request and is of type string.
-func requiredStringParam(r mcp.CallToolRequest, p string) (string, error) {
+// requiredParam is a helper function that can be used to fetch a requested parameter from the request.
+// It does the following checks:
+// 1. Checks if the parameter is present in the request.
+// 2. Checks if the parameter is of the expected type.
+// 3. Checks if the parameter is not empty, i.e: non-zero value
+func requiredParam[T comparable](r mcp.CallToolRequest, p string) (T, error) {
+	var zero T
+
 	// Check if the parameter is present in the request
 	if _, ok := r.Params.Arguments[p]; !ok {
-		return "", fmt.Errorf("missing required parameter: %s", p)
+		return zero, fmt.Errorf("missing required parameter: %s", p)
 	}
 
 	// Check if the parameter is of the expected type
-	if _, ok := r.Params.Arguments[p].(string); !ok {
-		return "", fmt.Errorf("parameter %s is not of type string", p)
+	if _, ok := r.Params.Arguments[p].(T); !ok {
+		return zero, fmt.Errorf("parameter %s is not of type %T", p, zero)
 	}
 
-	// Check if the parameter is not the zero value
-	v := r.Params.Arguments[p].(string)
-	if v == "" {
-		return v, fmt.Errorf("missing required parameter: %s", p)
+	if r.Params.Arguments[p].(T) == zero {
+		return zero, fmt.Errorf("missing required parameter: %s", p)
+
 	}
 
-	return v, nil
+	return r.Params.Arguments[p].(T), nil
 }
 
-// requiredNumberParam checks if the parameter is present in the request and is of type number.
-func requiredNumberParam(r mcp.CallToolRequest, p string) (int, error) {
+// requiredInt is a helper function that can be used to fetch a requested parameter from the request.
+// It does the following checks:
+// 1. Checks if the parameter is present in the request.
+// 2. Checks if the parameter is of the expected type.
+// 3. Checks if the parameter is not empty, i.e: non-zero value
+func requiredInt(r mcp.CallToolRequest, p string) (int, error) {
+	v, err := requiredParam[float64](r, p)
+	if err != nil {
+		return 0, err
+	}
+	return int(v), nil
+}
+
+// optionalParam is a helper function that can be used to fetch a requested parameter from the request.
+// It does the following checks:
+// 1. Checks if the parameter is present in the request, if not, it returns its zero-value
+// 2. If it is present, it checks if the parameter is of the expected type and returns it
+func optionalParam[T any](r mcp.CallToolRequest, p string) (T, error) {
+	var zero T
+
 	// Check if the parameter is present in the request
 	if _, ok := r.Params.Arguments[p]; !ok {
-		return 0, fmt.Errorf("missing required parameter: %s", p)
+		return zero, nil
 	}
 
 	// Check if the parameter is of the expected type
-	if _, ok := r.Params.Arguments[p].(float64); !ok {
-		return 0, fmt.Errorf("parameter %s is not of type number", p)
+	if _, ok := r.Params.Arguments[p].(T); !ok {
+		return zero, fmt.Errorf("parameter %s is not of type %T", p, zero)
 	}
 
-	return int(r.Params.Arguments[p].(float64)), nil
+	return r.Params.Arguments[p].(T), nil
 }
 
-// optionalStringParam checks if an optional parameter is present in the request and is of type string.
-func optionalStringParam(r mcp.CallToolRequest, p string) (value string, err error) {
-	// Check if the parameter is present in the request
-	if _, ok := r.Params.Arguments[p]; !ok {
-		return "", nil
+// optionalIntParam is a helper function that can be used to fetch a requested parameter from the request.
+// It does the following checks:
+// 1. Checks if the parameter is present in the request, if not, it returns its zero-value
+// 2. If it is present, it checks if the parameter is of the expected type and returns it
+func optionalIntParam(r mcp.CallToolRequest, p string) (int, error) {
+	v, err := optionalParam[float64](r, p)
+	if err != nil {
+		return 0, err
 	}
-
-	// Check if the parameter is of the expected type
-	if _, ok := r.Params.Arguments[p].(string); !ok {
-		return "", fmt.Errorf("parameter %s is not of type string", p)
-	}
-
-	return r.Params.Arguments[p].(string), nil
+	return int(v), nil
 }
 
-// optionalNumberParam checks if an optional parameter is present in the request and is of type number.
-func optionalNumberParam(r mcp.CallToolRequest, p string) (int, error) {
-	// Check if the parameter is present in the request
-	if _, ok := r.Params.Arguments[p]; !ok {
-		return 0, nil
-	}
-
-	// Check if the parameter is of the expected type
-	if _, ok := r.Params.Arguments[p].(float64); !ok {
-		return 0, fmt.Errorf("parameter %s is not of type number", p)
-	}
-
-	return int(r.Params.Arguments[p].(float64)), nil
-}
-
-// optionalNumberParamWithDefault checks if an optional parameter is present in the request and is of type number.
-// If the parameter is not present or is zero, it returns the default value.
-func optionalNumberParamWithDefault(r mcp.CallToolRequest, p string, d int) (int, error) {
-	v, err := optionalNumberParam(r, p)
+// optionalIntParamWithDefault is a helper function that can be used to fetch a requested parameter from the request
+// similar to optionalIntParam, but it also takes a default value.
+func optionalIntParamWithDefault(r mcp.CallToolRequest, p string, d int) (int, error) {
+	v, err := optionalIntParam(r, p)
 	if err != nil {
 		return 0, err
 	}
@@ -218,38 +223,19 @@ func optionalNumberParamWithDefault(r mcp.CallToolRequest, p string, d int) (int
 	return v, nil
 }
 
-// optionalCommaSeparatedListParam checks if an optional parameter is present in the request and is of type string.
-// If the parameter is presents, it uses parseCommaSeparatedList to parse the string into a list of strings.
-// If the parameter is not present or is empty, it returns an empty list.
+// optionalCommaSeparatedListParam is a helper function that can be used to fetch a requested parameter from the request.
+// It does the following:
+//  1. Checks if the parameter is present in the request, if not, it returns an empty list
+//  2. If it is present, it checks if the parameter is of the expected type and uses parseCommaSeparatedList to parse it
+//     and return the list of strings
 func optionalCommaSeparatedListParam(r mcp.CallToolRequest, p string) ([]string, error) {
-	// Check if the parameter is present in the request
-	if _, ok := r.Params.Arguments[p]; !ok {
-		return []string{}, nil //default to empty list, not nil
+	v, err := optionalParam[string](r, p)
+	if err != nil {
+		return []string{}, err
 	}
-
-	// Check if the parameter is of the expected type
-	if _, ok := r.Params.Arguments[p].(string); !ok {
-		return nil, fmt.Errorf("parameter %s is not of type string", p)
-	}
-
-	l := parseCommaSeparatedList(r.Params.Arguments[p].(string))
+	l := parseCommaSeparatedList(v)
 	if len(l) == 0 {
-		return []string{}, nil // default to empty list, not nil
+		return []string{}, nil
 	}
 	return l, nil
-}
-
-// optionalBooleanParam checks if an optional parameter is present in the request and is of type boolean.
-func optionalBooleanParam(r mcp.CallToolRequest, p string) (bool, error) {
-	// Check if the parameter is present in the request
-	if _, ok := r.Params.Arguments[p]; !ok {
-		return false, nil
-	}
-
-	// Check if the parameter is of the expected type
-	if _, ok := r.Params.Arguments[p].(bool); !ok {
-		return false, fmt.Errorf("parameter %s is not of type bool", p)
-	}
-
-	return r.Params.Arguments[p].(bool), nil
 }

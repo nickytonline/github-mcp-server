@@ -28,15 +28,15 @@ func searchRepositories(client *github.Client, t translations.TranslationHelperF
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := requiredStringParam(request, "query")
+			query, err := requiredParam[string](request, "query")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			page, err := optionalIntParamWithDefault(request, "page", 1)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			perPage, err := optionalIntParamWithDefault(request, "per_page", 30)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -93,23 +93,23 @@ func searchCode(client *github.Client, t translations.TranslationHelperFunc) (to
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := requiredStringParam(request, "q")
+			query, err := requiredParam[string](request, "q")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sort, err := optionalStringParam(request, "sort")
+			sort, err := optionalParam[string](request, "sort")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order, err := optionalStringParam(request, "order")
+			order, err := optionalParam[string](request, "order")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			perPage, err := optionalIntParamWithDefault(request, "per_page", 30)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			page, err := optionalIntParamWithDefault(request, "page", 1)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -168,23 +168,23 @@ func searchUsers(client *github.Client, t translations.TranslationHelperFunc) (t
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := requiredStringParam(request, "q")
+			query, err := requiredParam[string](request, "q")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sort, err := optionalStringParam(request, "sort")
+			sort, err := optionalParam[string](request, "sort")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order, err := optionalStringParam(request, "order")
+			order, err := optionalParam[string](request, "order")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalNumberParamWithDefault(request, "per_page", 30)
+			perPage, err := optionalIntParamWithDefault(request, "per_page", 30)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page, err := optionalNumberParamWithDefault(request, "page", 1)
+			page, err := optionalIntParamWithDefault(request, "page", 1)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

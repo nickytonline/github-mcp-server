@@ -30,15 +30,15 @@ func getCodeScanningAlert(client *github.Client, t translations.TranslationHelpe
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, err := requiredStringParam(request, "owner")
+			owner, err := requiredParam[string](request, "owner")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := requiredStringParam(request, "repo")
+			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			alertNumber, err := requiredNumberParam(request, "alert_number")
+			alertNumber, err := requiredInt(request, "alert_number")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -89,23 +89,23 @@ func listCodeScanningAlerts(client *github.Client, t translations.TranslationHel
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			owner, err := requiredStringParam(request, "owner")
+			owner, err := requiredParam[string](request, "owner")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := requiredStringParam(request, "repo")
+			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			ref, err := optionalStringParam(request, "ref")
+			ref, err := optionalParam[string](request, "ref")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			state, err := optionalStringParam(request, "state")
+			state, err := optionalParam[string](request, "state")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			severity, err := optionalStringParam(request, "severity")
+			severity, err := optionalParam[string](request, "severity")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
