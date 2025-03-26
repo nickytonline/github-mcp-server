@@ -351,40 +351,103 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 ## Testing on VS Code Insiders
 
-First of all, install `github-mcp-server` with:
+### Requirements
+
+You can either use a Docker image or build the binary from the repo.
+
+#### Docker image
+
+As of now, this repo is private and hence the docker image is not available publicly. To pull it,
+you need to make sure you can access the GitHub docker registry. See [this](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic)
+for more details.
+
+To make sure you can access the GitHub docker registry, run the following command:
+
+```bash
+docker pull ghcr.io/github/github-mcp-server:main
+```
+
+If the above command works, you are good to go.
+
+#### Build from repo
+First of all, install `github-mcp-server` by cloning the repo and running the following command:
 
 ```bash
 go install ./cmd/github-mcp-server
 ```
 
+If you don't want to clone the repo, you can run:
+
+```bash
+GOPRIVATE=github.com/github go install github.com/github/github-mcp-server/cmd/github-mcp-server@latest
+```
+
+This will install the `github-mcp-server` binary in your `$GOPATH/bin` directory.
+
+Find where the binary is installed by running:
+
+```bash
+which github-mcp-server
+```
+
+### Start VS Code Insiders
+
+Start VS Code Insiders and make sure you pass the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable to the process.
+
+One way to do this is to make sure that [you can run VS code from your terminal](https://code.visualstudio.com/docs/setup/mac#_launch-vs-code-from-the-command-line) and
+start it with the following command:
+
+```bash
+export GITHUB_PERSONAL_ACCESS_TOKEN=your-token-here
+code-insiders
+```
+
 Run **Preferences: Open User Settings (JSON)**, and create or append to the `mcp` setting:
+
+If you are using the docker image, use this configuration:
 
 ```json
 {
   "mcp": {
-    "inputs": [
-      {
-        "type": "promptString",
-        "id": "githubpat",
-        "description": "GitHub Personal Access Token",
-        "password": true
-      }
-    ],
+    "inputs": [],
     "servers": {
-      "mcp-github-server": {
-        "command": "path-to-your/github-mcp-server",
-        "args": ["stdio"],
-        "env": {
-          "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:githubpat}"
-        },
+      "github-mcp-server": {
+        "type": "stdio",
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-e",
+          "GITHUB_PERSONAL_ACCESS_TOKEN",
+          "ghcr.io/github/github-mcp-server:main"
+        ],
+        "env": {}
       }
     }
   }
 }
 ```
 
-In `Copilot Edits`, you should now see an option to reload the available `tools`.
-Reload, and you should be good to go.
+If you built the binary from the repo use this configuration:
+
+```json
+{
+  "mcp": {
+    "inputs": [ ],
+    "servers": {
+      "mcp-github-server": {
+        "command": "path-to-your/github-mcp-server",
+        "args": ["stdio"],
+        "env": {   }
+      }
+    }
+  }
+}
+```
+
+Right on top of `servers`, you should see a `start` link to start the server.
+
 
 Try something like the following prompt to verify that it works:
 
