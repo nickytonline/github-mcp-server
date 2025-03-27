@@ -7,7 +7,7 @@ GitHub MCP Server implemented in Go.
 Create a GitHub Personal Access Token with the appropriate permissions
 and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
 
-## Testing on VS Code Insiders
+## Testing in VS Code Insiders
 
 ### Requirements
 
