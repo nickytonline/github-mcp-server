@@ -7,6 +7,120 @@ GitHub MCP Server implemented in Go.
 Create a GitHub Personal Access Token with the appropriate permissions
 and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
 
+## Testing on VS Code Insiders
+
+### Requirements
+
+You can either use a Docker image or build the binary from the repo.
+
+#### Docker image
+
+As of now, this repo is private, and hence the docker image is not available publicly. To pull it,
+you need to make sure you can access the GitHub docker registry. See [this](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic)
+for more details.
+
+To make sure you can access the GitHub docker registry, run the following command:
+
+```bash
+docker pull ghcr.io/github/github-mcp-server:main
+```
+
+If the above command works, you are good to go.
+
+#### Build from repo
+First, install `github-mcp-server` by cloning the repo and running the following command:
+
+```bash
+go install ./cmd/github-mcp-server
+```
+
+If you don't want to clone the repo, you can run:
+
+```bash
+GOPRIVATE=github.com/github go install github.com/github/github-mcp-server/cmd/github-mcp-server@latest
+```
+
+This will install the `github-mcp-server` binary in your `$GOPATH/bin` directory.
+
+Find where the binary is installed by running:
+
+```bash
+# note this assumes $GOPATH/bin is in your $PATH
+which github-mcp-server
+```
+
+### Start VS Code Insiders
+
+Start VS Code Insiders and make sure you pass the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable to the process.
+
+One way to do this is to make sure that [you can run VS code from your terminal](https://code.visualstudio.com/docs/setup/mac#_launch-vs-code-from-the-command-line) and
+start it with the following command:
+
+```bash
+export GITHUB_PERSONAL_ACCESS_TOKEN=your-token-here
+code-insiders
+```
+
+Another way is to set the environment variable in your shell configuration file (e.g., `.bashrc`, `.zshrc`, etc.).
+
+Run **Preferences: Open User Settings (JSON)**, and create or append to the `mcp` setting:
+
+If you are using the docker image, use this configuration:
+
+```json
+{
+  "mcp": {
+    "inputs": [],
+    "servers": {
+      "github-mcp-server": {
+        "type": "stdio",
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-e",
+          "GITHUB_PERSONAL_ACCESS_TOKEN",
+          "ghcr.io/github/github-mcp-server:main"
+        ],
+        "env": {}
+      }
+    }
+  }
+}
+```
+
+If you built the binary from the repo use this configuration:
+
+```json
+{
+  "mcp": {
+    "inputs": [ ],
+    "servers": {
+      "mcp-github-server": {
+        "command": "path-to-your/github-mcp-server",
+        "args": ["stdio"],
+        "env": {   }
+      }
+    }
+  }
+}
+```
+
+Right on top of `servers`, you should see a `Start` link to start the server.
+
+
+Try something like the following prompt to verify that it works:
+
+```
+I'd like to know more about my GitHub profile.
+```
+
+## GitHub Enterprise Server
+
+The flag `--gh-host` and the environment variable `GH_HOST` can be used to set the GitHub Enterprise Server hostname.
+
+
 ## Tools
 
 ### Users
@@ -349,123 +463,9 @@ For example, to override the `TOOL_ADD_ISSUE_COMMENT_DESCRIPTION` tool, you can 
 export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description"
 ```
 
-## Testing on VS Code Insiders
-
-### Requirements
-
-You can either use a Docker image or build the binary from the repo.
-
-#### Docker image
-
-As of now, this repo is private and hence the docker image is not available publicly. To pull it,
-you need to make sure you can access the GitHub docker registry. See [this](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic)
-for more details.
-
-To make sure you can access the GitHub docker registry, run the following command:
-
-```bash
-docker pull ghcr.io/github/github-mcp-server:main
-```
-
-If the above command works, you are good to go.
-
-#### Build from repo
-First of all, install `github-mcp-server` by cloning the repo and running the following command:
-
-```bash
-go install ./cmd/github-mcp-server
-```
-
-If you don't want to clone the repo, you can run:
-
-```bash
-GOPRIVATE=github.com/github go install github.com/github/github-mcp-server/cmd/github-mcp-server@latest
-```
-
-This will install the `github-mcp-server` binary in your `$GOPATH/bin` directory.
-
-Find where the binary is installed by running:
-
-```bash
-which github-mcp-server
-```
-
-### Start VS Code Insiders
-
-Start VS Code Insiders and make sure you pass the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable to the process.
-
-One way to do this is to make sure that [you can run VS code from your terminal](https://code.visualstudio.com/docs/setup/mac#_launch-vs-code-from-the-command-line) and
-start it with the following command:
-
-```bash
-export GITHUB_PERSONAL_ACCESS_TOKEN=your-token-here
-code-insiders
-```
-
-Run **Preferences: Open User Settings (JSON)**, and create or append to the `mcp` setting:
-
-If you are using the docker image, use this configuration:
-
-```json
-{
-  "mcp": {
-    "inputs": [],
-    "servers": {
-      "github-mcp-server": {
-        "type": "stdio",
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-e",
-          "GITHUB_PERSONAL_ACCESS_TOKEN",
-          "ghcr.io/github/github-mcp-server:main"
-        ],
-        "env": {}
-      }
-    }
-  }
-}
-```
-
-If you built the binary from the repo use this configuration:
-
-```json
-{
-  "mcp": {
-    "inputs": [ ],
-    "servers": {
-      "mcp-github-server": {
-        "command": "path-to-your/github-mcp-server",
-        "args": ["stdio"],
-        "env": {   }
-      }
-    }
-  }
-}
-```
-
-Right on top of `servers`, you should see a `start` link to start the server.
-
-
-Try something like the following prompt to verify that it works:
-
-```
-I'd like to know more about my GitHub profile.
-```
-
-## GitHub Enterprise Server
-
-The flag `--gh-host` and the environment variable `GH_HOST` can be used to set the GitHub Enterprise Server hostname.
-
 ## TODO
 
 Testing
 
 - Integration tests
 - Blackbox testing: ideally comparing output to Anthropic's server to make sure that this is a fully compatible drop-in replacement.
-
-And some other stuff:
-
-- ...
