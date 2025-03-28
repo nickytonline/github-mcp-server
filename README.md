@@ -63,32 +63,36 @@ code-insiders
 
 Another way is to set the environment variable in your shell configuration file (e.g., `.bashrc`, `.zshrc`, etc.).
 
-Run **Preferences: Open User Settings (JSON)**, and create or append to the `mcp` setting:
+Create a new file `.vscode/mcp.json` and provide this configuration:
 
 If you are using the docker image, use this configuration:
 
 ```json
 {
-  "mcp": {
-    "inputs": [],
+    "inputs": [
+        {
+            "id": "github-pat",
+            "type": "promptString",
+            "description": "Github Personal Access Token",
+            "password": true,
+        }
+    ],
     "servers": {
-      "github-mcp-server": {
+        "github-mcp-server": {
         "type": "stdio",
         "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-e",
-          "GITHUB_PERSONAL_ACCESS_TOKEN",
-          "ghcr.io/github/github-mcp-server:main"
-        ],
-        "env": {}
-      }
+            "args": [
+                "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server:main"
+            ],
+            "env": {
+                "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github-pat}"
+            }
+        }
     }
-  }
 }
 ```
+
+When you start the server, VS Code will prompt for your token, as indicated by `${input:github-pat}`.
 
 If you built the binary from the repo use this configuration:
 
