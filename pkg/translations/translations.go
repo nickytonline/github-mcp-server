@@ -24,7 +24,7 @@ func TranslationHelper() (TranslationHelperFunc, func()) {
 	v.AutomaticEnv()
 
 	// Load from JSON file
-	v.SetConfigName("github-mcp-server")
+	v.SetConfigName("github-mcp-server-config")
 	v.SetConfigType("json")
 	v.AddConfigPath(".")
 
@@ -59,9 +59,9 @@ func TranslationHelper() (TranslationHelperFunc, func()) {
 		}
 }
 
-// dump translationKeyMap to a json file called github-mcp-server.json
+// dump translationKeyMap to a json file called github-mcp-server-config.json
 func DumpTranslationKeyMap(translationKeyMap map[string]string) error {
-	file, err := os.Create("github-mcp-server.json")
+	file, err := os.Create("github-mcp-server-config.json")
 	if err != nil {
 		return fmt.Errorf("error creating file: %v", err)
 	}
