@@ -1,0 +1,5 @@
+#!/bin/bash
+
+go install github.com/google/go-licenses@latest
+go-licenses report ./... --template .github/licenses.tmpl > third-party-licenses.md || echo "Ignore warnings"
+go-licenses save ./... --save_path=third-party --force || echo "Ignore warnings"
