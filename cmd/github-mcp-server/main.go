@@ -101,6 +101,7 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 		logger.Fatal("GITHUB_PERSONAL_ACCESS_TOKEN not set")
 	}
 	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
+	ghClient.UserAgent = "github-mcp-server/1.0"
 
 	// Check GH_HOST env var first, then fall back to viper config
 	host := os.Getenv("GH_HOST")
