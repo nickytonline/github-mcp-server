@@ -1187,3 +1187,152 @@ func Test_CreatePullRequestReview(t *testing.T) {
 		})
 	}
 }
+
+func Test_CreatePullRequest(t *testing.T) {
+	// Verify tool definition once
+	mockClient := github.NewClient(nil)
+	tool, _ := createPullRequest(mockClient, translations.NullTranslationHelper)
+
+	assert.Equal(t, "create_pull_request", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "title")
+	assert.Contains(t, tool.InputSchema.Properties, "body")
+	assert.Contains(t, tool.InputSchema.Properties, "head")
+	assert.Contains(t, tool.InputSchema.Properties, "base")
+	assert.Contains(t, tool.InputSchema.Properties, "draft")
+	assert.Contains(t, tool.InputSchema.Properties, "maintainer_can_modify")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "title", "head", "base"})
+
+	// Setup mock PR for success case
+	mockPR := &github.PullRequest{
+		Number:  github.Ptr(42),
+		Title:   github.Ptr("Test PR"),
+		State:   github.Ptr("open"),
+		HTMLURL: github.Ptr("https://github.com/owner/repo/pull/42"),
+		Head: &github.PullRequestBranch{
+			SHA: github.Ptr("abcd1234"),
+			Ref: github.Ptr("feature-branch"),
+		},
+		Base: &github.PullRequestBranch{
+			SHA: github.Ptr("efgh5678"),
+			Ref: github.Ptr("main"),
+		},
+		Body:                github.Ptr("This is a test PR"),
+		Draft:               github.Ptr(false),
+		MaintainerCanModify: github.Ptr(true),
+		User: &github.User{
+			Login: github.Ptr("testuser"),
+		},
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedPR     *github.PullRequest
+		expectedErrMsg string
+	}{
+		{
+			name: "successful PR creation",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsByOwnerByRepo,
+					mockResponse(t, http.StatusCreated, mockPR),
+				),
+			),
+
+			requestArgs: map[string]interface{}{
+				"owner":                 "owner",
+				"repo":                  "repo",
+				"title":                 "Test PR",
+				"body":                  "This is a test PR",
+				"head":                  "feature-branch",
+				"base":                  "main",
+				"draft":                 false,
+				"maintainer_can_modify": true,
+			},
+			expectError: false,
+			expectedPR:  mockPR,
+		},
+		{
+			name:         "missing required parameter",
+			mockedClient: mock.NewMockedHTTPClient(),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				// missing title, head, base
+			},
+			expectError:    true,
+			expectedErrMsg: "missing required parameter: title",
+		},
+		{
+			name: "PR creation fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsByOwnerByRepo,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						_, _ = w.Write([]byte(`{"message":"Validation failed","errors":[{"resource":"PullRequest","code":"invalid"}]}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"title": "Test PR",
+				"head":  "feature-branch",
+				"base":  "main",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to create pull request",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := createPullRequest(client, translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				if err != nil {
+					assert.Contains(t, err.Error(), tc.expectedErrMsg)
+					return
+				}
+
+				// If no error returned but in the result
+				textContent := getTextResult(t, result)
+				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+
+			// Parse the result and get the text content if no error
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedPR github.PullRequest
+			err = json.Unmarshal([]byte(textContent.Text), &returnedPR)
+			require.NoError(t, err)
+			assert.Equal(t, *tc.expectedPR.Number, *returnedPR.Number)
+			assert.Equal(t, *tc.expectedPR.Title, *returnedPR.Title)
+			assert.Equal(t, *tc.expectedPR.State, *returnedPR.State)
+			assert.Equal(t, *tc.expectedPR.HTMLURL, *returnedPR.HTMLURL)
+			assert.Equal(t, *tc.expectedPR.Head.SHA, *returnedPR.Head.SHA)
+			assert.Equal(t, *tc.expectedPR.Base.Ref, *returnedPR.Base.Ref)
+			assert.Equal(t, *tc.expectedPR.Body, *returnedPR.Body)
+			assert.Equal(t, *tc.expectedPR.User.Login, *returnedPR.User.Login)
+		})
+	}
+}

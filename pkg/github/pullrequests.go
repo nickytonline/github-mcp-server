@@ -712,3 +712,110 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 			return mcp.NewToolResultText(string(r)), nil
 		}
 }
+
+// createPullRequest creates a tool to create a new pull request.
+func createPullRequest(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("create_pull_request",
+			mcp.WithDescription(t("TOOL_CREATE_PULL_REQUEST_DESCRIPTION", "Create a new pull request in a GitHub repository")),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithString("title",
+				mcp.Required(),
+				mcp.Description("PR title"),
+			),
+			mcp.WithString("body",
+				mcp.Description("PR description"),
+			),
+			mcp.WithString("head",
+				mcp.Required(),
+				mcp.Description("Branch containing changes"),
+			),
+			mcp.WithString("base",
+				mcp.Required(),
+				mcp.Description("Branch to merge into"),
+			),
+			mcp.WithBoolean("draft",
+				mcp.Description("Create as draft PR"),
+			),
+			mcp.WithBoolean("maintainer_can_modify",
+				mcp.Description("Allow maintainer edits"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner, err := requiredParam[string](request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredParam[string](request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			title, err := requiredParam[string](request, "title")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			head, err := requiredParam[string](request, "head")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			base, err := requiredParam[string](request, "base")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			body, err := optionalParam[string](request, "body")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			draft, err := optionalParam[bool](request, "draft")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			maintainerCanModify, err := optionalParam[bool](request, "maintainer_can_modify")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			newPR := &github.NewPullRequest{
+				Title: github.Ptr(title),
+				Head:  github.Ptr(head),
+				Base:  github.Ptr(base),
+			}
+
+			if body != "" {
+				newPR.Body = github.Ptr(body)
+			}
+
+			newPR.Draft = github.Ptr(draft)
+			newPR.MaintainerCanModify = github.Ptr(maintainerCanModify)
+
+			pr, resp, err := client.PullRequests.Create(ctx, owner, repo, newPR)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create pull request: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusCreated {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to create pull request: %s", string(body))), nil
+			}
+
+			r, err := json.Marshal(pr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}
