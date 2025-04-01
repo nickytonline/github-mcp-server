@@ -1,129 +1,112 @@
 # GitHub MCP Server
 
-GitHub MCP Server implemented in Go.
+The GitHub MCP Server is a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction)
+server that provides seamless integration with GitHub APIs, enabling advanced
+automation and interaction capabilities for developers and tools.
 
-## Setup
+## Use Cases
 
-Create a GitHub Personal Access Token with the appropriate permissions
-and set it as the GITHUB_PERSONAL_ACCESS_TOKEN environment variable.
+- Automating GitHub workflows and processes.
+- Extracting and analyzing data from GitHub repositories.
+- Building AI powered tools and applications that interact with GitHub's ecosystem.
 
-## Testing in VS Code Insiders
+## Prerequisites
 
-### Requirements
+[Create a GitHub Personal Access Token](https://github.com/settings/personal-access-tokens/new).
+The MCP server can use many of the GitHub APIs, so enable the permissions that you feel comfortable granting your AI tools.
 
-You can either use a Docker image or build the binary from the repo.
+To learn more about access tokens, please check out the [documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
 
-#### Docker image
+To run the server in a container, you will need to have [Docker](https://www.docker.com/) installed.
 
-As of now, this repo is private, and hence the docker image is not available publicly. To pull it,
-you need to make sure you can access the GitHub docker registry. See [this](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic)
-for more details.
+## Installation
 
-To make sure you can access the GitHub docker registry, run the following command:
+### Usage with VS Code
 
-```bash
-docker pull ghcr.io/github/github-mcp-server:main
-```
+Install the GitHub MCP server into VS Code by clicking here:
 
-If the above command works, you are good to go.
+[<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%25%7B%22name%22%3A%22github%22%2C%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%20%22-i%22%2C%20%22--rm%22%2C%20%22-e%22%2C%20%22GITHUB_PERSONAL_ACCESS_TOKEN%22%2C%20%22ghcr.io%2Fgithub%2Fgithub-mcp-server%3Amain%22%5D%2C%20%22env%22%3A%20%7B%22GITHUB_PERSONAL_ACCESS_TOKEN%22%3A%20%22%24%7Binput%3Agithub-pat%7D%22%7D%2C%20%22inputs%22%3A%20%5B%7B%20%22id%22%3A%20%22github-pat%22%2C%20%22type%22%3A%20%22promptString%22%2C%20%22description%22%3A%20%22Github%20Personal%20Access%20Token%22%2C%20%22password%22%3A%20true%7D%5D%7D)
 
-#### Build from repo
-First, install `github-mcp-server` by cloning the repo and running the following command:
-
-```bash
-go install ./cmd/github-mcp-server
-```
-
-If you don't want to clone the repo, you can run:
+Or run this command in your terminal:
 
 ```bash
-GOPRIVATE=github.com/github go install github.com/github/github-mcp-server/cmd/github-mcp-server@latest
+code --add-mcp '{"name":"github","command":"docker","args":["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server:main"], "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github-pat}"}, "inputs": [{ "id": "github-pat", "type": "promptString", "description": "Github Personal Access Token", "password": true}]}'
+
 ```
+VS Code is now configured and will prompt for your token the first time you use agent mode.
 
-This will install the `github-mcp-server` binary in your `$GOPATH/bin` directory.
-
-Find where the binary is installed by running:
-
-```bash
-# note this assumes $GOPATH/bin is in your $PATH
-which github-mcp-server
-```
-
-### Start VS Code Insiders
-
-Start VS Code Insiders and make sure you pass the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable to the process.
-
-One way to do this is to make sure that [you can run VS code from your terminal](https://code.visualstudio.com/docs/setup/mac#_launch-vs-code-from-the-command-line) and
-start it with the following command:
-
-```bash
-export GITHUB_PERSONAL_ACCESS_TOKEN=your-token-here
-code-insiders
-```
-
-Another way is to set the environment variable in your shell configuration file (e.g., `.bashrc`, `.zshrc`, etc.).
-
-Create a new file `.vscode/mcp.json` and provide this configuration:
-
-If you are using the docker image, use this configuration:
+### Usage with Claude Desktop
 
 ```json
 {
-    "inputs": [
-        {
-            "id": "github-pat",
-            "type": "promptString",
-            "description": "Github Personal Access Token",
-            "password": true,
-        }
-    ],
-    "servers": {
-        "github-mcp-server": {
-        "type": "stdio",
-        "command": "docker",
-            "args": [
-                "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server:main"
-            ],
-            "env": {
-                "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github-pat}"
-            }
-        }
-    }
-}
-```
-
-When you start the server, VS Code will prompt for your token, as indicated by `${input:github-pat}`.
-
-If you built the binary from the repo use this configuration:
-
-```json
-{
-  "mcp": {
-    "inputs": [ ],
-    "servers": {
-      "mcp-github-server": {
-        "command": "path-to-your/github-mcp-server",
-        "args": ["stdio"],
-        "env": {   }
+  "mcpServers": {
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server:main"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
       }
     }
   }
 }
 ```
 
-Right on top of `servers`, you should see a `Start` link to start the server.
+### Build from source
 
-
-Try something like the following prompt to verify that it works:
-
-```
-I'd like to know more about my GitHub profile.
-```
+If you don't have Docker, you can use `go` to build the binary in the
+`cmd/github-mcp-server` directory, and use the `github-mcp-server stdio`
+command with the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable set to
+your token.
 
 ## GitHub Enterprise Server
 
-The flag `--gh-host` and the environment variable `GH_HOST` can be used to set the GitHub Enterprise Server hostname.
+The flag `--gh-host` and the environment variable `GH_HOST` can be used to set
+the GitHub Enterprise Server hostname.
 
+## i18n / Overriding Descriptions
+
+The descriptions of the tools can be overridden by creating a
+`github-mcp-server-config.json` file in the same directory as the binary.
+
+The file should contain a JSON object with the tool names as keys and the new
+descriptions as values. For example:
+
+```json
+{
+  "TOOL_ADD_ISSUE_COMMENT_DESCRIPTION": "an alternative description",
+  "TOOL_CREATE_BRANCH_DESCRIPTION": "Create a new branch in a GitHub repository"
+}
+```
+
+You can create an export of the current translations by running the binary with
+the `--export-translations` flag.
+
+This flag will preserve any translations/overrides you have made, while adding
+any new translations that have been added to the binary since the last time you
+exported.
+
+```sh
+./github-mcp-server --export-translations
+cat github-mcp-server-config.json
+```
+
+You can also use ENV vars to override the descriptions. The environment
+variable names are the same as the keys in the JSON file, prefixed with
+`GITHUB_MCP_` and all uppercase.
+
+For example, to override the `TOOL_ADD_ISSUE_COMMENT_DESCRIPTION` tool, you can
+set the following environment variable:
+
+```sh
+export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description"
+```
 
 ## Tools
 
@@ -355,7 +338,7 @@ The flag `--gh-host` and the environment variable `GH_HOST` can be used to set t
 
 ### Repository Content
 
-- **Get Repository Content**  
+- **Get Repository Content**
   Retrieves the content of a repository at a specific path.
 
   - **Template**: `repo://{owner}/{repo}/contents{/path*}`
@@ -364,7 +347,7 @@ The flag `--gh-host` and the environment variable `GH_HOST` can be used to set t
     - `repo`: Repository name (string, required)
     - `path`: File or directory path (string, optional)
 
-- **Get Repository Content for a Specific Branch**  
+- **Get Repository Content for a Specific Branch**
   Retrieves the content of a repository at a specific path for a given branch.
 
   - **Template**: `repo://{owner}/{repo}/refs/heads/{branch}/contents{/path*}`
@@ -374,7 +357,7 @@ The flag `--gh-host` and the environment variable `GH_HOST` can be used to set t
     - `branch`: Branch name (string, required)
     - `path`: File or directory path (string, optional)
 
-- **Get Repository Content for a Specific Commit**  
+- **Get Repository Content for a Specific Commit**
   Retrieves the content of a repository at a specific path for a given commit.
 
   - **Template**: `repo://{owner}/{repo}/sha/{sha}/contents{/path*}`
@@ -384,7 +367,7 @@ The flag `--gh-host` and the environment variable `GH_HOST` can be used to set t
     - `sha`: Commit SHA (string, required)
     - `path`: File or directory path (string, optional)
 
-- **Get Repository Content for a Specific Tag**  
+- **Get Repository Content for a Specific Tag**
   Retrieves the content of a repository at a specific path for a given tag.
 
   - **Template**: `repo://{owner}/{repo}/refs/tags/{tag}/contents{/path*}`
@@ -394,7 +377,7 @@ The flag `--gh-host` and the environment variable `GH_HOST` can be used to set t
     - `tag`: Tag name (string, required)
     - `path`: File or directory path (string, optional)
 
-- **Get Repository Content for a Specific Pull Request**  
+- **Get Repository Content for a Specific Pull Request**
   Retrieves the content of a repository at a specific path for a given pull request.
 
   - **Template**: `repo://{owner}/{repo}/refs/pull/{pr_number}/head/contents{/path*}`
@@ -403,73 +386,3 @@ The flag `--gh-host` and the environment variable `GH_HOST` can be used to set t
     - `repo`: Repository name (string, required)
     - `pr_number`: Pull request number (string, required)
     - `path`: File or directory path (string, optional)
-
-## Standard input/output server
-
-```sh
-go run cmd/github-mcp-server/main.go stdio
-```
-
-E.g:
-
-Set the PAT token in the environment variable and run:
-
-```sh
-script/get-me
-```
-
-And you should see the output of the GitHub MCP server responding with the user information.
-
-```sh
-GitHub MCP Server running on stdio
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "{\"login\":\"juruen\",\"id\" ... }
-      }
-    ]
-  }
-}
-
-```
-
-## i18n / Overriding descriptions
-
-The descriptions of the tools can be overridden by creating a github-mcp-server.json file in the same directory as the binary.
-The file should contain a JSON object with the tool names as keys and the new descriptions as values.
-For example:
-
-```json
-{
-  "TOOL_ADD_ISSUE_COMMENT_DESCRIPTION": "an alternative description",
-  "TOOL_CREATE_BRANCH_DESCRIPTION": "Create a new branch in a GitHub repository"
-}
-```
-
-You can create an export of the current translations by running the binary with the `--export-translations` flag.
-This flag will preserve any translations/overrides you have made, while adding any new translations that have been added to the binary since the last time you exported.
-
-```sh
-./github-mcp-server --export-translations
-cat github-mcp-server.json
-```
-
-You can also use ENV vars to override the descriptions. The environment variable names are the same as the keys in the JSON file,
-prefixed with `GITHUB_MCP_` and all uppercase.
-
-For example, to override the `TOOL_ADD_ISSUE_COMMENT_DESCRIPTION` tool, you can set the following environment variable:
-
-```sh
-export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description"
-```
-
-## TODO
-
-Testing
-
-- Integration tests
-- Blackbox testing: ideally comparing output to Anthropic's server to make sure that this is a fully compatible drop-in replacement.
