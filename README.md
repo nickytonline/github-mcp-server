@@ -25,7 +25,7 @@ To run the server in a container, you will need to have [Docker](https://www.doc
 
 Install the GitHub MCP server into VS Code by clicking here:
 
-[<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%25%7B%22name%22%3A%22github%22%2C%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%20%22-i%22%2C%20%22--rm%22%2C%20%22-e%22%2C%20%22GITHUB_PERSONAL_ACCESS_TOKEN%22%2C%20%22ghcr.io%2Fgithub%2Fgithub-mcp-server%3Amain%22%5D%2C%20%22env%22%3A%20%7B%22GITHUB_PERSONAL_ACCESS_TOKEN%22%3A%20%22%24%7Binput%3Agithub-pat%7D%22%7D%2C%20%22inputs%22%3A%20%5B%7B%20%22id%22%3A%20%22github-pat%22%2C%20%22type%22%3A%20%22promptString%22%2C%20%22description%22%3A%20%22Github%20Personal%20Access%20Token%22%2C%20%22password%22%3A%20true%7D%5D%7D)
+[<img alt="Install in VS Code" src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=24bfa5">](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%25%7B%22name%22%3A%22github%22%2C%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%20%22-i%22%2C%20%22--rm%22%2C%20%22-e%22%2C%20%22GITHUB_PERSONAL_ACCESS_TOKEN%22%2C%20%22ghcr.io%2Fgithub%2Fgithub-mcp-server%3Amain%22%5D%2C%20%22env%22%3A%20%7B%22GITHUB_PERSONAL_ACCESS_TOKEN%22%3A%20%22%24%7Binput%3Agithub-pat%7D%22%7D%2C%20%22inputs%22%3A%20%5B%7B%20%22id%22%3A%20%22github-pat%22%2C%20%22type%22%3A%20%22promptString%22%2C%20%22description%22%3A%20%22Github%20Personal%20Access%20Token%22%2C%20%22password%22%3A%20true%7D%5D%7D)
 
 Or run this command in your terminal:
 
@@ -397,3 +397,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
     - `repo`: Repository name (string, required)
     - `pr_number`: Pull request number (string, required)
     - `path`: File or directory path (string, optional)
+
+## License
+
+This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE) for the full terms.
