@@ -1,19 +1,7 @@
 name: Lint
 on:
   push:
-    paths:
-      - "**.go"
-      - go.mod
-      - go.sum
-    paths-ignore:
-      - '**.md'
   pull_request:
-    paths:
-      - "**.go"
-      - go.mod
-      - go.sum
-    paths-ignore:
-      - '**.md'
 
 permissions:
   contents: read
