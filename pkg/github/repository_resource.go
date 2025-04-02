@@ -3,7 +3,11 @@ package github
 import (
 	"context"
 	"encoding/base64"
+	"errors"
+	"fmt"
+	"io"
 	"mime"
+	"net/http"
 	"path/filepath"
 	"strings"
 
@@ -13,110 +17,185 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// getRepositoryContent defines the resource template and handler for the Repository Content API.
-func getRepositoryContent(client *github.Client, t translations.TranslationHelperFunc) (mainTemplate mcp.ResourceTemplate, reftemplate mcp.ResourceTemplate, shaTemplate mcp.ResourceTemplate, tagTemplate mcp.ResourceTemplate, prTemplate mcp.ResourceTemplate, handler server.ResourceTemplateHandlerFunc) {
-
+// getRepositoryResourceContent defines the resource template and handler for getting repository content.
+func getRepositoryResourceContent(client *github.Client, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
 	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_DESCRIPTION", "Repository Content"),
-		), mcp.NewResourceTemplate(
+		),
+		repositoryResourceContentsHandler(client)
+}
+
+// getRepositoryContent defines the resource template and handler for getting repository content for a branch.
+func getRepositoryResourceBranchContent(client *github.Client, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/heads/{branch}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_BRANCH_DESCRIPTION", "Repository Content for specific branch"),
-		), mcp.NewResourceTemplate(
+		),
+		repositoryResourceContentsHandler(client)
+}
+
+// getRepositoryResourceCommitContent defines the resource template and handler for getting repository content for a commit.
+func getRepositoryResourceCommitContent(client *github.Client, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/sha/{sha}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_COMMIT_DESCRIPTION", "Repository Content for specific commit"),
-		), mcp.NewResourceTemplate(
+		),
+		repositoryResourceContentsHandler(client)
+}
+
+// getRepositoryResourceTagContent defines the resource template and handler for getting repository content for a tag.
+func getRepositoryResourceTagContent(client *github.Client, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/tags/{tag}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_TAG_DESCRIPTION", "Repository Content for specific tag"),
-		), mcp.NewResourceTemplate(
+		),
+		repositoryResourceContentsHandler(client)
+}
+
+// getRepositoryResourcePrContent defines the resource template and handler for getting repository content for a pull request.
+func getRepositoryResourcePrContent(client *github.Client, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/pull/{pr_number}/head/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_PR_DESCRIPTION", "Repository Content for specific pull request"),
-		), func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
-			// Extract parameters from request.Params.URI
+		),
+		repositoryResourceContentsHandler(client)
+}
 
-			owner := request.Params.Arguments["owner"].([]string)[0]
-			repo := request.Params.Arguments["repo"].([]string)[0]
-			// path should be a joined list of the path parts
-			path := strings.Join(request.Params.Arguments["path"].([]string), "/")
+func repositoryResourceContentsHandler(client *github.Client) func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+	return func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+		// the matcher will give []string with one elemenent
+		// https://github.com/mark3labs/mcp-go/pull/54
+		o, ok := request.Params.Arguments["owner"].([]string)
+		if !ok || len(o) == 0 {
+			return nil, errors.New("owner is required")
+		}
+		owner := o[0]
 
-			opts := &github.RepositoryContentGetOptions{}
+		r, ok := request.Params.Arguments["repo"].([]string)
+		if !ok || len(r) == 0 {
+			return nil, errors.New("repo is required")
+		}
+		repo := r[0]
 
-			sha, ok := request.Params.Arguments["sha"].([]string)
-			if ok {
-				opts.Ref = sha[0]
-			}
+		// path should be a joined list of the path parts
+		path := ""
+		p, ok := request.Params.Arguments["path"].([]string)
+		if ok {
+			path = strings.Join(p, "/")
+		}
 
-			branch, ok := request.Params.Arguments["branch"].([]string)
-			if ok {
-				opts.Ref = "refs/heads/" + branch[0]
-			}
+		opts := &github.RepositoryContentGetOptions{}
 
-			tag, ok := request.Params.Arguments["tag"].([]string)
-			if ok {
-				opts.Ref = "refs/tags/" + tag[0]
-			}
-			prNumber, ok := request.Params.Arguments["pr_number"].([]string)
-			if ok {
-				opts.Ref = "refs/pull/" + prNumber[0] + "/head"
-			}
+		sha, ok := request.Params.Arguments["sha"].([]string)
+		if ok && len(sha) > 0 {
+			opts.Ref = sha[0]
+		}
 
-			// Use the GitHub client to fetch repository content
-			fileContent, directoryContent, _, err := client.Repositories.GetContents(ctx, owner, repo, path, opts)
-			if err != nil {
-				return nil, err
-			}
+		branch, ok := request.Params.Arguments["branch"].([]string)
+		if ok && len(branch) > 0 {
+			opts.Ref = "refs/heads/" + branch[0]
+		}
 
-			if directoryContent != nil {
-				// Process the directory content and return it as resource contents
-				var resources []mcp.ResourceContents
-				for _, entry := range directoryContent {
-					mimeType := "text/directory"
-					if entry.GetType() == "file" {
-						mimeType = mime.TypeByExtension(filepath.Ext(entry.GetName()))
+		tag, ok := request.Params.Arguments["tag"].([]string)
+		if ok && len(tag) > 0 {
+			opts.Ref = "refs/tags/" + tag[0]
+		}
+		prNumber, ok := request.Params.Arguments["pr_number"].([]string)
+		if ok && len(prNumber) > 0 {
+			opts.Ref = "refs/pull/" + prNumber[0] + "/head"
+		}
+
+		fileContent, directoryContent, _, err := client.Repositories.GetContents(ctx, owner, repo, path, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		if directoryContent != nil {
+			var resources []mcp.ResourceContents
+			for _, entry := range directoryContent {
+				mimeType := "text/directory"
+				if entry.GetType() == "file" {
+					// this is system dependent, and a best guess
+					ext := filepath.Ext(entry.GetName())
+					mimeType = mime.TypeByExtension(ext)
+					if ext == ".md" {
+						mimeType = "text/markdown"
 					}
-					resources = append(resources, mcp.TextResourceContents{
-						URI:      entry.GetHTMLURL(),
-						MIMEType: mimeType,
-						Text:     entry.GetName(),
-					})
-
 				}
-				return resources, nil
+				resources = append(resources, mcp.TextResourceContents{
+					URI:      entry.GetHTMLURL(),
+					MIMEType: mimeType,
+					Text:     entry.GetName(),
+				})
 
-			} else if fileContent != nil {
-				// Process the file content and return it as a binary resource
+			}
+			return resources, nil
 
-				if fileContent.Content != nil {
-					decodedContent, err := fileContent.GetContent()
+		}
+		if fileContent != nil {
+			if fileContent.Content != nil {
+				// download the file content from fileContent.GetDownloadURL() and use the content-type header to determine the MIME type
+				// and return the content as a blob unless it is a text file, where you can return the content as text
+				req, err := http.NewRequest("GET", fileContent.GetDownloadURL(), nil)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create request: %w", err)
+				}
+
+				resp, err := client.Client().Do(req)
+				if err != nil {
+					return nil, fmt.Errorf("failed to send request: %w", err)
+				}
+				defer func() { _ = resp.Body.Close() }()
+
+				if resp.StatusCode != http.StatusOK {
+					body, err := io.ReadAll(resp.Body)
 					if err != nil {
-						return nil, err
+						return nil, fmt.Errorf("failed to read response body: %w", err)
+					}
+					return nil, fmt.Errorf("failed to fetch file content: %s", string(body))
+				}
+
+				ext := filepath.Ext(fileContent.GetName())
+				mimeType := resp.Header.Get("Content-Type")
+				if ext == ".md" {
+					mimeType = "text/markdown"
+				} else if mimeType == "" {
+					// backstop to the file extension if the content type is not set
+					mimeType = mime.TypeByExtension(filepath.Ext(fileContent.GetName()))
+				}
+
+				// if the content is a string, return it as text
+				if strings.HasPrefix(mimeType, "text") {
+					content, err := io.ReadAll(resp.Body)
+					if err != nil {
+						return nil, fmt.Errorf("failed to parse the response body: %w", err)
 					}
 
-					mimeType := mime.TypeByExtension(filepath.Ext(fileContent.GetName()))
-
-					// Check if the file is text-based
-					if strings.HasPrefix(mimeType, "text") {
-						// Return as TextResourceContents
-						return []mcp.ResourceContents{
-							mcp.TextResourceContents{
-								URI:      request.Params.URI,
-								MIMEType: mimeType,
-								Text:     decodedContent,
-							},
-						}, nil
-					}
-
-					// Otherwise, return as BlobResourceContents
 					return []mcp.ResourceContents{
-						mcp.BlobResourceContents{
+						mcp.TextResourceContents{
 							URI:      request.Params.URI,
 							MIMEType: mimeType,
-							Blob:     base64.StdEncoding.EncodeToString([]byte(decodedContent)), // Encode content as Base64
+							Text:     string(content),
 						},
 					}, nil
 				}
-			}
+				// otherwise, read the content and encode it as base64
+				decodedContent, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse the response body: %w", err)
+				}
 
-			return nil, nil
+				return []mcp.ResourceContents{
+					mcp.BlobResourceContents{
+						URI:      request.Params.URI,
+						MIMEType: mimeType,
+						Blob:     base64.StdEncoding.EncodeToString(decodedContent), // Encode content as Base64
+					},
+				}, nil
+			}
 		}
+
+		return nil, errors.New("no repository resource content found")
+	}
 }

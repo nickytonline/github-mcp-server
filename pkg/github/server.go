@@ -25,13 +25,11 @@ func NewServer(client *github.Client, readOnly bool, t translations.TranslationH
 		server.WithLogging())
 
 	// Add GitHub Resources
-	defaultTemplate, branchTemplate, tagTemplate, shaTemplate, prTemplate, handler := getRepositoryContent(client, t)
-
-	s.AddResourceTemplate(defaultTemplate, handler)
-	s.AddResourceTemplate(branchTemplate, handler)
-	s.AddResourceTemplate(tagTemplate, handler)
-	s.AddResourceTemplate(shaTemplate, handler)
-	s.AddResourceTemplate(prTemplate, handler)
+	s.AddResourceTemplate(getRepositoryResourceContent(client, t))
+	s.AddResourceTemplate(getRepositoryResourceBranchContent(client, t))
+	s.AddResourceTemplate(getRepositoryResourceCommitContent(client, t))
+	s.AddResourceTemplate(getRepositoryResourceTagContent(client, t))
+	s.AddResourceTemplate(getRepositoryResourcePrContent(client, t))
 
 	// Add GitHub tools - Issues
 	s.AddTool(getIssue(client, t))
