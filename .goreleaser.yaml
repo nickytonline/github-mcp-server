@@ -4,9 +4,6 @@ before:
   hooks:
     - go mod tidy
     - go generate ./...
-    - script/licenses
-    - cp -r ./third-party/ ./dist
-    - cp third-party-licenses.md ./dist/third-party-licenses.md
 
 builds:
   - env:
