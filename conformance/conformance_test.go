@@ -130,8 +130,11 @@ func TestCapabilities(t *testing.T) {
 	anthropicServer := start(t, anthropic)
 	githubServer := start(t, github)
 
-	req := newInitializeRequest(
-		initializeRequestParams{
+	req := initializeRequest{
+		JSONRPC: "2.0",
+		ID:      1,
+		Method:  "initialize",
+		Params: initializeParams{
 			ProtocolVersion: "2025-03-26",
 			Capabilities:    clientCapabilities{},
 			ClientInfo: clientInfo{
@@ -139,7 +142,7 @@ func TestCapabilities(t *testing.T) {
 				Version: "0.0.1",
 			},
 		},
-	)
+	}
 
 	require.NoError(t, anthropicServer.send(req))
 
@@ -274,11 +277,23 @@ func (s server) receive(res response) error {
 	return res.unmarshal(line)
 }
 
+type request interface {
+	marshal() ([]byte, error)
+}
+
+type response interface {
+	unmarshal([]byte) error
+}
+
 type jsonRPRCRequest[params any] struct {
 	JSONRPC string `json:"jsonrpc"`
 	ID      int    `json:"id"`
 	Method  string `json:"method"`
 	Params  params `json:"params"`
+}
+
+func (r jsonRPRCRequest[any]) marshal() ([]byte, error) {
+	return json.Marshal(r)
 }
 
 type jsonRPRCResponse[result any] struct {
@@ -288,34 +303,13 @@ type jsonRPRCResponse[result any] struct {
 	Result  result `json:"result"`
 }
 
-type request interface {
-	marshal() ([]byte, error)
+func (r *jsonRPRCResponse[any]) unmarshal(b []byte) error {
+	return json.Unmarshal(b, r)
 }
 
-type response interface {
-	unmarshal([]byte) error
-}
+type initializeRequest = jsonRPRCRequest[initializeParams]
 
-func newInitializeRequest(params initializeRequestParams) initializeRequest {
-	return initializeRequest{
-		jsonRPRCRequest: jsonRPRCRequest[initializeRequestParams]{
-			JSONRPC: "2.0",
-			ID:      1,
-			Method:  "initialize",
-			Params:  params,
-		},
-	}
-}
-
-type initializeRequest struct {
-	jsonRPRCRequest[initializeRequestParams]
-}
-
-func (r initializeRequest) marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
-type initializeRequestParams struct {
+type initializeParams struct {
 	ProtocolVersion string             `json:"protocolVersion"`
 	Capabilities    clientCapabilities `json:"capabilities"`
 	ClientInfo      clientInfo         `json:"clientInfo"`
@@ -328,13 +322,7 @@ type clientInfo struct {
 	Version string `json:"version"`
 }
 
-type initializeResponse struct {
-	jsonRPRCResponse[initializeResult]
-}
-
-func (r *initializeResponse) unmarshal(b []byte) error {
-	return json.Unmarshal(b, r)
-}
+type initializeResponse = jsonRPRCResponse[initializeResult]
 
 type initializeResult struct {
 	ProtocolVersion string             `json:"protocolVersion"`
