@@ -30,9 +30,10 @@ Install the GitHub MCP server into VS Code by clicking here:
 Or run this command in your terminal:
 
 ```bash
-code --add-mcp '{"name":"github","command":"docker","args":["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server:main"], "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github-pat}"}, "inputs": [{ "id": "github-pat", "type": "promptString", "description": "Github Personal Access Token", "password": true}]}'
+code --add-mcp '{"name":"github","command":"docker","args":["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"], "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github-pat}"}, "inputs": [{ "id": "github-pat", "type": "promptString", "description": "Github Personal Access Token", "password": true}]}'
 
 ```
+
 VS Code is now configured and will prompt for your token the first time you use agent mode.
 
 ### Usage with Claude Desktop
@@ -48,7 +49,7 @@ VS Code is now configured and will prompt for your token the first time you use 
         "--rm",
         "-e",
         "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server:main"
+        "ghcr.io/github/github-mcp-server"
       ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
