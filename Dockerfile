@@ -1,3 +1,5 @@
+ARG VERSION="dev"
+
 FROM golang:1.23.7 AS build
 # Set the working directory
 WORKDIR /build
@@ -6,7 +8,8 @@ COPY . .
 # Install dependencies
 RUN go mod download
 # Build the server
-RUN CGO_ENABLED=0 go build -o github-mcp-server cmd/github-mcp-server/main.go
+RUN CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=${VERSION} -X main.commit=$(git rev-parse HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    -o github-mcp-server cmd/github-mcp-server/main.go
 # Make a stage to run the app
 FROM gcr.io/distroless/base-debian12
 # Set the working directory
