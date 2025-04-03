@@ -19,11 +19,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+var version = "version"
+var commit = "commit"
+var date = "date"
+
 var (
 	rootCmd = &cobra.Command{
-		Use:   "server",
-		Short: "GitHub MCP Server",
-		Long:  `A GitHub MCP server that handles various tools and resources.`,
+		Use:     "server",
+		Short:   "GitHub MCP Server",
+		Long:    `A GitHub MCP server that handles various tools and resources.`,
+		Version: fmt.Sprintf("%s (%s) %s", version, commit, date),
 	}
 
 	stdioCmd = &cobra.Command{
@@ -101,7 +106,7 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 		logger.Fatal("GITHUB_PERSONAL_ACCESS_TOKEN not set")
 	}
 	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
-	ghClient.UserAgent = "github-mcp-server/1.0"
+	ghClient.UserAgent = fmt.Sprintf("github-mcp-server/%s", version)
 
 	// Check GH_HOST env var first, then fall back to viper config
 	host := os.Getenv("GH_HOST")
