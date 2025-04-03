@@ -164,9 +164,12 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 			),
 			mcp.WithNumber("per_page",
 				mcp.Description("Results per page (max 100)"),
+				mcp.Min(1),
+				mcp.Max(100),
 			),
 			mcp.WithNumber("page",
 				mcp.Description("Page number"),
+				mcp.Min(1),
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
