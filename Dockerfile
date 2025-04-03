@@ -1,6 +1,8 @@
 ARG VERSION="dev"
 
 FROM golang:1.23.7 AS build
+# allow this step access to build arg
+ARG VERSION
 # Set the working directory
 WORKDIR /build
 # Copy the current directory contents into the working directory
