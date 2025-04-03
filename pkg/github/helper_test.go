@@ -10,6 +10,52 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// expectQueryParams is a helper function to create a partial mock that expects a
+// request with the given query parameters, with the ability to chain a response handler.
+func expectQueryParams(t *testing.T, expectedQueryParams map[string]string) *partialMock {
+	return &partialMock{
+		t:                   t,
+		expectedQueryParams: expectedQueryParams,
+	}
+}
+
+// expectRequestBody is a helper function to create a partial mock that expects a
+// request with the given body, with the ability to chain a response handler.
+func expectRequestBody(t *testing.T, expectedRequestBody any) *partialMock {
+	return &partialMock{
+		t:                   t,
+		expectedRequestBody: expectedRequestBody,
+	}
+}
+
+type partialMock struct {
+	t                   *testing.T
+	expectedQueryParams map[string]string
+	expectedRequestBody any
+}
+
+func (p *partialMock) andThen(responseHandler http.HandlerFunc) http.HandlerFunc {
+	p.t.Helper()
+	return func(w http.ResponseWriter, r *http.Request) {
+		if p.expectedRequestBody != nil {
+			var unmarshaledRequestBody any
+			err := json.NewDecoder(r.Body).Decode(&unmarshaledRequestBody)
+			require.NoError(p.t, err)
+
+			require.Equal(p.t, p.expectedRequestBody, unmarshaledRequestBody)
+		}
+
+		if p.expectedQueryParams != nil {
+			require.Equal(p.t, len(p.expectedQueryParams), len(r.URL.Query()))
+			for k, v := range p.expectedQueryParams {
+				require.Equal(p.t, v, r.URL.Query().Get(k))
+			}
+		}
+
+		responseHandler(w, r)
+	}
+}
+
 // mockResponse is a helper function to create a mock HTTP response handler
 // that returns a specified status code and marshaled body.
 func mockResponse(t *testing.T, code int, body interface{}) http.HandlerFunc {

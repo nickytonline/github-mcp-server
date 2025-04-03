@@ -168,67 +168,6 @@ func Test_IsAcceptedError(t *testing.T) {
 	}
 }
 
-func Test_ParseCommaSeparatedList(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected []string
-	}{
-		{
-			name:     "simple comma separated values",
-			input:    "one,two,three",
-			expected: []string{"one", "two", "three"},
-		},
-		{
-			name:     "values with spaces",
-			input:    "one, two, three",
-			expected: []string{"one", "two", "three"},
-		},
-		{
-			name:     "values with extra spaces",
-			input:    "  one  ,  two  ,  three  ",
-			expected: []string{"one", "two", "three"},
-		},
-		{
-			name:     "empty values in between",
-			input:    "one,,three",
-			expected: []string{"one", "three"},
-		},
-		{
-			name:     "only spaces",
-			input:    " , , ",
-			expected: []string{},
-		},
-		{
-			name:     "empty string",
-			input:    "",
-			expected: nil,
-		},
-		{
-			name:     "single value",
-			input:    "one",
-			expected: []string{"one"},
-		},
-		{
-			name:     "trailing comma",
-			input:    "one,two,",
-			expected: []string{"one", "two"},
-		},
-		{
-			name:     "leading comma",
-			input:    ",one,two",
-			expected: []string{"one", "two"},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			result := parseCommaSeparatedList(tc.input)
-			assert.Equal(t, tc.expected, result)
-		})
-	}
-}
-
 func Test_RequiredStringParam(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -481,59 +420,6 @@ func Test_OptionalNumberParamWithDefault(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
 			result, err := optionalIntParamWithDefault(request, tc.paramName, tc.defaultVal)
-
-			if tc.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tc.expected, result)
-			}
-		})
-	}
-}
-
-func Test_OptionalCommaSeparatedListParam(t *testing.T) {
-	tests := []struct {
-		name        string
-		params      map[string]interface{}
-		paramName   string
-		expected    []string
-		expectError bool
-	}{
-		{
-			name:        "valid comma-separated list",
-			params:      map[string]interface{}{"tags": "one,two,three"},
-			paramName:   "tags",
-			expected:    []string{"one", "two", "three"},
-			expectError: false,
-		},
-		{
-			name:        "empty list",
-			params:      map[string]interface{}{"tags": ""},
-			paramName:   "tags",
-			expected:    []string{},
-			expectError: false,
-		},
-		{
-			name:        "missing parameter",
-			params:      map[string]interface{}{},
-			paramName:   "tags",
-			expected:    []string{},
-			expectError: false,
-		},
-		{
-			name:        "wrong type parameter",
-			params:      map[string]interface{}{"tags": 123},
-			paramName:   "tags",
-			expected:    nil,
-			expectError: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			request := createMCPRequest(tc.params)
-			result, err := optionalCommaSeparatedListParam(request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)

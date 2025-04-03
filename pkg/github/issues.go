@@ -228,11 +228,21 @@ func createIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			mcp.WithString("body",
 				mcp.Description("Issue body content"),
 			),
-			mcp.WithString("assignees",
-				mcp.Description("Comma-separate list of usernames to assign to this issue"),
+			mcp.WithArray("assignees",
+				mcp.Description("Usernames to assign to this issue"),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
 			),
-			mcp.WithString("labels",
-				mcp.Description("Comma-separate list of labels to apply to this issue"),
+			mcp.WithArray("labels",
+				mcp.Description("Labels to apply to this issue"),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -256,12 +266,13 @@ func createIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			}
 
 			// Get assignees
-			assignees, err := optionalCommaSeparatedListParam(request, "assignees")
+			assignees, err := optionalParam[[]string](request, "assignees")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+
 			// Get labels
-			labels, err := optionalCommaSeparatedListParam(request, "labels")
+			labels, err := optionalParam[[]string](request, "labels")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -312,8 +323,13 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 			mcp.WithString("state",
 				mcp.Description("Filter by state ('open', 'closed', 'all')"),
 			),
-			mcp.WithString("labels",
-				mcp.Description("Comma-separated list of labels to filter by"),
+			mcp.WithArray("labels",
+				mcp.Description("Filter by labels"),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
 			),
 			mcp.WithString("sort",
 				mcp.Description("Sort by ('created', 'updated', 'comments')"),
@@ -349,7 +365,8 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			opts.Labels, err = optionalCommaSeparatedListParam(request, "labels")
+			// Get labels
+			opts.Labels, err = optionalParam[[]string](request, "labels")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -431,12 +448,23 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			),
 			mcp.WithString("state",
 				mcp.Description("New state ('open' or 'closed')"),
+				mcp.Enum("open", "closed"),
 			),
-			mcp.WithString("labels",
-				mcp.Description("Comma-separated list of new labels"),
+			mcp.WithArray("labels",
+				mcp.Description("New labels"),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
 			),
-			mcp.WithString("assignees",
-				mcp.Description("Comma-separated list of new assignees"),
+			mcp.WithArray("assignees",
+				mcp.Description("New assignees"),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
 			),
 			mcp.WithNumber("milestone",
 				mcp.Description("New milestone number"),
@@ -484,7 +512,8 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				issueRequest.State = github.Ptr(state)
 			}
 
-			labels, err := optionalCommaSeparatedListParam(request, "labels")
+			// Get labels
+			labels, err := optionalParam[[]string](request, "labels")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -492,7 +521,8 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				issueRequest.Labels = &labels
 			}
 
-			assignees, err := optionalCommaSeparatedListParam(request, "assignees")
+			// Get assignees
+			assignees, err := optionalParam[[]string](request, "assignees")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

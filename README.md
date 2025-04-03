@@ -130,8 +130,8 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `repo`: Repository name (string, required)
   - `title`: Issue title (string, required)
   - `body`: Issue body content (string, optional)
-  - `assignees`: Comma-separated list of usernames to assign to this issue (string, optional)
-  - `labels`: Comma-separated list of labels to apply to this issue (string, optional)
+  - `assignees`: Usernames to assign to this issue (string[], optional)
+  - `labels`: Labels to apply to this issue (string[], optional)
 
 - **add_issue_comment** - Add a comment to an issue
 
@@ -145,7 +145,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `state`: Filter by state ('open', 'closed', 'all') (string, optional)
-  - `labels`: Comma-separated list of labels to filter by (string, optional)
+  - `labels`: Labels to filter by (string[], optional)
   - `sort`: Sort by ('created', 'updated', 'comments') (string, optional)
   - `direction`: Sort direction ('asc', 'desc') (string, optional)
   - `since`: Filter by date (ISO 8601 timestamp) (string, optional)
@@ -160,8 +160,8 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `title`: New title (string, optional)
   - `body`: New description (string, optional)
   - `state`: New state ('open' or 'closed') (string, optional)
-  - `labels`: Comma-separated list of new labels (string, optional)
-  - `assignees`: Comma-separated list of new assignees (string, optional)
+  - `labels`: New labels (string[], optional)
+  - `assignees`: New assignees (string[], optional)
   - `milestone`: New milestone number (number, optional)
 
 - **search_issues** - Search for issues and pull requests

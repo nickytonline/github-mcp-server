@@ -418,7 +418,14 @@ func Test_CreateIssue(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PostReposIssuesByOwnerByRepo,
-					mockResponse(t, http.StatusCreated, mockIssue),
+					expectRequestBody(t, map[string]any{
+						"title":     "Test Issue",
+						"body":      "This is a test issue",
+						"labels":    []any{"bug", "help wanted"},
+						"assignees": []any{"user1", "user2"},
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockIssue),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -426,8 +433,8 @@ func Test_CreateIssue(t *testing.T) {
 				"repo":      "repo",
 				"title":     "Test Issue",
 				"body":      "This is a test issue",
-				"assignees": "user1, user2",
-				"labels":    "bug, help wanted",
+				"assignees": []string{"user1", "user2"},
+				"labels":    []string{"bug", "help wanted"},
 			},
 			expectError:   false,
 			expectedIssue: mockIssue,
@@ -606,16 +613,26 @@ func Test_ListIssues(t *testing.T) {
 		{
 			name: "list issues with all parameters",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposIssuesByOwnerByRepo,
-					mockIssues,
+					expectQueryParams(t, map[string]string{
+						"state":     "open",
+						"labels":    "bug,enhancement",
+						"sort":      "created",
+						"direction": "desc",
+						"since":     "2023-01-01T00:00:00Z",
+						"page":      "1",
+						"per_page":  "30",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockIssues),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
 				"owner":     "owner",
 				"repo":      "repo",
 				"state":     "open",
-				"labels":    "bug,enhancement",
+				"labels":    []string{"bug", "enhancement"},
 				"sort":      "created",
 				"direction": "desc",
 				"since":     "2023-01-01T00:00:00Z",
@@ -750,7 +767,16 @@ func Test_UpdateIssue(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PatchReposIssuesByOwnerByRepoByIssueNumber,
-					mockResponse(t, http.StatusOK, mockIssue),
+					expectRequestBody(t, map[string]any{
+						"title":     "Updated Issue Title",
+						"body":      "Updated issue description",
+						"state":     "closed",
+						"labels":    []any{"bug", "priority"},
+						"assignees": []any{"assignee1", "assignee2"},
+						"milestone": float64(5),
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockIssue),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -760,8 +786,8 @@ func Test_UpdateIssue(t *testing.T) {
 				"title":        "Updated Issue Title",
 				"body":         "Updated issue description",
 				"state":        "closed",
-				"labels":       "bug,priority",
-				"assignees":    "assignee1,assignee2",
+				"labels":       []string{"bug", "priority"},
+				"assignees":    []string{"assignee1", "assignee2"},
 				"milestone":    float64(5),
 			},
 			expectError:   false,

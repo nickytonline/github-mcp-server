@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
@@ -119,25 +118,6 @@ func isAcceptedError(err error) bool {
 	return errors.As(err, &acceptedError)
 }
 
-// parseCommaSeparatedList is a helper function that parses a comma-separated list of strings from the input string.
-func parseCommaSeparatedList(input string) []string {
-	if input == "" {
-		return nil
-	}
-
-	parts := strings.Split(input, ",")
-	result := make([]string, 0, len(parts))
-
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-
-	return result
-}
-
 // requiredParam is a helper function that can be used to fetch a requested parameter from the request.
 // It does the following checks:
 // 1. Checks if the parameter is present in the request.
@@ -220,21 +200,4 @@ func optionalIntParamWithDefault(r mcp.CallToolRequest, p string, d int) (int, e
 		return d, nil
 	}
 	return v, nil
-}
-
-// optionalCommaSeparatedListParam is a helper function that can be used to fetch a requested parameter from the request.
-// It does the following:
-//  1. Checks if the parameter is present in the request, if not, it returns an empty list
-//  2. If it is present, it checks if the parameter is of the expected type and uses parseCommaSeparatedList to parse it
-//     and return the list of strings
-func optionalCommaSeparatedListParam(r mcp.CallToolRequest, p string) ([]string, error) {
-	v, err := optionalParam[string](r, p)
-	if err != nil {
-		return []string{}, err
-	}
-	l := parseCommaSeparatedList(v)
-	if len(l) == 0 {
-		return []string{}, nil
-	}
-	return l, nil
 }
