@@ -5,14 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"os/exec"
 	"slices"
 	"strings"
 
+	"crypto/rand"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/rand"
 )
 
 type (
@@ -348,9 +350,13 @@ func buildArgumentsMap(cmd *cobra.Command, tool *Tool) (map[string]interface{}, 
 
 // buildJSONRPCRequest creates a JSON-RPC request with the given tool name and arguments
 func buildJSONRPCRequest(method, toolName string, arguments map[string]interface{}) (string, error) {
+	id, err := rand.Int(rand.Reader, big.NewInt(10000))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random ID: %w", err)
+	}
 	request := JSONRPCRequest{
 		JSONRPC: "2.0",
-		ID:      rand.Intn(10000), // Random ID between 0 and 9999
+		ID:      int(id.Int64()), // Random ID between 0 and 9999
 		Method:  method,
 		Params: RequestParams{
 			Name:      toolName,
