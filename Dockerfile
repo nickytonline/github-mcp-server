@@ -5,13 +5,18 @@ FROM golang:1.23.7 AS build
 ARG VERSION
 # Set the working directory
 WORKDIR /build
-# Copy the current directory contents into the working directory
-COPY . .
+
+RUN go env -w GOMODCACHE=/root/.cache/go-build
+
 # Install dependencies
-RUN go mod download
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/root/.cache/go-build go mod download
+
+COPY . ./
 # Build the server
-RUN CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=${VERSION} -X main.commit=$(git rev-parse HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=${VERSION} -X main.commit=$(git rev-parse HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     -o github-mcp-server cmd/github-mcp-server/main.go
+
 # Make a stage to run the app
 FROM gcr.io/distroless/base-debian12
 # Set the working directory
