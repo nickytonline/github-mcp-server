@@ -22,8 +22,8 @@ func Test_GetCodeScanningAlert(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "alert_number")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "alert_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "alertNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "alertNumber"})
 
 	// Setup mock alert for success case
 	mockAlert := &github.Alert{
@@ -50,9 +50,9 @@ func Test_GetCodeScanningAlert(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":        "owner",
-				"repo":         "repo",
-				"alert_number": float64(42),
+				"owner":       "owner",
+				"repo":        "repo",
+				"alertNumber": float64(42),
 			},
 			expectError:   false,
 			expectedAlert: mockAlert,
@@ -69,9 +69,9 @@ func Test_GetCodeScanningAlert(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":        "owner",
-				"repo":         "repo",
-				"alert_number": float64(9999),
+				"owner":       "owner",
+				"repo":        "repo",
+				"alertNumber": float64(9999),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to get alert",

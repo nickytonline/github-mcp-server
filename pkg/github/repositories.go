@@ -32,7 +32,7 @@ func listCommits(client *github.Client, t translations.TranslationHelperFunc) (t
 			mcp.WithNumber("page",
 				mcp.Description("Page number"),
 			),
-			mcp.WithNumber("per_page",
+			mcp.WithNumber("perPage",
 				mcp.Description("Number of records per page"),
 			),
 		),
@@ -204,7 +204,7 @@ func createRepository(client *github.Client, t translations.TranslationHelperFun
 			mcp.WithBoolean("private",
 				mcp.Description("Whether repo should be private"),
 			),
-			mcp.WithBoolean("auto_init",
+			mcp.WithBoolean("autoInit",
 				mcp.Description("Initialize with README"),
 			),
 		),
@@ -221,7 +221,7 @@ func createRepository(client *github.Client, t translations.TranslationHelperFun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			autoInit, err := optionalParam[bool](request, "auto_init")
+			autoInit, err := optionalParam[bool](request, "autoInit")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

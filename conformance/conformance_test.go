@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -17,6 +18,8 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 )
 
@@ -230,6 +233,69 @@ func diffNonNilFields(a, b interface{}, path string) string {
 	return sb.String()
 }
 
+func TestListTools(t *testing.T) {
+	anthropicServer := start(t, anthropic)
+	githubServer := start(t, github)
+
+	req := listToolsRequest{
+		JSONRPC: "2.0",
+		ID:      1,
+		Method:  "tools/list",
+	}
+
+	require.NoError(t, anthropicServer.send(req))
+
+	var anthropicListToolsResponse listToolsResponse
+	require.NoError(t, anthropicServer.receive(&anthropicListToolsResponse))
+
+	require.NoError(t, githubServer.send(req))
+
+	var ghListToolsResponse listToolsResponse
+	require.NoError(t, githubServer.receive(&ghListToolsResponse))
+
+	require.NoError(t, isToolListSubset(anthropicListToolsResponse.Result, ghListToolsResponse.Result), "expected the github list tools response to be a subset of the anthropic list tools response")
+}
+
+func isToolListSubset(subset, superset listToolsResult) error {
+	// Build a map from tool name to Tool from the superset
+	supersetMap := make(map[string]tool)
+	for _, tool := range superset.Tools {
+		supersetMap[tool.Name] = tool
+	}
+
+	var err error
+	for _, tool := range subset.Tools {
+		sup, ok := supersetMap[tool.Name]
+		if !ok {
+			return fmt.Errorf("tool %q not found in superset", tool.Name)
+		}
+
+		// Intentionally ignore the description fields because there are lots of slight differences.
+		// if tool.Description != sup.Description {
+		// 	return fmt.Errorf("description mismatch for tool %q, got %q expected %q", tool.Name, tool.Description, sup.Description)
+		// }
+
+		// Ignore any description fields within the input schema properties for the same reason
+		ignoreDescOpt := cmp.FilterPath(func(p cmp.Path) bool {
+			// Look for a field named "Properties" somewhere in the path
+			for _, ps := range p {
+				if sf, ok := ps.(cmp.StructField); ok && sf.Name() == "Properties" {
+					return true
+				}
+			}
+			return false
+		}, cmpopts.IgnoreMapEntries(func(k string, _ any) bool {
+			return k == "description"
+		}))
+
+		if diff := cmp.Diff(tool.InputSchema, sup.InputSchema, ignoreDescOpt); diff != "" {
+			err = errors.Join(err, fmt.Errorf("inputSchema mismatch for tool %q:\n%s", tool.Name, diff))
+		}
+	}
+
+	return err
+}
+
 type serverStartResult struct {
 	server server
 	err    error
@@ -347,4 +413,23 @@ type serverCapabilities struct {
 type serverInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
+}
+
+type listToolsRequest = jsonRPRCRequest[struct{}]
+
+type listToolsResponse = jsonRPRCResponse[listToolsResult]
+
+type listToolsResult struct {
+	Tools []tool `json:"tools"`
+}
+type tool struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description,omitempty"`
+	InputSchema inputSchema `json:"inputSchema"`
+}
+
+type inputSchema struct {
+	Type       string         `json:"type"`
+	Properties map[string]any `json:"properties,omitempty"`
+	Required   []string       `json:"required,omitempty"`
 }

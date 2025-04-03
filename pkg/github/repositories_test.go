@@ -486,7 +486,7 @@ func Test_ListCommits(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
 	assert.Contains(t, tool.InputSchema.Properties, "sha")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
-	assert.Contains(t, tool.InputSchema.Properties, "per_page")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
 
 	// Setup mock commits for success case
@@ -822,7 +822,7 @@ func Test_CreateRepository(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "name")
 	assert.Contains(t, tool.InputSchema.Properties, "description")
 	assert.Contains(t, tool.InputSchema.Properties, "private")
-	assert.Contains(t, tool.InputSchema.Properties, "auto_init")
+	assert.Contains(t, tool.InputSchema.Properties, "autoInit")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"name"})
 
 	// Setup mock repository response
@@ -868,7 +868,7 @@ func Test_CreateRepository(t *testing.T) {
 				"name":        "test-repo",
 				"description": "Test repository",
 				"private":     true,
-				"auto_init":   true,
+				"autoInit":    true,
 			},
 			expectError:  false,
 			expectedRepo: mockRepo,

@@ -56,7 +56,7 @@ func getRepositoryResourceTagContent(client *github.Client, t translations.Trans
 // getRepositoryResourcePrContent defines the resource template and handler for getting repository content for a pull request.
 func getRepositoryResourcePrContent(client *github.Client, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
 	return mcp.NewResourceTemplate(
-			"repo://{owner}/{repo}/refs/pull/{pr_number}/head/contents{/path*}", // Resource template
+			"repo://{owner}/{repo}/refs/pull/{prNumber}/head/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_PR_DESCRIPTION", "Repository Content for specific pull request"),
 		),
 		repositoryResourceContentsHandler(client)
@@ -101,7 +101,7 @@ func repositoryResourceContentsHandler(client *github.Client) func(ctx context.C
 		if ok && len(tag) > 0 {
 			opts.Ref = "refs/tags/" + tag[0]
 		}
-		prNumber, ok := request.Params.Arguments["pr_number"].([]string)
+		prNumber, ok := request.Params.Arguments["prNumber"].([]string)
 		if ok && len(prNumber) > 0 {
 			opts.Ref = "refs/pull/" + prNumber[0] + "/head"
 		}

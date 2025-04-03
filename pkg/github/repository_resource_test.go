@@ -279,5 +279,5 @@ func Test_getRepositoryResourceTagContent(t *testing.T) {
 
 func Test_getRepositoryResourcePrContent(t *testing.T) {
 	tmpl, _ := getRepositoryResourcePrContent(nil, translations.NullTranslationHelper)
-	require.Equal(t, "repo://{owner}/{repo}/refs/pull/{pr_number}/head/contents{/path*}", tmpl.URITemplate.Raw())
+	require.Equal(t, "repo://{owner}/{repo}/refs/pull/{prNumber}/head/contents{/path*}", tmpl.URITemplate.Raw())
 }

@@ -150,7 +150,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `direction`: Sort direction ('asc', 'desc') (string, optional)
   - `since`: Filter by date (ISO 8601 timestamp) (string, optional)
   - `page`: Page number (number, optional)
-  - `per_page`: Results per page (number, optional)
+  - `perPage`: Results per page (number, optional)
 
 - **update_issue** - Update an existing issue in a GitHub repository
 
@@ -177,7 +177,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
+  - `pullNumber`: Pull request number (number, required)
 
 - **list_pull_requests** - List and filter repository pull requests
 
@@ -186,14 +186,14 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `state`: PR state (string, optional)
   - `sort`: Sort field (string, optional)
   - `direction`: Sort direction (string, optional)
-  - `per_page`: Results per page (number, optional)
+  - `perPage`: Results per page (number, optional)
   - `page`: Page number (number, optional)
 
 - **merge_pull_request** - Merge a pull request
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
+  - `pullNumber`: Pull request number (number, required)
   - `commit_title`: Title for the merge commit (string, optional)
   - `commit_message`: Message for the merge commit (string, optional)
   - `merge_method`: Merge method (string, optional)
@@ -202,41 +202,41 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
+  - `pullNumber`: Pull request number (number, required)
 
 - **get_pull_request_status** - Get the combined status of all status checks for a pull request
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
+  - `pullNumber`: Pull request number (number, required)
 
 - **update_pull_request_branch** - Update a pull request branch with the latest changes from the base branch
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
-  - `expected_head_sha`: The expected SHA of the pull request's HEAD ref (string, optional)
+  - `pullNumber`: Pull request number (number, required)
+  - `expectedHeadSha`: The expected SHA of the pull request's HEAD ref (string, optional)
 
 - **get_pull_request_comments** - Get the review comments on a pull request
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
+  - `pullNumber`: Pull request number (number, required)
 
 - **get_pull_request_reviews** - Get the reviews on a pull request
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
+  - `pullNumber`: Pull request number (number, required)
 
 - **create_pull_request_review** - Create a review on a pull request review
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
+  - `pullNumber`: Pull request number (number, required)
   - `body`: Review comment text (string, optional)
   - `event`: Review action ('APPROVE', 'REQUEST_CHANGES', 'COMMENT') (string, required)
-  - `commit_id`: SHA of commit to review (string, optional)
+  - `commitId`: SHA of commit to review (string, optional)
   - `comments`: Line-specific comments array of objects, each object with path (string), position (number), and body (string) (array, optional)
 
 - **create_pull_request** - Create a new pull request
@@ -276,14 +276,14 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `sort`: Sort field (string, optional)
   - `order`: Sort order (string, optional)
   - `page`: Page number (number, optional)
-  - `per_page`: Results per page (number, optional)
+  - `perPage`: Results per page (number, optional)
 
 - **create_repository** - Create a new GitHub repository
 
   - `name`: Repository name (string, required)
   - `description`: Repository description (string, optional)
   - `private`: Whether the repository is private (boolean, optional)
-  - `auto_init`: Auto-initialize with README (boolean, optional)
+  - `autoInit`: Auto-initialize with README (boolean, optional)
 
 - **get_file_contents** - Get contents of a file or directory
 
@@ -311,7 +311,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `sha`: Branch name, tag, or commit SHA (string, optional)
   - `path`: Only commits containing this file path (string, optional)
   - `page`: Page number (number, optional)
-  - `per_page`: Results per page (number, optional)
+  - `perPage`: Results per page (number, optional)
 
 ### Search
 
@@ -321,14 +321,14 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `sort`: Sort field (string, optional)
   - `order`: Sort order (string, optional)
   - `page`: Page number (number, optional)
-  - `per_page`: Results per page (number, optional)
+  - `perPage`: Results per page (number, optional)
 
 - **search_users** - Search for GitHub users
   - `query`: Search query (string, required)
   - `sort`: Sort field (string, optional)
   - `order`: Sort order (string, optional)
   - `page`: Page number (number, optional)
-  - `per_page`: Results per page (number, optional)
+  - `perPage`: Results per page (number, optional)
 
 ### Code Scanning
 
@@ -336,7 +336,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `alert_number`: Alert number (number, required)
+  - `alertNumber`: Alert number (number, required)
 
 - **list_code_scanning_alerts** - List code scanning alerts for a repository
   - `owner`: Repository owner (string, required)
@@ -391,11 +391,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 - **Get Repository Content for a Specific Pull Request**
   Retrieves the content of a repository at a specific path for a given pull request.
 
-  - **Template**: `repo://{owner}/{repo}/refs/pull/{pr_number}/head/contents{/path*}`
+  - **Template**: `repo://{owner}/{repo}/refs/pull/{prNumber}/head/contents{/path*}`
   - **Parameters**:
     - `owner`: Repository owner (string, required)
     - `repo`: Repository name (string, required)
-    - `pr_number`: Pull request number (string, required)
+    - `prNumber`: Pull request number (string, required)
     - `path`: File or directory path (string, optional)
 
 ## License

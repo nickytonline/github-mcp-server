@@ -25,7 +25,7 @@ func getPullRequest(client *github.Client, t translations.TranslationHelperFunc)
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -39,7 +39,7 @@ func getPullRequest(client *github.Client, t translations.TranslationHelperFunc)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -186,7 +186,7 @@ func mergePullRequest(client *github.Client, t translations.TranslationHelperFun
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -209,7 +209,7 @@ func mergePullRequest(client *github.Client, t translations.TranslationHelperFun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -266,7 +266,7 @@ func getPullRequestFiles(client *github.Client, t translations.TranslationHelper
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -280,7 +280,7 @@ func getPullRequestFiles(client *github.Client, t translations.TranslationHelper
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -321,7 +321,7 @@ func getPullRequestStatus(client *github.Client, t translations.TranslationHelpe
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -335,7 +335,7 @@ func getPullRequestStatus(client *github.Client, t translations.TranslationHelpe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -390,11 +390,11 @@ func updatePullRequestBranch(client *github.Client, t translations.TranslationHe
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
-			mcp.WithString("expected_head_sha",
+			mcp.WithString("expectedHeadSha",
 				mcp.Description("The expected SHA of the pull request's HEAD ref"),
 			),
 		),
@@ -407,11 +407,11 @@ func updatePullRequestBranch(client *github.Client, t translations.TranslationHe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			expectedHeadSHA, err := optionalParam[string](request, "expected_head_sha")
+			expectedHeadSHA, err := optionalParam[string](request, "expectedHeadSha")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -460,7 +460,7 @@ func getPullRequestComments(client *github.Client, t translations.TranslationHel
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -474,7 +474,7 @@ func getPullRequestComments(client *github.Client, t translations.TranslationHel
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -520,7 +520,7 @@ func getPullRequestReviews(client *github.Client, t translations.TranslationHelp
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -534,7 +534,7 @@ func getPullRequestReviews(client *github.Client, t translations.TranslationHelp
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -574,7 +574,7 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -585,7 +585,7 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 				mcp.Required(),
 				mcp.Description("Review action ('APPROVE', 'REQUEST_CHANGES', 'COMMENT')"),
 			),
-			mcp.WithString("commit_id",
+			mcp.WithString("commitId",
 				mcp.Description("SHA of commit to review"),
 			),
 			mcp.WithArray("comments",
@@ -622,7 +622,7 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pull_number")
+			pullNumber, err := requiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -646,7 +646,7 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 			}
 
 			// Add commit ID if provided
-			commitID, err := optionalParam[string](request, "commit_id")
+			commitID, err := optionalParam[string](request, "commitId")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

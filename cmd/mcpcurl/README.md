@@ -72,7 +72,7 @@ Use "mcpcurl tools [command] --help" for more information about a command.
 Get help for a specific tool:
 
 ```bash
- % ./mcpcurl --stdio-server-cmd "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN mcp/github" tools get_issue --help                                   
+ % ./mcpcurl --stdio-server-cmd "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN mcp/github" tools get_issue --help
 Get details of a specific issue in a GitHub repository.
 
 Usage:

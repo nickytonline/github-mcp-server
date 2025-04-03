@@ -24,7 +24,7 @@ func getCodeScanningAlert(client *github.Client, t translations.TranslationHelpe
 				mcp.Required(),
 				mcp.Description("The name of the repository."),
 			),
-			mcp.WithNumber("alert_number",
+			mcp.WithNumber("alertNumber",
 				mcp.Required(),
 				mcp.Description("The number of the alert."),
 			),
@@ -38,7 +38,7 @@ func getCodeScanningAlert(client *github.Client, t translations.TranslationHelpe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			alertNumber, err := requiredInt(request, "alert_number")
+			alertNumber, err := requiredInt(request, "alertNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

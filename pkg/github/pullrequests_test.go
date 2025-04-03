@@ -23,8 +23,8 @@ func Test_GetPullRequest(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
 	// Setup mock PR for success case
 	mockPR := &github.PullRequest{
@@ -62,9 +62,9 @@ func Test_GetPullRequest(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError: false,
 			expectedPR:  mockPR,
@@ -81,9 +81,9 @@ func Test_GetPullRequest(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(999),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(999),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to get pull request",
@@ -265,11 +265,11 @@ func Test_MergePullRequest(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
 	assert.Contains(t, tool.InputSchema.Properties, "commit_title")
 	assert.Contains(t, tool.InputSchema.Properties, "commit_message")
 	assert.Contains(t, tool.InputSchema.Properties, "merge_method")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
 	// Setup mock merge result for success case
 	mockMergeResult := &github.PullRequestMergeResult{
@@ -303,7 +303,7 @@ func Test_MergePullRequest(t *testing.T) {
 			requestArgs: map[string]interface{}{
 				"owner":          "owner",
 				"repo":           "repo",
-				"pull_number":    float64(42),
+				"pullNumber":     float64(42),
 				"commit_title":   "Merge PR #42",
 				"commit_message": "Merging awesome feature",
 				"merge_method":   "squash",
@@ -323,9 +323,9 @@ func Test_MergePullRequest(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to merge pull request",
@@ -376,8 +376,8 @@ func Test_GetPullRequestFiles(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
 	// Setup mock PR files for success case
 	mockFiles := []*github.CommitFile{
@@ -416,9 +416,9 @@ func Test_GetPullRequestFiles(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:   false,
 			expectedFiles: mockFiles,
@@ -435,9 +435,9 @@ func Test_GetPullRequestFiles(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(999),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(999),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to get pull request files",
@@ -492,8 +492,8 @@ func Test_GetPullRequestStatus(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
 	// Setup mock PR for successful PR fetch
 	mockPR := &github.PullRequest{
@@ -553,9 +553,9 @@ func Test_GetPullRequestStatus(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:    false,
 			expectedStatus: mockStatus,
@@ -572,9 +572,9 @@ func Test_GetPullRequestStatus(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(999),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(999),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to get pull request",
@@ -595,9 +595,9 @@ func Test_GetPullRequestStatus(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to get combined status",
@@ -653,9 +653,9 @@ func Test_UpdatePullRequestBranch(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
-	assert.Contains(t, tool.InputSchema.Properties, "expected_head_sha")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.Contains(t, tool.InputSchema.Properties, "expectedHeadSha")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
 	// Setup mock update result for success case
 	mockUpdateResult := &github.PullRequestBranchUpdateResponse{
@@ -684,10 +684,10 @@ func Test_UpdatePullRequestBranch(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":             "owner",
-				"repo":              "repo",
-				"pull_number":       float64(42),
-				"expected_head_sha": "abcd1234",
+				"owner":           "owner",
+				"repo":            "repo",
+				"pullNumber":      float64(42),
+				"expectedHeadSha": "abcd1234",
 			},
 			expectError:          false,
 			expectedUpdateResult: mockUpdateResult,
@@ -703,9 +703,9 @@ func Test_UpdatePullRequestBranch(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:          false,
 			expectedUpdateResult: mockUpdateResult,
@@ -722,9 +722,9 @@ func Test_UpdatePullRequestBranch(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to update pull request branch",
@@ -769,8 +769,8 @@ func Test_GetPullRequestComments(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
 	// Setup mock PR comments for success case
 	mockComments := []*github.PullRequestComment{
@@ -819,9 +819,9 @@ func Test_GetPullRequestComments(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:      false,
 			expectedComments: mockComments,
@@ -838,9 +838,9 @@ func Test_GetPullRequestComments(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(999),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(999),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to get pull request comments",
@@ -896,8 +896,8 @@ func Test_GetPullRequestReviews(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
 	// Setup mock PR reviews for success case
 	mockReviews := []*github.PullRequestReview{
@@ -942,9 +942,9 @@ func Test_GetPullRequestReviews(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
 			},
 			expectError:     false,
 			expectedReviews: mockReviews,
@@ -961,9 +961,9 @@ func Test_GetPullRequestReviews(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(999),
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(999),
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to get pull request reviews",
@@ -1019,12 +1019,12 @@ func Test_CreatePullRequestReview(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
 	assert.Contains(t, tool.InputSchema.Properties, "body")
 	assert.Contains(t, tool.InputSchema.Properties, "event")
-	assert.Contains(t, tool.InputSchema.Properties, "commit_id")
+	assert.Contains(t, tool.InputSchema.Properties, "commitId")
 	assert.Contains(t, tool.InputSchema.Properties, "comments")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number", "event"})
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber", "event"})
 
 	// Setup mock review for success case
 	mockReview := &github.PullRequestReview{
@@ -1061,17 +1061,17 @@ func Test_CreatePullRequestReview(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
-				"body":        "Looks good!",
-				"event":       "APPROVE",
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "Looks good!",
+				"event":      "APPROVE",
 			},
 			expectError:    false,
 			expectedReview: mockReview,
 		},
 		{
-			name: "successful review creation with commit_id",
+			name: "successful review creation with commitId",
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
@@ -1085,12 +1085,12 @@ func Test_CreatePullRequestReview(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
-				"body":        "Looks good!",
-				"event":       "APPROVE",
-				"commit_id":   "abcdef123456",
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "Looks good!",
+				"event":      "APPROVE",
+				"commitId":   "abcdef123456",
 			},
 			expectError:    false,
 			expectedReview: mockReview,
@@ -1121,11 +1121,11 @@ func Test_CreatePullRequestReview(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
-				"body":        "Some issues to fix",
-				"event":       "REQUEST_CHANGES",
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "Some issues to fix",
+				"event":      "REQUEST_CHANGES",
 				"comments": []interface{}{
 					map[string]interface{}{
 						"path":     "file1.go",
@@ -1154,10 +1154,10 @@ func Test_CreatePullRequestReview(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
-				"event":       "REQUEST_CHANGES",
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"event":      "REQUEST_CHANGES",
 				"comments": []interface{}{
 					map[string]interface{}{
 						"path": "file1.go",
@@ -1181,11 +1181,11 @@ func Test_CreatePullRequestReview(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(42),
-				"body":        "Looks good!",
-				"event":       "APPROVE",
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "Looks good!",
+				"event":      "APPROVE",
 			},
 			expectError:    true,
 			expectedErrMsg: "failed to create pull request review",

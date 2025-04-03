@@ -22,7 +22,7 @@ func Test_SearchRepositories(t *testing.T) {
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "query")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
-	assert.Contains(t, tool.InputSchema.Properties, "per_page")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"query"})
 
 	// Setup mock search results

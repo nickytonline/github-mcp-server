@@ -23,7 +23,7 @@ func searchRepositories(client *github.Client, t translations.TranslationHelperF
 			mcp.WithNumber("page",
 				mcp.Description("Page number for pagination"),
 			),
-			mcp.WithNumber("per_page",
+			mcp.WithNumber("perPage",
 				mcp.Description("Results per page (max 100)"),
 			),
 		),
