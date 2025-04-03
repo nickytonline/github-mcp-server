@@ -1,5 +1,5 @@
 <!--
-    Thank you for contributing to GitHub MCP!
+    Thank you for contributing to GitHub MCP Server!
     Please reference an existing issue: `Closes #NUMBER`
 
     Screenshots or videos of changed behavior is incredibly helpful and always appreciated.

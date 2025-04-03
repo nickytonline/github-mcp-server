@@ -1,6 +1,6 @@
 ---
 name: "\U0001F41B Bug report"
-about: Report a bug or unexpected behavior while using GitHub MCP
+about: Report a bug or unexpected behavior while using GitHub MCP Server
 title: ''
 labels: bug
 assignees: ''
@@ -13,7 +13,7 @@ A clear and concise description of what the bug is.
 
 ### Affected version
 
-Please run `go run cmd/github-mcp-server/main.go --version` and paste the output below.
+Please run ` docker run -i --rm ghcr.io/github/github-mcp-server ./github-mcp-server --version` and paste the output below
 
 ### Steps to reproduce the behavior
 
