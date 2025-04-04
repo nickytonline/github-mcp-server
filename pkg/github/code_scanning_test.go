@@ -156,9 +156,15 @@ func Test_ListCodeScanningAlerts(t *testing.T) {
 		{
 			name: "successful alerts listing",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposCodeScanningAlertsByOwnerByRepo,
-					mockAlerts,
+					expectQueryParams(t, map[string]string{
+						"ref":      "main",
+						"state":    "open",
+						"severity": "high",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockAlerts),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
