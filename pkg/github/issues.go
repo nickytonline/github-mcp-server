@@ -286,13 +286,13 @@ func createIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			}
 
 			// Get assignees
-			assignees, err := optionalParam[[]string](request, "assignees")
+			assignees, err := optionalStringArrayParam(request, "assignees")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			// Get labels
-			labels, err := optionalParam[[]string](request, "labels")
+			labels, err := optionalStringArrayParam(request, "labels")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -401,7 +401,7 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 			}
 
 			// Get labels
-			opts.Labels, err = optionalParam[[]string](request, "labels")
+			opts.Labels, err = optionalStringArrayParam(request, "labels")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -548,7 +548,7 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			}
 
 			// Get labels
-			labels, err := optionalParam[[]string](request, "labels")
+			labels, err := optionalStringArrayParam(request, "labels")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -557,7 +557,7 @@ func updateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 			}
 
 			// Get assignees
-			assignees, err := optionalParam[[]string](request, "assignees")
+			assignees, err := optionalStringArrayParam(request, "assignees")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

@@ -483,3 +483,71 @@ func Test_OptionalBooleanParam(t *testing.T) {
 		})
 	}
 }
+
+func TestOptionalStringArrayParam(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]interface{}
+		paramName   string
+		expected    []string
+		expectError bool
+	}{
+		{
+			name:        "parameter not in request",
+			params:      map[string]any{},
+			paramName:   "flag",
+			expected:    []string{},
+			expectError: false,
+		},
+		{
+			name: "valid any array parameter",
+			params: map[string]any{
+				"flag": []any{"v1", "v2"},
+			},
+			paramName:   "flag",
+			expected:    []string{"v1", "v2"},
+			expectError: false,
+		},
+		{
+			name: "valid string array parameter",
+			params: map[string]any{
+				"flag": []string{"v1", "v2"},
+			},
+			paramName:   "flag",
+			expected:    []string{"v1", "v2"},
+			expectError: false,
+		},
+		{
+			name: "wrong type parameter",
+			params: map[string]any{
+				"flag": 1,
+			},
+			paramName:   "flag",
+			expected:    []string{},
+			expectError: true,
+		},
+		{
+			name: "wrong slice type parameter",
+			params: map[string]any{
+				"flag": []any{"foo", 2},
+			},
+			paramName:   "flag",
+			expected:    []string{},
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := optionalStringArrayParam(request, tc.paramName)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}
