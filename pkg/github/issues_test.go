@@ -392,6 +392,7 @@ func Test_CreateIssue(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "body")
 	assert.Contains(t, tool.InputSchema.Properties, "assignees")
 	assert.Contains(t, tool.InputSchema.Properties, "labels")
+	assert.Contains(t, tool.InputSchema.Properties, "milestone")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "title"})
 
 	// Setup mock issue for success case
@@ -403,6 +404,7 @@ func Test_CreateIssue(t *testing.T) {
 		HTMLURL:   github.Ptr("https://github.com/owner/repo/issues/123"),
 		Assignees: []*github.User{{Login: github.Ptr("user1")}, {Login: github.Ptr("user2")}},
 		Labels:    []*github.Label{{Name: github.Ptr("bug")}, {Name: github.Ptr("help wanted")}},
+		Milestone: &github.Milestone{Number: github.Ptr(5)},
 	}
 
 	tests := []struct {
@@ -423,6 +425,7 @@ func Test_CreateIssue(t *testing.T) {
 						"body":      "This is a test issue",
 						"labels":    []any{"bug", "help wanted"},
 						"assignees": []any{"user1", "user2"},
+						"milestone": float64(5),
 					}).andThen(
 						mockResponse(t, http.StatusCreated, mockIssue),
 					),
@@ -435,6 +438,7 @@ func Test_CreateIssue(t *testing.T) {
 				"body":      "This is a test issue",
 				"assignees": []string{"user1", "user2"},
 				"labels":    []string{"bug", "help wanted"},
+				"milestone": float64(5),
 			},
 			expectError:   false,
 			expectedIssue: mockIssue,

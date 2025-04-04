@@ -261,6 +261,9 @@ func createIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 					},
 				),
 			),
+			mcp.WithNumber("milestone",
+				mcp.Description("Milestone number"),
+			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := requiredParam[string](request, "owner")
@@ -294,12 +297,24 @@ func createIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
+			// Get optional milestone
+			milestone, err := optionalIntParam(request, "milestone")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			var milestoneNum *int
+			if milestone != 0 {
+				milestoneNum = &milestone
+			}
+
 			// Create the issue request
 			issueRequest := &github.IssueRequest{
 				Title:     github.Ptr(title),
 				Body:      github.Ptr(body),
 				Assignees: &assignees,
 				Labels:    &labels,
+				Milestone: milestoneNum,
 			}
 
 			issue, resp, err := client.Issues.Create(ctx, owner, repo, issueRequest)
