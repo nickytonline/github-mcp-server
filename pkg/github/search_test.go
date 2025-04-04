@@ -60,15 +60,21 @@ func Test_SearchRepositories(t *testing.T) {
 		{
 			name: "successful repository search",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetSearchRepositories,
-					mockSearchResult,
+					expectQueryParams(t, map[string]string{
+						"q":        "golang test",
+						"page":     "2",
+						"per_page": "10",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
 				"query":    "golang test",
-				"page":     float64(1),
-				"per_page": float64(30),
+				"page":     float64(2),
+				"per_page": float64(10),
 			},
 			expectError:    false,
 			expectedResult: mockSearchResult,
@@ -76,9 +82,15 @@ func Test_SearchRepositories(t *testing.T) {
 		{
 			name: "repository search with default pagination",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetSearchRepositories,
-					mockSearchResult,
+					expectQueryParams(t, map[string]string{
+						"q":        "golang test",
+						"page":     "1",
+						"per_page": "30",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -195,9 +207,17 @@ func Test_SearchCode(t *testing.T) {
 		{
 			name: "successful code search with all parameters",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetSearchCode,
-					mockSearchResult,
+					expectQueryParams(t, map[string]string{
+						"q":        "fmt.Println language:go",
+						"sort":     "indexed",
+						"order":    "desc",
+						"page":     "1",
+						"per_page": "30",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -213,9 +233,15 @@ func Test_SearchCode(t *testing.T) {
 		{
 			name: "code search with minimal parameters",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetSearchCode,
-					mockSearchResult,
+					expectQueryParams(t, map[string]string{
+						"q":        "fmt.Println language:go",
+						"page":     "1",
+						"per_page": "30",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -336,9 +362,17 @@ func Test_SearchUsers(t *testing.T) {
 		{
 			name: "successful users search with all parameters",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetSearchUsers,
-					mockSearchResult,
+					expectQueryParams(t, map[string]string{
+						"q":        "location:finland language:go",
+						"sort":     "followers",
+						"order":    "desc",
+						"page":     "1",
+						"per_page": "30",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -354,9 +388,15 @@ func Test_SearchUsers(t *testing.T) {
 		{
 			name: "users search with minimal parameters",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetSearchUsers,
-					mockSearchResult,
+					expectQueryParams(t, map[string]string{
+						"q":        "location:finland language:go",
+						"page":     "1",
+						"per_page": "30",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
