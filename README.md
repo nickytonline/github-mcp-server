@@ -14,12 +14,11 @@ automation and interaction capabilities for developers and tools.
 
 ## Prerequisites
 
-[Create a GitHub Personal Access Token](https://github.com/settings/personal-access-tokens/new).
-The MCP server can use many of the GitHub APIs, so enable the permissions that you feel comfortable granting your AI tools.
+1. To run the server in a container, you will need to have [Docker](https://www.docker.com/) installed.
+2. [Create a GitHub Personal Access Token](https://github.com/settings/personal-access-tokens/new).
+The MCP server can use many of the GitHub APIs, so enable the permissions that you feel comfortable granting your AI tools (to learn more about access tokens, please check out the [documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
 
-To learn more about access tokens, please check out the [documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
 
-To run the server in a container, you will need to have [Docker](https://www.docker.com/) installed.
 
 ## Installation
 
