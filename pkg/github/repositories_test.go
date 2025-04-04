@@ -70,9 +70,13 @@ func Test_GetFileContents(t *testing.T) {
 		{
 			name: "successful file content fetch",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposContentsByOwnerByRepoByPath,
-					mockFileContent,
+					expectQueryParams(t, map[string]string{
+						"ref": "main",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockFileContent),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -87,9 +91,11 @@ func Test_GetFileContents(t *testing.T) {
 		{
 			name: "successful directory content fetch",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposContentsByOwnerByRepoByPath,
-					mockDirContent,
+					expectQueryParams(t, map[string]string{}).andThen(
+						mockResponse(t, http.StatusOK, mockDirContent),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -352,9 +358,14 @@ func Test_CreateBranch(t *testing.T) {
 					mock.GetReposGitRefByOwnerByRepoByRef,
 					mockSourceRef,
 				),
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PostReposGitRefsByOwnerByRepo,
-					mockCreatedRef,
+					expectRequestBody(t, map[string]interface{}{
+						"ref": "refs/heads/new-feature",
+						"sha": "abc123def456",
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockCreatedRef),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -538,9 +549,15 @@ func Test_ListCommits(t *testing.T) {
 		{
 			name: "successful commits fetch with branch",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposCommitsByOwnerByRepo,
-					mockCommits,
+					expectQueryParams(t, map[string]string{
+						"sha":      "main",
+						"page":     "1",
+						"per_page": "30",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockCommits),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -554,9 +571,14 @@ func Test_ListCommits(t *testing.T) {
 		{
 			name: "successful commits fetch with pagination",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposCommitsByOwnerByRepo,
-					mockCommits,
+					expectQueryParams(t, map[string]string{
+						"page":     "2",
+						"per_page": "10",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockCommits),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -676,9 +698,15 @@ func Test_CreateOrUpdateFile(t *testing.T) {
 		{
 			name: "successful file creation",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PutReposContentsByOwnerByRepoByPath,
-					mockFileResponse,
+					expectRequestBody(t, map[string]interface{}{
+						"message": "Add example file",
+						"content": "IyBFeGFtcGxlCgpUaGlzIGlzIGFuIGV4YW1wbGUgZmlsZS4=", // Base64 encoded content
+						"branch":  "main",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockFileResponse),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -695,9 +723,16 @@ func Test_CreateOrUpdateFile(t *testing.T) {
 		{
 			name: "successful file update with SHA",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PutReposContentsByOwnerByRepoByPath,
-					mockFileResponse,
+					expectRequestBody(t, map[string]interface{}{
+						"message": "Update example file",
+						"content": "IyBVcGRhdGVkIEV4YW1wbGUKClRoaXMgZmlsZSBoYXMgYmVlbiB1cGRhdGVkLg==", // Base64 encoded content
+						"branch":  "main",
+						"sha":     "abc123def456",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockFileResponse),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -819,7 +854,14 @@ func Test_CreateRepository(t *testing.T) {
 						Pattern: "/user/repos",
 						Method:  "POST",
 					},
-					mockResponse(t, http.StatusCreated, mockRepo),
+					expectRequestBody(t, map[string]interface{}{
+						"name":        "test-repo",
+						"description": "Test repository",
+						"private":     true,
+						"auto_init":   true,
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockRepo),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -839,7 +881,14 @@ func Test_CreateRepository(t *testing.T) {
 						Pattern: "/user/repos",
 						Method:  "POST",
 					},
-					mockResponse(t, http.StatusCreated, mockRepo),
+					expectRequestBody(t, map[string]interface{}{
+						"name":        "test-repo",
+						"auto_init":   false,
+						"description": "",
+						"private":     false,
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockRepo),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -980,19 +1029,48 @@ func Test_PushFiles(t *testing.T) {
 					mockCommit,
 				),
 				// Create tree
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PostReposGitTreesByOwnerByRepo,
-					mockTree,
+					expectRequestBody(t, map[string]interface{}{
+						"base_tree": "def456",
+						"tree": []interface{}{
+							map[string]interface{}{
+								"path":    "README.md",
+								"mode":    "100644",
+								"type":    "blob",
+								"content": "# Updated README\n\nThis is an updated README file.",
+							},
+							map[string]interface{}{
+								"path":    "docs/example.md",
+								"mode":    "100644",
+								"type":    "blob",
+								"content": "# Example\n\nThis is an example file.",
+							},
+						},
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockTree),
+					),
 				),
 				// Create commit
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PostReposGitCommitsByOwnerByRepo,
-					mockNewCommit,
+					expectRequestBody(t, map[string]interface{}{
+						"message": "Update multiple files",
+						"tree":    "ghi789",
+						"parents": []interface{}{"abc123"},
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockNewCommit),
+					),
 				),
 				// Update reference
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PatchReposGitRefsByOwnerByRepoByRef,
-					mockUpdatedRef,
+					expectRequestBody(t, map[string]interface{}{
+						"sha":   "jkl012",
+						"force": false,
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockUpdatedRef),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
