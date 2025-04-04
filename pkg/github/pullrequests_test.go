@@ -171,9 +171,17 @@ func Test_ListPullRequests(t *testing.T) {
 		{
 			name: "successful PRs listing",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposPullsByOwnerByRepo,
-					mockPRs,
+					expectQueryParams(t, map[string]string{
+						"state":     "all",
+						"sort":      "created",
+						"direction": "desc",
+						"per_page":  "30",
+						"page":      "1",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockPRs),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -281,9 +289,15 @@ func Test_MergePullRequest(t *testing.T) {
 		{
 			name: "successful merge",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PutReposPullsMergeByOwnerByRepoByPullNumber,
-					mockMergeResult,
+					expectRequestBody(t, map[string]interface{}{
+						"commit_title":   "Merge PR #42",
+						"commit_message": "Merging awesome feature",
+						"merge_method":   "squash",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockMergeResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -662,7 +676,11 @@ func Test_UpdatePullRequestBranch(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PutReposPullsUpdateBranchByOwnerByRepoByPullNumber,
-					mockResponse(t, http.StatusAccepted, mockUpdateResult),
+					expectRequestBody(t, map[string]interface{}{
+						"expected_head_sha": "abcd1234",
+					}).andThen(
+						mockResponse(t, http.StatusAccepted, mockUpdateResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -679,7 +697,9 @@ func Test_UpdatePullRequestBranch(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PutReposPullsUpdateBranchByOwnerByRepoByPullNumber,
-					mockResponse(t, http.StatusAccepted, mockUpdateResult),
+					expectRequestBody(t, map[string]interface{}{}).andThen(
+						mockResponse(t, http.StatusAccepted, mockUpdateResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -1030,9 +1050,14 @@ func Test_CreatePullRequestReview(t *testing.T) {
 		{
 			name: "successful review creation with body only",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					mockReview,
+					expectRequestBody(t, map[string]interface{}{
+						"body":  "Looks good!",
+						"event": "APPROVE",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockReview),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -1048,9 +1073,15 @@ func Test_CreatePullRequestReview(t *testing.T) {
 		{
 			name: "successful review creation with commit_id",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					mockReview,
+					expectRequestBody(t, map[string]interface{}{
+						"body":      "Looks good!",
+						"event":     "APPROVE",
+						"commit_id": "abcdef123456",
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockReview),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -1067,9 +1098,26 @@ func Test_CreatePullRequestReview(t *testing.T) {
 		{
 			name: "successful review creation with comments",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					mockReview,
+					expectRequestBody(t, map[string]interface{}{
+						"body":  "Some issues to fix",
+						"event": "REQUEST_CHANGES",
+						"comments": []interface{}{
+							map[string]interface{}{
+								"path":     "file1.go",
+								"position": float64(10),
+								"body":     "This needs to be fixed",
+							},
+							map[string]interface{}{
+								"path":     "file2.go",
+								"position": float64(20),
+								"body":     "Consider a different approach here",
+							},
+						},
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockReview),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -1240,10 +1288,18 @@ func Test_CreatePullRequest(t *testing.T) {
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PostReposPullsByOwnerByRepo,
-					mockResponse(t, http.StatusCreated, mockPR),
+					expectRequestBody(t, map[string]interface{}{
+						"title":                 "Test PR",
+						"body":                  "This is a test PR",
+						"head":                  "feature-branch",
+						"base":                  "main",
+						"draft":                 false,
+						"maintainer_can_modify": true,
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockPR),
+					),
 				),
 			),
-
 			requestArgs: map[string]interface{}{
 				"owner":                 "owner",
 				"repo":                  "repo",
