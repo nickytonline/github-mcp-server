@@ -284,7 +284,6 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `description`: Repository description (string, optional)
   - `private`: Whether the repository is private (boolean, optional)
   - `auto_init`: Auto-initialize with README (boolean, optional)
-  - `gitignore_template`: Gitignore template name (string, optional)
 
 - **get_file_contents** - Get contents of a file or directory
 
