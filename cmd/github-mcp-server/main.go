@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	stdlog "log"
@@ -39,12 +41,20 @@ var (
 			logFile := viper.GetString("log-file")
 			readOnly := viper.GetBool("read-only")
 			exportTranslations := viper.GetBool("export-translations")
+			prettyPrintJSON := viper.GetBool("pretty-print-json")
 			logger, err := initLogger(logFile)
 			if err != nil {
 				stdlog.Fatal("Failed to initialize logger:", err)
 			}
 			logCommands := viper.GetBool("enable-command-logging")
-			if err := runStdioServer(readOnly, logger, logCommands, exportTranslations); err != nil {
+			cfg := runConfig{
+				readOnly:           readOnly,
+				logger:             logger,
+				logCommands:        logCommands,
+				exportTranslations: exportTranslations,
+				prettyPrintJSON:    prettyPrintJSON,
+			}
+			if err := runStdioServer(cfg); err != nil {
 				stdlog.Fatal("failed to run stdio server:", err)
 			}
 		},
@@ -60,6 +70,7 @@ func init() {
 	rootCmd.PersistentFlags().Bool("enable-command-logging", false, "When enabled, the server will log all command requests and responses to the log file")
 	rootCmd.PersistentFlags().Bool("export-translations", false, "Save translations to a JSON file")
 	rootCmd.PersistentFlags().String("gh-host", "", "Specify the GitHub hostname (for GitHub Enterprise etc.)")
+	rootCmd.PersistentFlags().Bool("pretty-print-json", false, "Pretty print JSON output")
 
 	// Bind flag to viper
 	_ = viper.BindPFlag("read-only", rootCmd.PersistentFlags().Lookup("read-only"))
@@ -67,6 +78,7 @@ func init() {
 	_ = viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
 	_ = viper.BindPFlag("export-translations", rootCmd.PersistentFlags().Lookup("export-translations"))
 	_ = viper.BindPFlag("gh-host", rootCmd.PersistentFlags().Lookup("gh-host"))
+	_ = viper.BindPFlag("pretty-print-json", rootCmd.PersistentFlags().Lookup("pretty-print-json"))
 
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)
@@ -95,7 +107,28 @@ func initLogger(outPath string) (*log.Logger, error) {
 	return logger, nil
 }
 
-func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportTranslations bool) error {
+type runConfig struct {
+	readOnly           bool
+	logger             *log.Logger
+	logCommands        bool
+	exportTranslations bool
+	prettyPrintJSON    bool
+}
+
+// JSONPrettyPrintWriter is a Writer that pretty prints input to indented JSON
+type JSONPrettyPrintWriter struct {
+	writer io.Writer
+}
+
+func (j JSONPrettyPrintWriter) Write(p []byte) (n int, err error) {
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, p, "", "\t"); err != nil {
+		return 0, err
+	}
+	return j.writer.Write(prettyJSON.Bytes())
+}
+
+func runStdioServer(cfg runConfig) error {
 	// Create app context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -103,7 +136,7 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 	// Create GH client
 	token := os.Getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
 	if token == "" {
-		logger.Fatal("GITHUB_PERSONAL_ACCESS_TOKEN not set")
+		cfg.logger.Fatal("GITHUB_PERSONAL_ACCESS_TOKEN not set")
 	}
 	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
 	ghClient.UserAgent = fmt.Sprintf("github-mcp-server/%s", version)
@@ -125,13 +158,13 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 	t, dumpTranslations := translations.TranslationHelper()
 
 	// Create
-	ghServer := github.NewServer(ghClient, readOnly, t)
+	ghServer := github.NewServer(ghClient, cfg.readOnly, t)
 	stdioServer := server.NewStdioServer(ghServer)
 
-	stdLogger := stdlog.New(logger.Writer(), "stdioserver", 0)
+	stdLogger := stdlog.New(cfg.logger.Writer(), "stdioserver", 0)
 	stdioServer.SetErrorLogger(stdLogger)
 
-	if exportTranslations {
+	if cfg.exportTranslations {
 		// Once server is initialized, all translations are loaded
 		dumpTranslations()
 	}
@@ -141,11 +174,14 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 	go func() {
 		in, out := io.Reader(os.Stdin), io.Writer(os.Stdout)
 
-		if logCommands {
-			loggedIO := iolog.NewIOLogger(in, out, logger)
+		if cfg.logCommands {
+			loggedIO := iolog.NewIOLogger(in, out, cfg.logger)
 			in, out = loggedIO, loggedIO
 		}
 
+		if cfg.prettyPrintJSON {
+			out = JSONPrettyPrintWriter{writer: out}
+		}
 		errC <- stdioServer.Listen(ctx, in, out)
 	}()
 
@@ -155,7 +191,7 @@ func runStdioServer(readOnly bool, logger *log.Logger, logCommands bool, exportT
 	// Wait for shutdown signal
 	select {
 	case <-ctx.Done():
-		logger.Infof("shutting down server...")
+		cfg.logger.Infof("shutting down server...")
 	case err := <-errC:
 		if err != nil {
 			return fmt.Errorf("error running server: %w", err)
