@@ -140,7 +140,7 @@ func Test_ListPullRequests(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "base")
 	assert.Contains(t, tool.InputSchema.Properties, "sort")
 	assert.Contains(t, tool.InputSchema.Properties, "direction")
-	assert.Contains(t, tool.InputSchema.Properties, "per_page")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
 
@@ -190,7 +190,7 @@ func Test_ListPullRequests(t *testing.T) {
 				"state":     "all",
 				"sort":      "created",
 				"direction": "desc",
-				"per_page":  float64(30),
+				"perPage":   float64(30),
 				"page":      float64(1),
 			},
 			expectError: false,

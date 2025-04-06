@@ -94,7 +94,7 @@ func listPullRequests(client *github.Client, t translations.TranslationHelperFun
 			mcp.WithString("direction",
 				mcp.Description("Sort direction ('asc', 'desc')"),
 			),
-			mcp.WithNumber("per_page",
+			mcp.WithNumber("perPage",
 				mcp.Description("Results per page (max 100)"),
 			),
 			mcp.WithNumber("page",
@@ -130,7 +130,7 @@ func listPullRequests(client *github.Client, t translations.TranslationHelperFun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalIntParamWithDefault(request, "per_page", 30)
+			perPage, err := optionalIntParamWithDefault(request, "perPage", 30)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

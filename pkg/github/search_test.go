@@ -170,7 +170,7 @@ func Test_SearchCode(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "q")
 	assert.Contains(t, tool.InputSchema.Properties, "sort")
 	assert.Contains(t, tool.InputSchema.Properties, "order")
-	assert.Contains(t, tool.InputSchema.Properties, "per_page")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"q"})
 
@@ -221,11 +221,11 @@ func Test_SearchCode(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"q":        "fmt.Println language:go",
-				"sort":     "indexed",
-				"order":    "desc",
-				"page":     float64(1),
-				"per_page": float64(30),
+				"q":       "fmt.Println language:go",
+				"sort":    "indexed",
+				"order":   "desc",
+				"page":    float64(1),
+				"perPage": float64(30),
 			},
 			expectError:    false,
 			expectedResult: mockSearchResult,
@@ -321,7 +321,7 @@ func Test_SearchUsers(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "q")
 	assert.Contains(t, tool.InputSchema.Properties, "sort")
 	assert.Contains(t, tool.InputSchema.Properties, "order")
-	assert.Contains(t, tool.InputSchema.Properties, "per_page")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"q"})
 
@@ -376,11 +376,11 @@ func Test_SearchUsers(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"q":        "location:finland language:go",
-				"sort":     "followers",
-				"order":    "desc",
-				"page":     float64(1),
-				"per_page": float64(30),
+				"q":       "location:finland language:go",
+				"sort":    "followers",
+				"order":   "desc",
+				"page":    float64(1),
+				"perPage": float64(30),
 			},
 			expectError:    false,
 			expectedResult: mockSearchResult,

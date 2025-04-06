@@ -162,7 +162,7 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 				mcp.Description("Sort order ('asc' or 'desc')"),
 				mcp.Enum("asc", "desc"),
 			),
-			mcp.WithNumber("per_page",
+			mcp.WithNumber("perPage",
 				mcp.Description("Results per page (max 100)"),
 				mcp.Min(1),
 				mcp.Max(100),
@@ -185,7 +185,7 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalIntParamWithDefault(request, "per_page", 30)
+			perPage, err := optionalIntParamWithDefault(request, "perPage", 30)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -378,7 +378,7 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 			mcp.WithNumber("page",
 				mcp.Description("Page number"),
 			),
-			mcp.WithNumber("per_page",
+			mcp.WithNumber("perPage",
 				mcp.Description("Results per page"),
 			),
 		),
@@ -432,7 +432,7 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 				opts.Page = int(page)
 			}
 
-			if perPage, ok := request.Params.Arguments["per_page"].(float64); ok {
+			if perPage, ok := request.Params.Arguments["perPage"].(float64); ok {
 				opts.PerPage = int(perPage)
 			}
 

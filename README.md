@@ -204,7 +204,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `sort`: Sort field (string, optional)
   - `order`: Sort order (string, optional)
   - `page`: Page number (number, optional)
-  - `per_page`: Results per page (number, optional)
+  - `perPage`: Results per page (number, optional)
 
 ### Pull Requests
 
