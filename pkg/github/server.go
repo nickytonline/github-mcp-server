@@ -42,17 +42,17 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 	}
 
 	// Add GitHub tools - Pull Requests
-	s.AddTool(getPullRequest(client, t))
-	s.AddTool(listPullRequests(client, t))
-	s.AddTool(getPullRequestFiles(client, t))
-	s.AddTool(getPullRequestStatus(client, t))
-	s.AddTool(getPullRequestComments(client, t))
-	s.AddTool(getPullRequestReviews(client, t))
+	s.AddTool(GetPullRequest(client, t))
+	s.AddTool(ListPullRequests(client, t))
+	s.AddTool(GetPullRequestFiles(client, t))
+	s.AddTool(GetPullRequestStatus(client, t))
+	s.AddTool(GetPullRequestComments(client, t))
+	s.AddTool(GetPullRequestReviews(client, t))
 	if !readOnly {
-		s.AddTool(mergePullRequest(client, t))
-		s.AddTool(updatePullRequestBranch(client, t))
-		s.AddTool(createPullRequestReview(client, t))
-		s.AddTool(createPullRequest(client, t))
+		s.AddTool(MergePullRequest(client, t))
+		s.AddTool(UpdatePullRequestBranch(client, t))
+		s.AddTool(CreatePullRequestReview(client, t))
+		s.AddTool(CreatePullRequest(client, t))
 	}
 
 	// Add GitHub tools - Repositories
