@@ -20,14 +20,14 @@ func SearchRepositories(client *github.Client, t translations.TranslationHelperF
 				mcp.Required(),
 				mcp.Description("Search query"),
 			),
-			withPagination(),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			query, err := requiredParam[string](request, "query")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pagination, err := optionalPaginationParams(request)
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -77,22 +77,22 @@ func SearchCode(client *github.Client, t translations.TranslationHelperFunc) (to
 				mcp.Description("Sort order ('asc' or 'desc')"),
 				mcp.Enum("asc", "desc"),
 			),
-			withPagination(),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			query, err := requiredParam[string](request, "q")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sort, err := optionalParam[string](request, "sort")
+			sort, err := OptionalParam[string](request, "sort")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order, err := optionalParam[string](request, "order")
+			order, err := OptionalParam[string](request, "order")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pagination, err := optionalPaginationParams(request)
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -145,22 +145,22 @@ func SearchUsers(client *github.Client, t translations.TranslationHelperFunc) (t
 				mcp.Description("Sort order ('asc' or 'desc')"),
 				mcp.Enum("asc", "desc"),
 			),
-			withPagination(),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			query, err := requiredParam[string](request, "q")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sort, err := optionalParam[string](request, "sort")
+			sort, err := OptionalParam[string](request, "sort")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			order, err := optionalParam[string](request, "order")
+			order, err := OptionalParam[string](request, "order")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pagination, err := optionalPaginationParams(request)
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

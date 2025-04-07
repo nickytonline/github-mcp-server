@@ -38,7 +38,7 @@ func GetCodeScanningAlert(client *github.Client, t translations.TranslationHelpe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			alertNumber, err := requiredInt(request, "alertNumber")
+			alertNumber, err := RequiredInt(request, "alertNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -97,15 +97,15 @@ func ListCodeScanningAlerts(client *github.Client, t translations.TranslationHel
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			ref, err := optionalParam[string](request, "ref")
+			ref, err := OptionalParam[string](request, "ref")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			state, err := optionalParam[string](request, "state")
+			state, err := OptionalParam[string](request, "state")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			severity, err := optionalParam[string](request, "severity")
+			severity, err := OptionalParam[string](request, "severity")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

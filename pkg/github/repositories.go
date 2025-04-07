@@ -28,7 +28,7 @@ func ListCommits(client *github.Client, t translations.TranslationHelperFunc) (t
 			mcp.WithString("sha",
 				mcp.Description("Branch name"),
 			),
-			withPagination(),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := requiredParam[string](request, "owner")
@@ -39,11 +39,11 @@ func ListCommits(client *github.Client, t translations.TranslationHelperFunc) (t
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sha, err := optionalParam[string](request, "sha")
+			sha, err := OptionalParam[string](request, "sha")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pagination, err := optionalPaginationParams(request)
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -148,7 +148,7 @@ func CreateOrUpdateFile(client *github.Client, t translations.TranslationHelperF
 			}
 
 			// If SHA is provided, set it (for updates)
-			sha, err := optionalParam[string](request, "sha")
+			sha, err := OptionalParam[string](request, "sha")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -203,15 +203,15 @@ func CreateRepository(client *github.Client, t translations.TranslationHelperFun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			description, err := optionalParam[string](request, "description")
+			description, err := OptionalParam[string](request, "description")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			private, err := optionalParam[bool](request, "private")
+			private, err := OptionalParam[bool](request, "private")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			autoInit, err := optionalParam[bool](request, "autoInit")
+			autoInit, err := OptionalParam[bool](request, "autoInit")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -279,7 +279,7 @@ func GetFileContents(client *github.Client, t translations.TranslationHelperFunc
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			branch, err := optionalParam[string](request, "branch")
+			branch, err := OptionalParam[string](request, "branch")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -340,7 +340,7 @@ func ForkRepository(client *github.Client, t translations.TranslationHelperFunc)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			org, err := optionalParam[string](request, "organization")
+			org, err := OptionalParam[string](request, "organization")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -411,7 +411,7 @@ func CreateBranch(client *github.Client, t translations.TranslationHelperFunc) (
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			fromBranch, err := optionalParam[string](request, "from_branch")
+			fromBranch, err := OptionalParam[string](request, "from_branch")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

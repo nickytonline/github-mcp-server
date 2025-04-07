@@ -72,7 +72,7 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 	s.AddTool(SearchUsers(client, t))
 
 	// Add GitHub tools - Users
-	s.AddTool(getMe(client, t))
+	s.AddTool(GetMe(client, t))
 
 	// Add GitHub tools - Code Scanning
 	s.AddTool(GetCodeScanningAlert(client, t))
@@ -80,8 +80,8 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 	return s
 }
 
-// getMe creates a tool to get details of the authenticated user.
-func getMe(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+// GetMe creates a tool to get details of the authenticated user.
+func GetMe(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_me",
 			mcp.WithDescription(t("TOOL_GET_ME_DESCRIPTION", "Get details of the authenticated GitHub user. Use this when a request include \"me\", \"my\"...")),
 			mcp.WithString("reason",
@@ -144,12 +144,12 @@ func requiredParam[T comparable](r mcp.CallToolRequest, p string) (T, error) {
 	return r.Params.Arguments[p].(T), nil
 }
 
-// requiredInt is a helper function that can be used to fetch a requested parameter from the request.
+// RequiredInt is a helper function that can be used to fetch a requested parameter from the request.
 // It does the following checks:
 // 1. Checks if the parameter is present in the request.
 // 2. Checks if the parameter is of the expected type.
 // 3. Checks if the parameter is not empty, i.e: non-zero value
-func requiredInt(r mcp.CallToolRequest, p string) (int, error) {
+func RequiredInt(r mcp.CallToolRequest, p string) (int, error) {
 	v, err := requiredParam[float64](r, p)
 	if err != nil {
 		return 0, err
@@ -157,11 +157,11 @@ func requiredInt(r mcp.CallToolRequest, p string) (int, error) {
 	return int(v), nil
 }
 
-// optionalParam is a helper function that can be used to fetch a requested parameter from the request.
+// OptionalParam is a helper function that can be used to fetch a requested parameter from the request.
 // It does the following checks:
 // 1. Checks if the parameter is present in the request, if not, it returns its zero-value
 // 2. If it is present, it checks if the parameter is of the expected type and returns it
-func optionalParam[T any](r mcp.CallToolRequest, p string) (T, error) {
+func OptionalParam[T any](r mcp.CallToolRequest, p string) (T, error) {
 	var zero T
 
 	// Check if the parameter is present in the request
@@ -177,22 +177,22 @@ func optionalParam[T any](r mcp.CallToolRequest, p string) (T, error) {
 	return r.Params.Arguments[p].(T), nil
 }
 
-// optionalIntParam is a helper function that can be used to fetch a requested parameter from the request.
+// OptionalIntParam is a helper function that can be used to fetch a requested parameter from the request.
 // It does the following checks:
 // 1. Checks if the parameter is present in the request, if not, it returns its zero-value
 // 2. If it is present, it checks if the parameter is of the expected type and returns it
-func optionalIntParam(r mcp.CallToolRequest, p string) (int, error) {
-	v, err := optionalParam[float64](r, p)
+func OptionalIntParam(r mcp.CallToolRequest, p string) (int, error) {
+	v, err := OptionalParam[float64](r, p)
 	if err != nil {
 		return 0, err
 	}
 	return int(v), nil
 }
 
-// optionalIntParamWithDefault is a helper function that can be used to fetch a requested parameter from the request
+// OptionalIntParamWithDefault is a helper function that can be used to fetch a requested parameter from the request
 // similar to optionalIntParam, but it also takes a default value.
-func optionalIntParamWithDefault(r mcp.CallToolRequest, p string, d int) (int, error) {
-	v, err := optionalIntParam(r, p)
+func OptionalIntParamWithDefault(r mcp.CallToolRequest, p string, d int) (int, error) {
+	v, err := OptionalIntParam(r, p)
 	if err != nil {
 		return 0, err
 	}
@@ -202,11 +202,11 @@ func optionalIntParamWithDefault(r mcp.CallToolRequest, p string, d int) (int, e
 	return v, nil
 }
 
-// optionalStringArrayParam is a helper function that can be used to fetch a requested parameter from the request.
+// OptionalStringArrayParam is a helper function that can be used to fetch a requested parameter from the request.
 // It does the following checks:
 // 1. Checks if the parameter is present in the request, if not, it returns its zero-value
 // 2. If it is present, iterates the elements and checks each is a string
-func optionalStringArrayParam(r mcp.CallToolRequest, p string) ([]string, error) {
+func OptionalStringArrayParam(r mcp.CallToolRequest, p string) ([]string, error) {
 	// Check if the parameter is present in the request
 	if _, ok := r.Params.Arguments[p]; !ok {
 		return []string{}, nil
@@ -230,9 +230,9 @@ func optionalStringArrayParam(r mcp.CallToolRequest, p string) ([]string, error)
 	}
 }
 
-// withPagination returns a ToolOption that adds "page" and "perPage" parameters to the tool.
+// WithPagination returns a ToolOption that adds "page" and "perPage" parameters to the tool.
 // The "page" parameter is optional, min 1. The "perPage" parameter is optional, min 1, max 100.
-func withPagination() mcp.ToolOption {
+func WithPagination() mcp.ToolOption {
 	return func(tool *mcp.Tool) {
 		mcp.WithNumber("page",
 			mcp.Description("Page number for pagination (min 1)"),
@@ -247,26 +247,26 @@ func withPagination() mcp.ToolOption {
 	}
 }
 
-type paginationParams struct {
+type PaginationParams struct {
 	page    int
 	perPage int
 }
 
-// optionalPaginationParams returns the "page" and "perPage" parameters from the request,
+// OptionalPaginationParams returns the "page" and "perPage" parameters from the request,
 // or their default values if not present, "page" default is 1, "perPage" default is 30.
 // In future, we may want to make the default values configurable, or even have this
 // function returned from `withPagination`, where the defaults are provided alongside
 // the min/max values.
-func optionalPaginationParams(r mcp.CallToolRequest) (paginationParams, error) {
-	page, err := optionalIntParamWithDefault(r, "page", 1)
+func OptionalPaginationParams(r mcp.CallToolRequest) (PaginationParams, error) {
+	page, err := OptionalIntParamWithDefault(r, "page", 1)
 	if err != nil {
-		return paginationParams{}, err
+		return PaginationParams{}, err
 	}
-	perPage, err := optionalIntParamWithDefault(r, "perPage", 30)
+	perPage, err := OptionalIntParamWithDefault(r, "perPage", 30)
 	if err != nil {
-		return paginationParams{}, err
+		return PaginationParams{}, err
 	}
-	return paginationParams{
+	return PaginationParams{
 		page:    page,
 		perPage: perPage,
 	}, nil

@@ -18,7 +18,7 @@ import (
 func Test_GetMe(t *testing.T) {
 	// Verify tool definition
 	mockClient := github.NewClient(nil)
-	tool, _ := getMe(mockClient, translations.NullTranslationHelper)
+	tool, _ := GetMe(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "get_me", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -96,7 +96,7 @@ func Test_GetMe(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := getMe(client, translations.NullTranslationHelper)
+			_, handler := GetMe(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -262,7 +262,7 @@ func Test_OptionalStringParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalParam[string](request, tc.paramName)
+			result, err := OptionalParam[string](request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -308,7 +308,7 @@ func Test_RequiredNumberParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := requiredInt(request, tc.paramName)
+			result, err := RequiredInt(request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -361,7 +361,7 @@ func Test_OptionalNumberParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalIntParam(request, tc.paramName)
+			result, err := OptionalIntParam(request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -419,7 +419,7 @@ func Test_OptionalNumberParamWithDefault(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalIntParamWithDefault(request, tc.paramName, tc.defaultVal)
+			result, err := OptionalIntParamWithDefault(request, tc.paramName, tc.defaultVal)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -472,7 +472,7 @@ func Test_OptionalBooleanParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalParam[bool](request, tc.paramName)
+			result, err := OptionalParam[bool](request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -540,7 +540,7 @@ func TestOptionalStringArrayParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalStringArrayParam(request, tc.paramName)
+			result, err := OptionalStringArrayParam(request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -556,13 +556,13 @@ func TestOptionalPaginationParams(t *testing.T) {
 	tests := []struct {
 		name        string
 		params      map[string]any
-		expected    paginationParams
+		expected    PaginationParams
 		expectError bool
 	}{
 		{
 			name:   "no pagination parameters, default values",
 			params: map[string]any{},
-			expected: paginationParams{
+			expected: PaginationParams{
 				page:    1,
 				perPage: 30,
 			},
@@ -573,7 +573,7 @@ func TestOptionalPaginationParams(t *testing.T) {
 			params: map[string]any{
 				"page": float64(2),
 			},
-			expected: paginationParams{
+			expected: PaginationParams{
 				page:    2,
 				perPage: 30,
 			},
@@ -584,7 +584,7 @@ func TestOptionalPaginationParams(t *testing.T) {
 			params: map[string]any{
 				"perPage": float64(50),
 			},
-			expected: paginationParams{
+			expected: PaginationParams{
 				page:    1,
 				perPage: 50,
 			},
@@ -596,7 +596,7 @@ func TestOptionalPaginationParams(t *testing.T) {
 				"page":    float64(2),
 				"perPage": float64(50),
 			},
-			expected: paginationParams{
+			expected: PaginationParams{
 				page:    2,
 				perPage: 50,
 			},
@@ -607,7 +607,7 @@ func TestOptionalPaginationParams(t *testing.T) {
 			params: map[string]any{
 				"page": "not-a-number",
 			},
-			expected:    paginationParams{},
+			expected:    PaginationParams{},
 			expectError: true,
 		},
 		{
@@ -615,7 +615,7 @@ func TestOptionalPaginationParams(t *testing.T) {
 			params: map[string]any{
 				"perPage": "not-a-number",
 			},
-			expected:    paginationParams{},
+			expected:    PaginationParams{},
 			expectError: true,
 		},
 	}
@@ -623,7 +623,7 @@ func TestOptionalPaginationParams(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := optionalPaginationParams(request)
+			result, err := OptionalPaginationParams(request)
 
 			if tc.expectError {
 				assert.Error(t, err)

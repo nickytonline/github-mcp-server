@@ -39,7 +39,7 @@ func GetPullRequest(client *github.Client, t translations.TranslationHelperFunc)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -94,7 +94,7 @@ func ListPullRequests(client *github.Client, t translations.TranslationHelperFun
 			mcp.WithString("direction",
 				mcp.Description("Sort direction ('asc', 'desc')"),
 			),
-			withPagination(),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := requiredParam[string](request, "owner")
@@ -105,27 +105,27 @@ func ListPullRequests(client *github.Client, t translations.TranslationHelperFun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			state, err := optionalParam[string](request, "state")
+			state, err := OptionalParam[string](request, "state")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			head, err := optionalParam[string](request, "head")
+			head, err := OptionalParam[string](request, "head")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			base, err := optionalParam[string](request, "base")
+			base, err := OptionalParam[string](request, "base")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			sort, err := optionalParam[string](request, "sort")
+			sort, err := OptionalParam[string](request, "sort")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			direction, err := optionalParam[string](request, "direction")
+			direction, err := OptionalParam[string](request, "direction")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pagination, err := optionalPaginationParams(request)
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -200,19 +200,19 @@ func MergePullRequest(client *github.Client, t translations.TranslationHelperFun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			commitTitle, err := optionalParam[string](request, "commit_title")
+			commitTitle, err := OptionalParam[string](request, "commit_title")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			commitMessage, err := optionalParam[string](request, "commit_message")
+			commitMessage, err := OptionalParam[string](request, "commit_message")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			mergeMethod, err := optionalParam[string](request, "merge_method")
+			mergeMethod, err := OptionalParam[string](request, "merge_method")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -271,7 +271,7 @@ func GetPullRequestFiles(client *github.Client, t translations.TranslationHelper
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -326,7 +326,7 @@ func GetPullRequestStatus(client *github.Client, t translations.TranslationHelpe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -398,11 +398,11 @@ func UpdatePullRequestBranch(client *github.Client, t translations.TranslationHe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			expectedHeadSHA, err := optionalParam[string](request, "expectedHeadSha")
+			expectedHeadSHA, err := OptionalParam[string](request, "expectedHeadSha")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -465,7 +465,7 @@ func GetPullRequestComments(client *github.Client, t translations.TranslationHel
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -525,7 +525,7 @@ func GetPullRequestReviews(client *github.Client, t translations.TranslationHelp
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -629,7 +629,7 @@ func CreatePullRequestReview(client *github.Client, t translations.TranslationHe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := requiredInt(request, "pullNumber")
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -644,7 +644,7 @@ func CreatePullRequestReview(client *github.Client, t translations.TranslationHe
 			}
 
 			// Add body if provided
-			body, err := optionalParam[string](request, "body")
+			body, err := OptionalParam[string](request, "body")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -653,7 +653,7 @@ func CreatePullRequestReview(client *github.Client, t translations.TranslationHe
 			}
 
 			// Add commit ID if provided
-			commitID, err := optionalParam[string](request, "commitId")
+			commitID, err := OptionalParam[string](request, "commitId")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -801,17 +801,17 @@ func CreatePullRequest(client *github.Client, t translations.TranslationHelperFu
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			body, err := optionalParam[string](request, "body")
+			body, err := OptionalParam[string](request, "body")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			draft, err := optionalParam[bool](request, "draft")
+			draft, err := OptionalParam[bool](request, "draft")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			maintainerCanModify, err := optionalParam[bool](request, "maintainer_can_modify")
+			maintainerCanModify, err := OptionalParam[bool](request, "maintainer_can_modify")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
