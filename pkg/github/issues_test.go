@@ -18,7 +18,7 @@ import (
 func Test_GetIssue(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := getIssue(mockClient, translations.NullTranslationHelper)
+	tool, _ := GetIssue(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "get_issue", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -82,7 +82,7 @@ func Test_GetIssue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := getIssue(client, translations.NullTranslationHelper)
+			_, handler := GetIssue(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -114,7 +114,7 @@ func Test_GetIssue(t *testing.T) {
 func Test_AddIssueComment(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := addIssueComment(mockClient, translations.NullTranslationHelper)
+	tool, _ := AddIssueComment(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "add_issue_comment", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -185,7 +185,7 @@ func Test_AddIssueComment(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := addIssueComment(client, translations.NullTranslationHelper)
+			_, handler := AddIssueComment(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := mcp.CallToolRequest{
@@ -237,7 +237,7 @@ func Test_AddIssueComment(t *testing.T) {
 func Test_SearchIssues(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := searchIssues(mockClient, translations.NullTranslationHelper)
+	tool, _ := SearchIssues(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "search_issues", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -352,7 +352,7 @@ func Test_SearchIssues(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := searchIssues(client, translations.NullTranslationHelper)
+			_, handler := SearchIssues(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -393,7 +393,7 @@ func Test_SearchIssues(t *testing.T) {
 func Test_CreateIssue(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := createIssue(mockClient, translations.NullTranslationHelper)
+	tool, _ := CreateIssue(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "create_issue", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -505,7 +505,7 @@ func Test_CreateIssue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := createIssue(client, translations.NullTranslationHelper)
+			_, handler := CreateIssue(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -566,7 +566,7 @@ func Test_CreateIssue(t *testing.T) {
 func Test_ListIssues(t *testing.T) {
 	// Verify tool definition
 	mockClient := github.NewClient(nil)
-	tool, _ := listIssues(mockClient, translations.NullTranslationHelper)
+	tool, _ := ListIssues(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "list_issues", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -697,7 +697,7 @@ func Test_ListIssues(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := listIssues(client, translations.NullTranslationHelper)
+			_, handler := ListIssues(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -742,7 +742,7 @@ func Test_ListIssues(t *testing.T) {
 func Test_UpdateIssue(t *testing.T) {
 	// Verify tool definition
 	mockClient := github.NewClient(nil)
-	tool, _ := updateIssue(mockClient, translations.NullTranslationHelper)
+	tool, _ := UpdateIssue(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "update_issue", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -881,7 +881,7 @@ func Test_UpdateIssue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := updateIssue(client, translations.NullTranslationHelper)
+			_, handler := UpdateIssue(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -999,7 +999,7 @@ func Test_ParseISOTimestamp(t *testing.T) {
 func Test_GetIssueComments(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := getIssueComments(mockClient, translations.NullTranslationHelper)
+	tool, _ := GetIssueComments(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "get_issue_comments", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1099,7 +1099,7 @@ func Test_GetIssueComments(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := getIssueComments(client, translations.NullTranslationHelper)
+			_, handler := GetIssueComments(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)

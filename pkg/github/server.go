@@ -31,14 +31,14 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 	s.AddResourceTemplate(getRepositoryResourcePrContent(client, t))
 
 	// Add GitHub tools - Issues
-	s.AddTool(getIssue(client, t))
-	s.AddTool(searchIssues(client, t))
-	s.AddTool(listIssues(client, t))
-	s.AddTool(getIssueComments(client, t))
+	s.AddTool(GetIssue(client, t))
+	s.AddTool(SearchIssues(client, t))
+	s.AddTool(ListIssues(client, t))
+	s.AddTool(GetIssueComments(client, t))
 	if !readOnly {
-		s.AddTool(createIssue(client, t))
-		s.AddTool(addIssueComment(client, t))
-		s.AddTool(updateIssue(client, t))
+		s.AddTool(CreateIssue(client, t))
+		s.AddTool(AddIssueComment(client, t))
+		s.AddTool(UpdateIssue(client, t))
 	}
 
 	// Add GitHub tools - Pull Requests
