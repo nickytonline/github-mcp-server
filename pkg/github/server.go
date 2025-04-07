@@ -75,8 +75,8 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 	s.AddTool(getMe(client, t))
 
 	// Add GitHub tools - Code Scanning
-	s.AddTool(getCodeScanningAlert(client, t))
-	s.AddTool(listCodeScanningAlerts(client, t))
+	s.AddTool(GetCodeScanningAlert(client, t))
+	s.AddTool(ListCodeScanningAlerts(client, t))
 	return s
 }
 
