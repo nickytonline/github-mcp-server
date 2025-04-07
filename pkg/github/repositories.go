@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/aws/smithy-go/ptr"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -152,9 +151,9 @@ func createOrUpdateFile(client *github.Client, t translations.TranslationHelperF
 
 			// Create the file options
 			opts := &github.RepositoryContentFileOptions{
-				Message: ptr.String(message),
+				Message: github.Ptr(message),
 				Content: contentBytes,
-				Branch:  ptr.String(branch),
+				Branch:  github.Ptr(branch),
 			}
 
 			// If SHA is provided, set it (for updates)
@@ -163,7 +162,7 @@ func createOrUpdateFile(client *github.Client, t translations.TranslationHelperF
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 			if sha != "" {
-				opts.SHA = ptr.String(sha)
+				opts.SHA = github.Ptr(sha)
 			}
 
 			// Create or update the file

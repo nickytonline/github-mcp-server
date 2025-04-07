@@ -7,7 +7,6 @@ The following open source dependencies are used to build the [github/github-mcp-
 Some packages may only be included on certain architectures or operating systems.
 
 
- - [github.com/aws/smithy-go/ptr](https://pkg.go.dev/github.com/aws/smithy-go/ptr) ([Apache-2.0](https://github.com/aws/smithy-go/blob/v1.22.3/LICENSE))
  - [github.com/fsnotify/fsnotify](https://pkg.go.dev/github.com/fsnotify/fsnotify) ([BSD-3-Clause](https://github.com/fsnotify/fsnotify/blob/v1.8.0/LICENSE))
  - [github.com/github/github-mcp-server](https://pkg.go.dev/github.com/github/github-mcp-server) ([MIT](https://github.com/github/github-mcp-server/blob/HEAD/LICENSE))
  - [github.com/go-viper/mapstructure/v2](https://pkg.go.dev/github.com/go-viper/mapstructure/v2) ([MIT](https://github.com/go-viper/mapstructure/blob/v2.2.1/LICENSE))
