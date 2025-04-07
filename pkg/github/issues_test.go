@@ -289,9 +289,20 @@ func Test_SearchIssues(t *testing.T) {
 		{
 			name: "successful issues search with all parameters",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetSearchIssues,
-					mockSearchResult,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "repo:owner/repo is:issue is:open",
+							"sort":     "created",
+							"order":    "desc",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
