@@ -38,7 +38,6 @@ func NewServer(client *github.Client, readOnly bool, t translations.TranslationH
 	if !readOnly {
 		s.AddTool(createIssue(client, t))
 		s.AddTool(addIssueComment(client, t))
-		s.AddTool(createIssue(client, t))
 		s.AddTool(updateIssue(client, t))
 	}
 
