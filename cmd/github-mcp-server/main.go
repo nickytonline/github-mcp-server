@@ -158,7 +158,7 @@ func runStdioServer(cfg runConfig) error {
 	t, dumpTranslations := translations.TranslationHelper()
 
 	// Create
-	ghServer := github.NewServer(ghClient, cfg.readOnly, t)
+	ghServer := github.NewServer(ghClient, version, cfg.readOnly, t)
 	stdioServer := server.NewStdioServer(ghServer)
 
 	stdLogger := stdlog.New(cfg.logger.Writer(), "stdioserver", 0)

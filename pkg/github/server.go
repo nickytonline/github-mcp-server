@@ -15,11 +15,11 @@ import (
 )
 
 // NewServer creates a new GitHub MCP server with the specified GH client and logger.
-func NewServer(client *github.Client, readOnly bool, t translations.TranslationHelperFunc) *server.MCPServer {
+func NewServer(client *github.Client, version string, readOnly bool, t translations.TranslationHelperFunc) *server.MCPServer {
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"github-mcp-server",
-		"0.0.1",
+		version,
 		server.WithResourceCapabilities(true, true),
 		server.WithLogging())
 
