@@ -56,7 +56,7 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 	}
 
 	// Add GitHub tools - Repositories
-	s.AddTool(searchRepositories(client, t))
+	s.AddTool(SearchRepositories(client, t))
 	s.AddTool(GetFileContents(client, t))
 	s.AddTool(ListCommits(client, t))
 	if !readOnly {
@@ -68,8 +68,8 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 	}
 
 	// Add GitHub tools - Search
-	s.AddTool(searchCode(client, t))
-	s.AddTool(searchUsers(client, t))
+	s.AddTool(SearchCode(client, t))
+	s.AddTool(SearchUsers(client, t))
 
 	// Add GitHub tools - Users
 	s.AddTool(getMe(client, t))

@@ -12,8 +12,8 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// searchRepositories creates a tool to search for GitHub repositories.
-func searchRepositories(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+// SearchRepositories creates a tool to search for GitHub repositories.
+func SearchRepositories(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_repositories",
 			mcp.WithDescription(t("TOOL_SEARCH_REPOSITORIES_DESCRIPTION", "Search for GitHub repositories")),
 			mcp.WithString("query",
@@ -62,8 +62,8 @@ func searchRepositories(client *github.Client, t translations.TranslationHelperF
 		}
 }
 
-// searchCode creates a tool to search for code across GitHub repositories.
-func searchCode(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+// SearchCode creates a tool to search for code across GitHub repositories.
+func SearchCode(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_code",
 			mcp.WithDescription(t("TOOL_SEARCH_CODE_DESCRIPTION", "Search for code across GitHub repositories")),
 			mcp.WithString("q",
@@ -129,8 +129,8 @@ func searchCode(client *github.Client, t translations.TranslationHelperFunc) (to
 		}
 }
 
-// searchUsers creates a tool to search for GitHub users.
-func searchUsers(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+// SearchUsers creates a tool to search for GitHub users.
+func SearchUsers(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_users",
 			mcp.WithDescription(t("TOOL_SEARCH_USERS_DESCRIPTION", "Search for GitHub users")),
 			mcp.WithString("q",
