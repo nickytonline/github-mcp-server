@@ -18,7 +18,7 @@ import (
 func Test_GetFileContents(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := getFileContents(mockClient, translations.NullTranslationHelper)
+	tool, _ := GetFileContents(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "get_file_contents", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -132,7 +132,7 @@ func Test_GetFileContents(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := getFileContents(client, translations.NullTranslationHelper)
+			_, handler := GetFileContents(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := mcp.CallToolRequest{
@@ -189,7 +189,7 @@ func Test_GetFileContents(t *testing.T) {
 func Test_ForkRepository(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := forkRepository(mockClient, translations.NullTranslationHelper)
+	tool, _ := ForkRepository(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "fork_repository", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -259,7 +259,7 @@ func Test_ForkRepository(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := forkRepository(client, translations.NullTranslationHelper)
+			_, handler := ForkRepository(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -287,7 +287,7 @@ func Test_ForkRepository(t *testing.T) {
 func Test_CreateBranch(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := createBranch(mockClient, translations.NullTranslationHelper)
+	tool, _ := CreateBranch(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "create_branch", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -445,7 +445,7 @@ func Test_CreateBranch(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := createBranch(client, translations.NullTranslationHelper)
+			_, handler := CreateBranch(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -478,7 +478,7 @@ func Test_CreateBranch(t *testing.T) {
 func Test_ListCommits(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := listCommits(mockClient, translations.NullTranslationHelper)
+	tool, _ := ListCommits(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "list_commits", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -614,7 +614,7 @@ func Test_ListCommits(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := listCommits(client, translations.NullTranslationHelper)
+			_, handler := ListCommits(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -652,7 +652,7 @@ func Test_ListCommits(t *testing.T) {
 func Test_CreateOrUpdateFile(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := createOrUpdateFile(mockClient, translations.NullTranslationHelper)
+	tool, _ := CreateOrUpdateFile(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "create_or_update_file", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -775,7 +775,7 @@ func Test_CreateOrUpdateFile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := createOrUpdateFile(client, translations.NullTranslationHelper)
+			_, handler := CreateOrUpdateFile(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -815,7 +815,7 @@ func Test_CreateOrUpdateFile(t *testing.T) {
 func Test_CreateRepository(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := createRepository(mockClient, translations.NullTranslationHelper)
+	tool, _ := CreateRepository(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "create_repository", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -923,7 +923,7 @@ func Test_CreateRepository(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := createRepository(client, translations.NullTranslationHelper)
+			_, handler := CreateRepository(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -961,7 +961,7 @@ func Test_CreateRepository(t *testing.T) {
 func Test_PushFiles(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := pushFiles(mockClient, translations.NullTranslationHelper)
+	tool, _ := PushFiles(mockClient, translations.NullTranslationHelper)
 
 	assert.Equal(t, "push_files", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1256,7 +1256,7 @@ func Test_PushFiles(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := pushFiles(client, translations.NullTranslationHelper)
+			_, handler := PushFiles(client, translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)

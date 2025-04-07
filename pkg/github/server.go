@@ -24,11 +24,11 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 		server.WithLogging())
 
 	// Add GitHub Resources
-	s.AddResourceTemplate(getRepositoryResourceContent(client, t))
-	s.AddResourceTemplate(getRepositoryResourceBranchContent(client, t))
-	s.AddResourceTemplate(getRepositoryResourceCommitContent(client, t))
-	s.AddResourceTemplate(getRepositoryResourceTagContent(client, t))
-	s.AddResourceTemplate(getRepositoryResourcePrContent(client, t))
+	s.AddResourceTemplate(GetRepositoryResourceContent(client, t))
+	s.AddResourceTemplate(GetRepositoryResourceBranchContent(client, t))
+	s.AddResourceTemplate(GetRepositoryResourceCommitContent(client, t))
+	s.AddResourceTemplate(GetRepositoryResourceTagContent(client, t))
+	s.AddResourceTemplate(GetRepositoryResourcePrContent(client, t))
 
 	// Add GitHub tools - Issues
 	s.AddTool(GetIssue(client, t))
@@ -57,14 +57,14 @@ func NewServer(client *github.Client, version string, readOnly bool, t translati
 
 	// Add GitHub tools - Repositories
 	s.AddTool(searchRepositories(client, t))
-	s.AddTool(getFileContents(client, t))
-	s.AddTool(listCommits(client, t))
+	s.AddTool(GetFileContents(client, t))
+	s.AddTool(ListCommits(client, t))
 	if !readOnly {
-		s.AddTool(createOrUpdateFile(client, t))
-		s.AddTool(createRepository(client, t))
-		s.AddTool(forkRepository(client, t))
-		s.AddTool(createBranch(client, t))
-		s.AddTool(pushFiles(client, t))
+		s.AddTool(CreateOrUpdateFile(client, t))
+		s.AddTool(CreateRepository(client, t))
+		s.AddTool(ForkRepository(client, t))
+		s.AddTool(CreateBranch(client, t))
+		s.AddTool(PushFiles(client, t))
 	}
 
 	// Add GitHub tools - Search
