@@ -551,3 +551,86 @@ func TestOptionalStringArrayParam(t *testing.T) {
 		})
 	}
 }
+
+func TestOptionalPaginationParams(t *testing.T) {
+	tests := []struct {
+		name        string
+		params      map[string]any
+		expected    paginationParams
+		expectError bool
+	}{
+		{
+			name:   "no pagination parameters, default values",
+			params: map[string]any{},
+			expected: paginationParams{
+				page:    1,
+				perPage: 30,
+			},
+			expectError: false,
+		},
+		{
+			name: "page parameter, default perPage",
+			params: map[string]any{
+				"page": float64(2),
+			},
+			expected: paginationParams{
+				page:    2,
+				perPage: 30,
+			},
+			expectError: false,
+		},
+		{
+			name: "perPage parameter, default page",
+			params: map[string]any{
+				"perPage": float64(50),
+			},
+			expected: paginationParams{
+				page:    1,
+				perPage: 50,
+			},
+			expectError: false,
+		},
+		{
+			name: "page and perPage parameters",
+			params: map[string]any{
+				"page":    float64(2),
+				"perPage": float64(50),
+			},
+			expected: paginationParams{
+				page:    2,
+				perPage: 50,
+			},
+			expectError: false,
+		},
+		{
+			name: "invalid page parameter",
+			params: map[string]any{
+				"page": "not-a-number",
+			},
+			expected:    paginationParams{},
+			expectError: true,
+		},
+		{
+			name: "invalid perPage parameter",
+			params: map[string]any{
+				"perPage": "not-a-number",
+			},
+			expected:    paginationParams{},
+			expectError: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			request := createMCPRequest(tc.params)
+			result, err := optionalPaginationParams(request)
+
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}

@@ -20,31 +20,22 @@ func searchRepositories(client *github.Client, t translations.TranslationHelperF
 				mcp.Required(),
 				mcp.Description("Search query"),
 			),
-			mcp.WithNumber("page",
-				mcp.Description("Page number for pagination"),
-			),
-			mcp.WithNumber("perPage",
-				mcp.Description("Results per page (max 100)"),
-			),
+			withPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			query, err := requiredParam[string](request, "query")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page, err := optionalIntParamWithDefault(request, "page", 1)
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			perPage, err := optionalIntParamWithDefault(request, "perPage", 30)
+			pagination, err := optionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			opts := &github.SearchOptions{
 				ListOptions: github.ListOptions{
-					Page:    page,
-					PerPage: perPage,
+					Page:    pagination.page,
+					PerPage: pagination.perPage,
 				},
 			}
 
@@ -86,15 +77,7 @@ func searchCode(client *github.Client, t translations.TranslationHelperFunc) (to
 				mcp.Description("Sort order ('asc' or 'desc')"),
 				mcp.Enum("asc", "desc"),
 			),
-			mcp.WithNumber("perPage",
-				mcp.Description("Results per page (max 100)"),
-				mcp.Min(1),
-				mcp.Max(100),
-			),
-			mcp.WithNumber("page",
-				mcp.Description("Page number"),
-				mcp.Min(1),
-			),
+			withPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			query, err := requiredParam[string](request, "q")
@@ -109,11 +92,7 @@ func searchCode(client *github.Client, t translations.TranslationHelperFunc) (to
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalIntParamWithDefault(request, "perPage", 30)
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			page, err := optionalIntParamWithDefault(request, "page", 1)
+			pagination, err := optionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -122,8 +101,8 @@ func searchCode(client *github.Client, t translations.TranslationHelperFunc) (to
 				Sort:  sort,
 				Order: order,
 				ListOptions: github.ListOptions{
-					PerPage: perPage,
-					Page:    page,
+					PerPage: pagination.perPage,
+					Page:    pagination.page,
 				},
 			}
 
@@ -166,15 +145,7 @@ func searchUsers(client *github.Client, t translations.TranslationHelperFunc) (t
 				mcp.Description("Sort order ('asc' or 'desc')"),
 				mcp.Enum("asc", "desc"),
 			),
-			mcp.WithNumber("perPage",
-				mcp.Description("Results per page (max 100)"),
-				mcp.Min(1),
-				mcp.Max(100),
-			),
-			mcp.WithNumber("page",
-				mcp.Description("Page number"),
-				mcp.Min(1),
-			),
+			withPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			query, err := requiredParam[string](request, "q")
@@ -189,11 +160,7 @@ func searchUsers(client *github.Client, t translations.TranslationHelperFunc) (t
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalIntParamWithDefault(request, "perPage", 30)
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			page, err := optionalIntParamWithDefault(request, "page", 1)
+			pagination, err := optionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -202,8 +169,8 @@ func searchUsers(client *github.Client, t translations.TranslationHelperFunc) (t
 				Sort:  sort,
 				Order: order,
 				ListOptions: github.ListOptions{
-					PerPage: perPage,
-					Page:    page,
+					PerPage: pagination.perPage,
+					Page:    pagination.page,
 				},
 			}
 

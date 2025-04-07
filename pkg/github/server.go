@@ -230,3 +230,45 @@ func optionalStringArrayParam(r mcp.CallToolRequest, p string) ([]string, error)
 		return []string{}, fmt.Errorf("parameter %s could not be coerced to []string, is %T", p, r.Params.Arguments[p])
 	}
 }
+
+// withPagination returns a ToolOption that adds "page" and "perPage" parameters to the tool.
+// The "page" parameter is optional, min 1. The "perPage" parameter is optional, min 1, max 100.
+func withPagination() mcp.ToolOption {
+	return func(tool *mcp.Tool) {
+		mcp.WithNumber("page",
+			mcp.Description("Page number for pagination (min 1)"),
+			mcp.Min(1),
+		)(tool)
+
+		mcp.WithNumber("perPage",
+			mcp.Description("Results per page for pagination (min 1, max 100)"),
+			mcp.Min(1),
+			mcp.Max(100),
+		)(tool)
+	}
+}
+
+type paginationParams struct {
+	page    int
+	perPage int
+}
+
+// optionalPaginationParams returns the "page" and "perPage" parameters from the request,
+// or their default values if not present, "page" default is 1, "perPage" default is 30.
+// In future, we may want to make the default values configurable, or even have this
+// function returned from `withPagination`, where the defaults are provided alongside
+// the min/max values.
+func optionalPaginationParams(r mcp.CallToolRequest) (paginationParams, error) {
+	page, err := optionalIntParamWithDefault(r, "page", 1)
+	if err != nil {
+		return paginationParams{}, err
+	}
+	perPage, err := optionalIntParamWithDefault(r, "perPage", 30)
+	if err != nil {
+		return paginationParams{}, err
+	}
+	return paginationParams{
+		page:    page,
+		perPage: perPage,
+	}, nil
+}

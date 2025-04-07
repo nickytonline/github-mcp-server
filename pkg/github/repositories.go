@@ -28,12 +28,7 @@ func listCommits(client *github.Client, t translations.TranslationHelperFunc) (t
 			mcp.WithString("sha",
 				mcp.Description("Branch name"),
 			),
-			mcp.WithNumber("page",
-				mcp.Description("Page number"),
-			),
-			mcp.WithNumber("perPage",
-				mcp.Description("Number of records per page"),
-			),
+			withPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := requiredParam[string](request, "owner")
@@ -48,11 +43,7 @@ func listCommits(client *github.Client, t translations.TranslationHelperFunc) (t
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			page, err := optionalIntParamWithDefault(request, "page", 1)
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			perPage, err := optionalIntParamWithDefault(request, "perPage", 30)
+			pagination, err := optionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -60,8 +51,8 @@ func listCommits(client *github.Client, t translations.TranslationHelperFunc) (t
 			opts := &github.CommitsListOptions{
 				SHA: sha,
 				ListOptions: github.ListOptions{
-					Page:    page,
-					PerPage: perPage,
+					Page:    pagination.page,
+					PerPage: pagination.perPage,
 				},
 			}
 

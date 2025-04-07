@@ -162,15 +162,7 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 				mcp.Description("Sort order ('asc' or 'desc')"),
 				mcp.Enum("asc", "desc"),
 			),
-			mcp.WithNumber("perPage",
-				mcp.Description("Results per page (max 100)"),
-				mcp.Min(1),
-				mcp.Max(100),
-			),
-			mcp.WithNumber("page",
-				mcp.Description("Page number"),
-				mcp.Min(1),
-			),
+			withPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			query, err := requiredParam[string](request, "q")
@@ -185,11 +177,7 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			perPage, err := optionalIntParamWithDefault(request, "perPage", 30)
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			page, err := optionalIntParamWithDefault(request, "page", 1)
+			pagination, err := optionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -198,8 +186,8 @@ func searchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 				Sort:  sort,
 				Order: order,
 				ListOptions: github.ListOptions{
-					PerPage: perPage,
-					Page:    page,
+					PerPage: pagination.perPage,
+					Page:    pagination.page,
 				},
 			}
 
@@ -375,12 +363,7 @@ func listIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 			mcp.WithString("since",
 				mcp.Description("Filter by date (ISO 8601 timestamp)"),
 			),
-			mcp.WithNumber("page",
-				mcp.Description("Page number"),
-			),
-			mcp.WithNumber("perPage",
-				mcp.Description("Results per page"),
-			),
+			withPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := requiredParam[string](request, "owner")
