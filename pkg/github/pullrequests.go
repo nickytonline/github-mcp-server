@@ -593,7 +593,7 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 					map[string]interface{}{
 						"type":                 "object",
 						"additionalProperties": false,
-						"required":             []string{"path", "position", "body"},
+						"required":             []string{"path", "body"},
 						"properties": map[string]interface{}{
 							"path": map[string]interface{}{
 								"type":        "string",
@@ -601,7 +601,23 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 							},
 							"position": map[string]interface{}{
 								"type":        "number",
-								"description": "line number in the file",
+								"description": "position of the comment in the diff",
+							},
+							"line": map[string]interface{}{
+								"type":        "number",
+								"description": "line number in the file to comment on. For multi-line comments, the end of the line range",
+							},
+							"side": map[string]interface{}{
+								"type":        "string",
+								"description": "The side of the diff on which the line resides. For multi-line comments, this is the side for the end of the line range. (LEFT or RIGHT)",
+							},
+							"start_line": map[string]interface{}{
+								"type":        "number",
+								"description": "The first line of the range to which the comment refers. Required for multi-line comments.",
+							},
+							"start_side": map[string]interface{}{
+								"type":        "string",
+								"description": "The side of the diff on which the start line resides for multi-line comments. (LEFT or RIGHT)",
 							},
 							"body": map[string]interface{}{
 								"type":        "string",
@@ -610,7 +626,7 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 						},
 					},
 				),
-				mcp.Description("Line-specific comments array of objects, each object with path (string), position (number), and body (string)"),
+				mcp.Description("Line-specific comments array of objects to place comments on pull request changes. Requires path and body. For line comments use line or position. For multi-line comments use start_line and line with optional side parameters."),
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -661,7 +677,7 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 				for _, c := range commentsObj {
 					commentMap, ok := c.(map[string]interface{})
 					if !ok {
-						return mcp.NewToolResultError("each comment must be an object with path, position, and body"), nil
+						return mcp.NewToolResultError("each comment must be an object with path and body"), nil
 					}
 
 					path, ok := commentMap["path"].(string)
@@ -669,22 +685,47 @@ func createPullRequestReview(client *github.Client, t translations.TranslationHe
 						return mcp.NewToolResultError("each comment must have a path"), nil
 					}
 
-					positionFloat, ok := commentMap["position"].(float64)
-					if !ok {
-						return mcp.NewToolResultError("each comment must have a position"), nil
-					}
-					position := int(positionFloat)
-
 					body, ok := commentMap["body"].(string)
 					if !ok || body == "" {
 						return mcp.NewToolResultError("each comment must have a body"), nil
 					}
 
-					comments = append(comments, &github.DraftReviewComment{
-						Path:     github.Ptr(path),
-						Position: github.Ptr(position),
-						Body:     github.Ptr(body),
-					})
+					_, hasPosition := commentMap["position"].(float64)
+					_, hasLine := commentMap["line"].(float64)
+					_, hasSide := commentMap["side"].(string)
+					_, hasStartLine := commentMap["start_line"].(float64)
+					_, hasStartSide := commentMap["start_side"].(string)
+
+					switch {
+					case !hasPosition && !hasLine:
+						return mcp.NewToolResultError("each comment must have either position or line"), nil
+					case hasPosition && (hasLine || hasSide || hasStartLine || hasStartSide):
+						return mcp.NewToolResultError("position cannot be combined with line, side, start_line, or start_side"), nil
+					case hasStartSide && !hasSide:
+						return mcp.NewToolResultError("if start_side is provided, side must also be provided"), nil
+					}
+
+					comment := &github.DraftReviewComment{
+						Path: github.Ptr(path),
+						Body: github.Ptr(body),
+					}
+
+					if positionFloat, ok := commentMap["position"].(float64); ok {
+						comment.Position = github.Ptr(int(positionFloat))
+					} else if lineFloat, ok := commentMap["line"].(float64); ok {
+						comment.Line = github.Ptr(int(lineFloat))
+					}
+					if side, ok := commentMap["side"].(string); ok {
+						comment.Side = github.Ptr(side)
+					}
+					if startLineFloat, ok := commentMap["start_line"].(float64); ok {
+						comment.StartLine = github.Ptr(int(startLineFloat))
+					}
+					if startSide, ok := commentMap["start_side"].(string); ok {
+						comment.StartSide = github.Ptr(startSide)
+					}
+
+					comments = append(comments, comment)
 				}
 
 				reviewRequest.Comments = comments

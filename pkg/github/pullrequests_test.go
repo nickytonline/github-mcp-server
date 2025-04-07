@@ -1167,7 +1167,152 @@ func Test_CreatePullRequestReview(t *testing.T) {
 				},
 			},
 			expectError:    false,
-			expectedErrMsg: "each comment must have a position",
+			expectedErrMsg: "each comment must have either position or line",
+		},
+		{
+			name: "successful review creation with line parameter",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					expectRequestBody(t, map[string]interface{}{
+						"body":  "Code review comments",
+						"event": "COMMENT",
+						"comments": []interface{}{
+							map[string]interface{}{
+								"path": "main.go",
+								"line": float64(42),
+								"body": "Consider adding a comment here",
+							},
+						},
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockReview),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "Code review comments",
+				"event":      "COMMENT",
+				"comments": []interface{}{
+					map[string]interface{}{
+						"path": "main.go",
+						"line": float64(42),
+						"body": "Consider adding a comment here",
+					},
+				},
+			},
+			expectError:    false,
+			expectedReview: mockReview,
+		},
+		{
+			name: "successful review creation with multi-line comment",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					expectRequestBody(t, map[string]interface{}{
+						"body":  "Multi-line comment review",
+						"event": "COMMENT",
+						"comments": []interface{}{
+							map[string]interface{}{
+								"path":       "main.go",
+								"start_line": float64(10),
+								"line":       float64(15),
+								"side":       "RIGHT",
+								"body":       "This entire block needs refactoring",
+							},
+						},
+					}).andThen(
+						mockResponse(t, http.StatusOK, mockReview),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "Multi-line comment review",
+				"event":      "COMMENT",
+				"comments": []interface{}{
+					map[string]interface{}{
+						"path":       "main.go",
+						"start_line": float64(10),
+						"line":       float64(15),
+						"side":       "RIGHT",
+						"body":       "This entire block needs refactoring",
+					},
+				},
+			},
+			expectError:    false,
+			expectedReview: mockReview,
+		},
+		{
+			name:         "invalid multi-line comment - missing line parameter",
+			mockedClient: mock.NewMockedHTTPClient(),
+			requestArgs: map[string]interface{}{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"event":      "COMMENT",
+				"comments": []interface{}{
+					map[string]interface{}{
+						"path":       "main.go",
+						"start_line": float64(10),
+						// missing line parameter
+						"body": "Invalid multi-line comment",
+					},
+				},
+			},
+			expectError:    false,
+			expectedErrMsg: "each comment must have either position or line", // Updated error message
+		},
+		{
+			name: "invalid comment - mixing position with line parameters",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
+					mockReview,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"event":      "COMMENT",
+				"comments": []interface{}{
+					map[string]interface{}{
+						"path":     "main.go",
+						"position": float64(5),
+						"line":     float64(42),
+						"body":     "Invalid parameter combination",
+					},
+				},
+			},
+			expectError:    false,
+			expectedErrMsg: "position cannot be combined with line, side, start_line, or start_side",
+		},
+		{
+			name:         "invalid multi-line comment - missing side parameter",
+			mockedClient: mock.NewMockedHTTPClient(),
+			requestArgs: map[string]interface{}{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"event":      "COMMENT",
+				"comments": []interface{}{
+					map[string]interface{}{
+						"path":       "main.go",
+						"start_line": float64(10),
+						"line":       float64(15),
+						"start_side": "LEFT",
+						// missing side parameter
+						"body": "Invalid multi-line comment",
+					},
+				},
+			},
+			expectError:    false,
+			expectedErrMsg: "if start_side is provided, side must also be provided",
 		},
 		{
 			name: "review creation fails",
