@@ -66,6 +66,20 @@ jobs:
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+            type=edge
+            type=match
+            type=pep440
+            # Custom rule to prevent pre-releases from getting latest tag
+            type=raw,value=latest,enable=${{ !contains(github.ref, '-') && github.ref_type == 'tag' }}
 
       - name: Go Build Cache for Docker
         uses: actions/cache@v4
