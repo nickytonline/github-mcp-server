@@ -76,7 +76,6 @@ jobs:
             type=semver,pattern={{major}}
             type=sha
             type=edge
-            type=match
             type=pep440
             # Custom rule to prevent pre-releases from getting latest tag
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-') }}
