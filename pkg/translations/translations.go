@@ -20,9 +20,6 @@ func TranslationHelper() (TranslationHelperFunc, func()) {
 	var translationKeyMap = map[string]string{}
 	v := viper.New()
 
-	v.SetEnvPrefix("GITHUB_MCP_")
-	v.AutomaticEnv()
-
 	// Load from JSON file
 	v.SetConfigName("github-mcp-server-config")
 	v.SetConfigType("json")
