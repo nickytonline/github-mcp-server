@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	stdlog "log"
@@ -41,7 +39,6 @@ var (
 			logFile := viper.GetString("log-file")
 			readOnly := viper.GetBool("read-only")
 			exportTranslations := viper.GetBool("export-translations")
-			prettyPrintJSON := viper.GetBool("pretty-print-json")
 			logger, err := initLogger(logFile)
 			if err != nil {
 				stdlog.Fatal("Failed to initialize logger:", err)
@@ -52,7 +49,6 @@ var (
 				logger:             logger,
 				logCommands:        logCommands,
 				exportTranslations: exportTranslations,
-				prettyPrintJSON:    prettyPrintJSON,
 			}
 			if err := runStdioServer(cfg); err != nil {
 				stdlog.Fatal("failed to run stdio server:", err)
@@ -70,7 +66,6 @@ func init() {
 	rootCmd.PersistentFlags().Bool("enable-command-logging", false, "When enabled, the server will log all command requests and responses to the log file")
 	rootCmd.PersistentFlags().Bool("export-translations", false, "Save translations to a JSON file")
 	rootCmd.PersistentFlags().String("gh-host", "", "Specify the GitHub hostname (for GitHub Enterprise etc.)")
-	rootCmd.PersistentFlags().Bool("pretty-print-json", false, "Pretty print JSON output")
 
 	// Bind flag to viper
 	_ = viper.BindPFlag("read-only", rootCmd.PersistentFlags().Lookup("read-only"))
@@ -78,7 +73,6 @@ func init() {
 	_ = viper.BindPFlag("enable-command-logging", rootCmd.PersistentFlags().Lookup("enable-command-logging"))
 	_ = viper.BindPFlag("export-translations", rootCmd.PersistentFlags().Lookup("export-translations"))
 	_ = viper.BindPFlag("gh-host", rootCmd.PersistentFlags().Lookup("gh-host"))
-	_ = viper.BindPFlag("pretty-print-json", rootCmd.PersistentFlags().Lookup("pretty-print-json"))
 
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)
@@ -112,20 +106,6 @@ type runConfig struct {
 	logger             *log.Logger
 	logCommands        bool
 	exportTranslations bool
-	prettyPrintJSON    bool
-}
-
-// JSONPrettyPrintWriter is a Writer that pretty prints input to indented JSON
-type JSONPrettyPrintWriter struct {
-	writer io.Writer
-}
-
-func (j JSONPrettyPrintWriter) Write(p []byte) (n int, err error) {
-	var prettyJSON bytes.Buffer
-	if err := json.Indent(&prettyJSON, p, "", "\t"); err != nil {
-		return 0, err
-	}
-	return j.writer.Write(prettyJSON.Bytes())
 }
 
 func runStdioServer(cfg runConfig) error {
@@ -179,9 +159,6 @@ func runStdioServer(cfg runConfig) error {
 			in, out = loggedIO, loggedIO
 		}
 
-		if cfg.prettyPrintJSON {
-			out = JSONPrettyPrintWriter{writer: out}
-		}
 		errC <- stdioServer.Listen(ctx, in, out)
 	}()
 
