@@ -17,18 +17,18 @@ import (
 // getIssue creates a tool to get details of a specific issue in a GitHub repository.
 func getIssue(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_issue",
-			mcp.WithDescription(t("TOOL_GET_ISSUE_DESCRIPTION", "Get details of a specific issue in a GitHub repository.")),
+			mcp.WithDescription(t("TOOL_GET_ISSUE_DESCRIPTION", "Get details of a specific issue in a GitHub repository")),
 			mcp.WithString("owner",
 				mcp.Required(),
-				mcp.Description("The owner of the repository."),
+				mcp.Description("The owner of the repository"),
 			),
 			mcp.WithString("repo",
 				mcp.Required(),
-				mcp.Description("The name of the repository."),
+				mcp.Description("The name of the repository"),
 			),
 			mcp.WithNumber("issue_number",
 				mcp.Required(),
-				mcp.Description("The number of the issue."),
+				mcp.Description("The number of the issue"),
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

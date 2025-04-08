@@ -49,7 +49,7 @@ Available Commands:
   create_repository     Create a new GitHub repository in your account
   fork_repository       Fork a GitHub repository to your account or specified organization
   get_file_contents     Get the contents of a file or directory from a GitHub repository
-  get_issue             Get details of a specific issue in a GitHub repository.
+  get_issue             Get details of a specific issue in a GitHub repository
   get_issue_comments    Get comments for a GitHub issue
   list_commits          Get list of commits of a branch in a GitHub repository
   list_issues           List issues in a GitHub repository with filtering options
@@ -74,7 +74,7 @@ Get help for a specific tool:
 
 ```bash
  % ./mcpcurl --stdio-server-cmd "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN mcp/github" tools get_issue --help
-Get details of a specific issue in a GitHub repository.
+Get details of a specific issue in a GitHub repository
 
 Usage:
   mcpcurl tools get_issue [flags]
