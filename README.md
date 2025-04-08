@@ -29,37 +29,35 @@ For manual installation, add the following JSON block to your User Settings (JSO
 
 Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
 
-> Note that the `mcp` key is not needed in the `.vscode/mcp.json` file.
 
 ```json
 {
-  "mcp": {
-    "inputs": [
-      {
-        "type": "promptString",
-        "id": "github_token",
-        "description": "GitHub Personal Access Token",
-        "password": true
-      }
-    ],
-    "servers": {
-      "github": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-e",
-          "GITHUB_PERSONAL_ACCESS_TOKEN",
-          "ghcr.io/github/github-mcp-server"
-        ],
-        "env": {
-          "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}"
-        }
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "github_token",
+      "description": "GitHub Personal Access Token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}"
       }
     }
   }
 }
+
 ```
 
 More about using MCP server tools in VS Code's [agent mode documentation](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
