@@ -15,10 +15,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func stubGetClientFn(client *github.Client) GetClientFn {
+	return func(_ context.Context) (*github.Client, error) {
+		return client, nil
+	}
+}
+
 func Test_GetMe(t *testing.T) {
 	// Verify tool definition
 	mockClient := github.NewClient(nil)
-	tool, _ := GetMe(mockClient, translations.NullTranslationHelper)
+	tool, _ := GetMe(stubGetClientFn(mockClient), translations.NullTranslationHelper)
 
 	assert.Equal(t, "get_me", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -96,7 +102,7 @@ func Test_GetMe(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := GetMe(client, translations.NullTranslationHelper)
+			_, handler := GetMe(stubGetClientFn(client), translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)

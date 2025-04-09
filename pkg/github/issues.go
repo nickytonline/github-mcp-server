@@ -15,7 +15,7 @@ import (
 )
 
 // GetIssue creates a tool to get details of a specific issue in a GitHub repository.
-func GetIssue(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func GetIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_issue",
 			mcp.WithDescription(t("TOOL_GET_ISSUE_DESCRIPTION", "Get details of a specific issue in a GitHub repository")),
 			mcp.WithString("owner",
@@ -45,6 +45,10 @@ func GetIssue(client *github.Client, t translations.TranslationHelperFunc) (tool
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
 			issue, resp, err := client.Issues.Get(ctx, owner, repo, issueNumber)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get issue: %w", err)
@@ -69,7 +73,7 @@ func GetIssue(client *github.Client, t translations.TranslationHelperFunc) (tool
 }
 
 // AddIssueComment creates a tool to add a comment to an issue.
-func AddIssueComment(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func AddIssueComment(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("add_issue_comment",
 			mcp.WithDescription(t("TOOL_ADD_ISSUE_COMMENT_DESCRIPTION", "Add a comment to an existing issue")),
 			mcp.WithString("owner",
@@ -111,6 +115,10 @@ func AddIssueComment(client *github.Client, t translations.TranslationHelperFunc
 				Body: github.Ptr(body),
 			}
 
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
 			createdComment, resp, err := client.Issues.CreateComment(ctx, owner, repo, issueNumber, comment)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create comment: %w", err)
@@ -135,7 +143,7 @@ func AddIssueComment(client *github.Client, t translations.TranslationHelperFunc
 }
 
 // SearchIssues creates a tool to search for issues and pull requests.
-func SearchIssues(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func SearchIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_issues",
 			mcp.WithDescription(t("TOOL_SEARCH_ISSUES_DESCRIPTION", "Search for issues and pull requests across GitHub repositories")),
 			mcp.WithString("q",
@@ -191,6 +199,10 @@ func SearchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 				},
 			}
 
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
 			result, resp, err := client.Search.Issues(ctx, query, opts)
 			if err != nil {
 				return nil, fmt.Errorf("failed to search issues: %w", err)
@@ -215,7 +227,7 @@ func SearchIssues(client *github.Client, t translations.TranslationHelperFunc) (
 }
 
 // CreateIssue creates a tool to create a new issue in a GitHub repository.
-func CreateIssue(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func CreateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("create_issue",
 			mcp.WithDescription(t("TOOL_CREATE_ISSUE_DESCRIPTION", "Create a new issue in a GitHub repository")),
 			mcp.WithString("owner",
@@ -305,6 +317,10 @@ func CreateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				Milestone: milestoneNum,
 			}
 
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
 			issue, resp, err := client.Issues.Create(ctx, owner, repo, issueRequest)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create issue: %w", err)
@@ -329,7 +345,7 @@ func CreateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 }
 
 // ListIssues creates a tool to list and filter repository issues
-func ListIssues(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func ListIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_issues",
 			mcp.WithDescription(t("TOOL_LIST_ISSUES_DESCRIPTION", "List issues in a GitHub repository with filtering options")),
 			mcp.WithString("owner",
@@ -419,6 +435,10 @@ func ListIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 				opts.PerPage = int(perPage)
 			}
 
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
 			issues, resp, err := client.Issues.ListByRepo(ctx, owner, repo, opts)
 			if err != nil {
 				return nil, fmt.Errorf("failed to list issues: %w", err)
@@ -443,7 +463,7 @@ func ListIssues(client *github.Client, t translations.TranslationHelperFunc) (to
 }
 
 // UpdateIssue creates a tool to update an existing issue in a GitHub repository.
-func UpdateIssue(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func UpdateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("update_issue",
 			mcp.WithDescription(t("TOOL_UPDATE_ISSUE_DESCRIPTION", "Update an existing issue in a GitHub repository")),
 			mcp.WithString("owner",
@@ -557,6 +577,10 @@ func UpdateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 				issueRequest.Milestone = &milestoneNum
 			}
 
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
 			updatedIssue, resp, err := client.Issues.Edit(ctx, owner, repo, issueNumber, issueRequest)
 			if err != nil {
 				return nil, fmt.Errorf("failed to update issue: %w", err)
@@ -581,7 +605,7 @@ func UpdateIssue(client *github.Client, t translations.TranslationHelperFunc) (t
 }
 
 // GetIssueComments creates a tool to get comments for a GitHub issue.
-func GetIssueComments(client *github.Client, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func GetIssueComments(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_issue_comments",
 			mcp.WithDescription(t("TOOL_GET_ISSUE_COMMENTS_DESCRIPTION", "Get comments for a GitHub issue")),
 			mcp.WithString("owner",
@@ -632,6 +656,10 @@ func GetIssueComments(client *github.Client, t translations.TranslationHelperFun
 				},
 			}
 
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
 			comments, resp, err := client.Issues.ListComments(ctx, owner, repo, issueNumber, opts)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get issue comments: %w", err)

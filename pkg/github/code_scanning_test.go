@@ -16,7 +16,7 @@ import (
 func Test_GetCodeScanningAlert(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := GetCodeScanningAlert(mockClient, translations.NullTranslationHelper)
+	tool, _ := GetCodeScanningAlert(stubGetClientFn(mockClient), translations.NullTranslationHelper)
 
 	assert.Equal(t, "get_code_scanning_alert", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -82,7 +82,7 @@ func Test_GetCodeScanningAlert(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := GetCodeScanningAlert(client, translations.NullTranslationHelper)
+			_, handler := GetCodeScanningAlert(stubGetClientFn(client), translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
@@ -118,7 +118,7 @@ func Test_GetCodeScanningAlert(t *testing.T) {
 func Test_ListCodeScanningAlerts(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
-	tool, _ := ListCodeScanningAlerts(mockClient, translations.NullTranslationHelper)
+	tool, _ := ListCodeScanningAlerts(stubGetClientFn(mockClient), translations.NullTranslationHelper)
 
 	assert.Equal(t, "list_code_scanning_alerts", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -201,7 +201,7 @@ func Test_ListCodeScanningAlerts(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := ListCodeScanningAlerts(client, translations.NullTranslationHelper)
+			_, handler := ListCodeScanningAlerts(stubGetClientFn(client), translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)
