@@ -238,6 +238,8 @@ func OptionalStringArrayParam(r mcp.CallToolRequest, p string) ([]string, error)
 	}
 
 	switch v := r.Params.Arguments[p].(type) {
+	case nil:
+		return []string{}, nil
 	case []string:
 		return v, nil
 	case []any:

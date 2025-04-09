@@ -468,9 +468,10 @@ func Test_CreateIssue(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner": "owner",
-				"repo":  "repo",
-				"title": "Minimal Issue",
+				"owner":     "owner",
+				"repo":      "repo",
+				"title":     "Minimal Issue",
+				"assignees": nil, // Expect no failure with nil optional value.
 			},
 			expectError: false,
 			expectedIssue: &github.Issue{
