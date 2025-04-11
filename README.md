@@ -354,13 +354,20 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `branch`: New branch name (string, required)
   - `sha`: SHA to create branch from (string, required)
 
-- **list_commits** - Gets commits of a branch in a repository
+- **list_commits** - Get a list of commits of a branch in a repository
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `sha`: Branch name, tag, or commit SHA (string, optional)
   - `path`: Only commits containing this file path (string, optional)
   - `page`: Page number (number, optional)
   - `perPage`: Results per page (number, optional)
+
+- **get_commit** - Get details for a commit from a repository
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `sha`: Commit SHA, branch name, or tag name (string, required)
+  - `page`: Page number, for files in the commit (number, optional)
+  - `perPage`: Results per page, for files in the commit (number, optional)
 
 ### Search
 

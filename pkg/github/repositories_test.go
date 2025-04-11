@@ -475,6 +475,136 @@ func Test_CreateBranch(t *testing.T) {
 	}
 }
 
+func Test_GetCommit(t *testing.T) {
+	// Verify tool definition once
+	mockClient := github.NewClient(nil)
+	tool, _ := GetCommit(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "get_commit", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "sha")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "sha"})
+
+	mockCommit := &github.RepositoryCommit{
+		SHA: github.Ptr("abc123def456"),
+		Commit: &github.Commit{
+			Message: github.Ptr("First commit"),
+			Author: &github.CommitAuthor{
+				Name:  github.Ptr("Test User"),
+				Email: github.Ptr("test@example.com"),
+				Date:  &github.Timestamp{Time: time.Now().Add(-48 * time.Hour)},
+			},
+		},
+		Author: &github.User{
+			Login: github.Ptr("testuser"),
+		},
+		HTMLURL: github.Ptr("https://github.com/owner/repo/commit/abc123def456"),
+		Stats: &github.CommitStats{
+			Additions: github.Ptr(10),
+			Deletions: github.Ptr(2),
+			Total:     github.Ptr(12),
+		},
+		Files: []*github.CommitFile{
+			{
+				Filename:  github.Ptr("file1.go"),
+				Status:    github.Ptr("modified"),
+				Additions: github.Ptr(10),
+				Deletions: github.Ptr(2),
+				Changes:   github.Ptr(12),
+				Patch:     github.Ptr("@@ -1,2 +1,10 @@"),
+			},
+		},
+	}
+	// This one currently isn't defined in the mock package we're using.
+	var mockEndpointPattern = mock.EndpointPattern{
+		Pattern: "/repos/{owner}/{repo}/commits/{sha}",
+		Method:  "GET",
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedCommit *github.RepositoryCommit
+		expectedErrMsg string
+	}{
+		{
+			name: "successful commit fetch",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mockEndpointPattern,
+					mockResponse(t, http.StatusOK, mockCommit),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"sha":   "abc123def456",
+			},
+			expectError:    false,
+			expectedCommit: mockCommit,
+		},
+		{
+			name: "commit fetch fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mockEndpointPattern,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusNotFound)
+						_, _ = w.Write([]byte(`{"message": "Not Found"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"sha":   "nonexistent-sha",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to get commit",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := GetCommit(stubGetClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+
+			// Parse the result and get the text content if no error
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedCommit github.RepositoryCommit
+			err = json.Unmarshal([]byte(textContent.Text), &returnedCommit)
+			require.NoError(t, err)
+
+			assert.Equal(t, *tc.expectedCommit.SHA, *returnedCommit.SHA)
+			assert.Equal(t, *tc.expectedCommit.Commit.Message, *returnedCommit.Commit.Message)
+			assert.Equal(t, *tc.expectedCommit.Author.Login, *returnedCommit.Author.Login)
+			assert.Equal(t, *tc.expectedCommit.HTMLURL, *returnedCommit.HTMLURL)
+		})
+	}
+}
+
 func Test_ListCommits(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
