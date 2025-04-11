@@ -517,11 +517,6 @@ func Test_GetCommit(t *testing.T) {
 			},
 		},
 	}
-	// This one currently isn't defined in the mock package we're using.
-	var mockEndpointPattern = mock.EndpointPattern{
-		Pattern: "/repos/{owner}/{repo}/commits/{sha}",
-		Method:  "GET",
-	}
 
 	tests := []struct {
 		name           string
@@ -535,7 +530,7 @@ func Test_GetCommit(t *testing.T) {
 			name: "successful commit fetch",
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
-					mockEndpointPattern,
+					mock.GetReposCommitsByOwnerByRepoByRef,
 					mockResponse(t, http.StatusOK, mockCommit),
 				),
 			),
@@ -551,7 +546,7 @@ func Test_GetCommit(t *testing.T) {
 			name: "commit fetch fails",
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
-					mockEndpointPattern,
+					mock.GetReposCommitsByOwnerByRepoByRef,
 					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.WriteHeader(http.StatusNotFound)
 						_, _ = w.Write([]byte(`{"message": "Not Found"}`))
