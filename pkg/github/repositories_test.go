@@ -1423,3 +1423,113 @@ func Test_PushFiles(t *testing.T) {
 		})
 	}
 }
+
+func Test_ListBranches(t *testing.T) {
+	// Verify tool definition once
+	mockClient := github.NewClient(nil)
+	tool, _ := ListBranches(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "list_branches", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "page")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
+
+	// Setup mock branches for success case
+	mockBranches := []*github.Branch{
+		{
+			Name:   github.Ptr("main"),
+			Commit: &github.RepositoryCommit{SHA: github.Ptr("abc123")},
+		},
+		{
+			Name:   github.Ptr("develop"),
+			Commit: &github.RepositoryCommit{SHA: github.Ptr("def456")},
+		},
+	}
+
+	// Test cases
+	tests := []struct {
+		name          string
+		args          map[string]interface{}
+		mockResponses []mock.MockBackendOption
+		wantErr       bool
+		errContains   string
+	}{
+		{
+			name: "success",
+			args: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"page":  float64(2),
+			},
+			mockResponses: []mock.MockBackendOption{
+				mock.WithRequestMatch(
+					mock.GetReposBranchesByOwnerByRepo,
+					mockBranches,
+				),
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing owner",
+			args: map[string]interface{}{
+				"repo": "repo",
+			},
+			mockResponses: []mock.MockBackendOption{},
+			wantErr:       false,
+			errContains:   "missing required parameter: owner",
+		},
+		{
+			name: "missing repo",
+			args: map[string]interface{}{
+				"owner": "owner",
+			},
+			mockResponses: []mock.MockBackendOption{},
+			wantErr:       false,
+			errContains:   "missing required parameter: repo",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create mock client
+			mockClient := github.NewClient(mock.NewMockedHTTPClient(tt.mockResponses...))
+			_, handler := ListBranches(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+
+			// Create request
+			request := createMCPRequest(tt.args)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+			if tt.wantErr {
+				require.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, result)
+
+			if tt.errContains != "" {
+				textContent := getTextResult(t, result)
+				assert.Contains(t, textContent.Text, tt.errContains)
+				return
+			}
+
+			textContent := getTextResult(t, result)
+			require.NotEmpty(t, textContent.Text)
+
+			// Verify response
+			var branches []*github.Branch
+			err = json.Unmarshal([]byte(textContent.Text), &branches)
+			require.NoError(t, err)
+			assert.Len(t, branches, 2)
+			assert.Equal(t, "main", *branches[0].Name)
+			assert.Equal(t, "develop", *branches[1].Name)
+		})
+	}
+}

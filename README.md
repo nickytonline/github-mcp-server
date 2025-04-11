@@ -311,6 +311,13 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `branch`: Branch name (string, optional)
   - `sha`: File SHA if updating (string, optional)
 
+- **list_branches** - List branches in a GitHub repository
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `page`: Page number (number, optional)
+  - `perPage`: Results per page (number, optional)
+
 - **push_files** - Push multiple files in a single commit
 
   - `owner`: Repository owner (string, required)
