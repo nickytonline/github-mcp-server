@@ -17,13 +17,20 @@ import (
 type GetClientFn func(context.Context) (*github.Client, error)
 
 // NewServer creates a new GitHub MCP server with the specified GH client and logger.
-func NewServer(getClient GetClientFn, version string, readOnly bool, t translations.TranslationHelperFunc) *server.MCPServer {
+func NewServer(getClient GetClientFn, version string, readOnly bool, t translations.TranslationHelperFunc, opts ...server.ServerOption) *server.MCPServer {
+	// Add default options
+	defaultOpts := []server.ServerOption{
+		server.WithResourceCapabilities(true, true),
+		server.WithLogging(),
+	}
+	opts = append(defaultOpts, opts...)
+
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"github-mcp-server",
 		version,
-		server.WithResourceCapabilities(true, true),
-		server.WithLogging())
+		opts...,
+	)
 
 	// Add GitHub Resources
 	s.AddResourceTemplate(GetRepositoryResourceContent(getClient, t))
