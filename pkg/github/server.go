@@ -63,6 +63,7 @@ func NewServer(getClient GetClientFn, version string, readOnly bool, t translati
 		s.AddTool(CreatePullRequestReview(getClient, t))
 		s.AddTool(CreatePullRequest(getClient, t))
 		s.AddTool(UpdatePullRequest(getClient, t))
+		s.AddTool(AddPullRequestReviewComment(getClient, t))
 	}
 
 	// Add GitHub tools - Repositories

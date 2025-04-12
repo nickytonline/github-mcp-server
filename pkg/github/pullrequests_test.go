@@ -1719,3 +1719,200 @@ func Test_CreatePullRequest(t *testing.T) {
 		})
 	}
 }
+
+func Test_AddPullRequestReviewComment(t *testing.T) {
+	mockClient := github.NewClient(nil)
+	tool, _ := AddPullRequestReviewComment(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "add_pull_request_review_comment", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
+	assert.Contains(t, tool.InputSchema.Properties, "body")
+	assert.Contains(t, tool.InputSchema.Properties, "commit_id")
+	assert.Contains(t, tool.InputSchema.Properties, "path")
+	// Since we've updated commit_id and path to be optional when using in_reply_to
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number", "body"})
+
+	mockComment := &github.PullRequestComment{
+		ID:   github.Ptr(int64(123)),
+		Body: github.Ptr("Great stuff!"),
+		Path: github.Ptr("file1.txt"),
+		Line: github.Ptr(2),
+		Side: github.Ptr("RIGHT"),
+	}
+
+	mockReply := &github.PullRequestComment{
+		ID:   github.Ptr(int64(456)),
+		Body: github.Ptr("Good point, will fix!"),
+	}
+
+	tests := []struct {
+		name            string
+		mockedClient    *http.Client
+		requestArgs     map[string]interface{}
+		expectError     bool
+		expectedComment *github.PullRequestComment
+		expectedErrMsg  string
+	}{
+		{
+			name: "successful line comment creation",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusCreated)
+						err := json.NewEncoder(w).Encode(mockComment)
+						if err != nil {
+							http.Error(w, err.Error(), http.StatusInternalServerError)
+							return
+						}
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(1),
+				"body":        "Great stuff!",
+				"commit_id":   "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+				"path":        "file1.txt",
+				"line":        float64(2),
+				"side":        "RIGHT",
+			},
+			expectError:     false,
+			expectedComment: mockComment,
+		},
+		{
+			name: "successful reply using in_reply_to",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusCreated)
+						err := json.NewEncoder(w).Encode(mockReply)
+						if err != nil {
+							http.Error(w, err.Error(), http.StatusInternalServerError)
+							return
+						}
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(1),
+				"body":        "Good point, will fix!",
+				"in_reply_to": float64(123),
+			},
+			expectError:     false,
+			expectedComment: mockReply,
+		},
+		{
+			name: "comment creation fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusUnprocessableEntity)
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`{"message": "Validation Failed"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(1),
+				"body":        "Great stuff!",
+				"commit_id":   "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+				"path":        "file1.txt",
+				"line":        float64(2),
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to create pull request comment",
+		},
+		{
+			name: "reply creation fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusNotFound)
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(`{"message": "Comment not found"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(1),
+				"body":        "Good point, will fix!",
+				"in_reply_to": float64(999),
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to reply to pull request comment",
+		},
+		{
+			name:         "missing required parameters for comment",
+			mockedClient: mock.NewMockedHTTPClient(),
+			requestArgs: map[string]interface{}{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pull_number": float64(1),
+				"body":        "Great stuff!",
+				// missing commit_id and path
+			},
+			expectError:    false,
+			expectedErrMsg: "missing required parameter: commit_id",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mockClient := github.NewClient(tc.mockedClient)
+
+			_, handler := AddPullRequestReviewComment(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+
+			request := createMCPRequest(tc.requestArgs)
+
+			result, err := handler(context.Background(), request)
+
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotNil(t, result)
+			require.Len(t, result.Content, 1)
+
+			textContent := getTextResult(t, result)
+			if tc.expectedErrMsg != "" {
+				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
+				return
+			}
+
+			var returnedComment github.PullRequestComment
+			err = json.Unmarshal([]byte(getTextResult(t, result).Text), &returnedComment)
+			require.NoError(t, err)
+
+			assert.Equal(t, *tc.expectedComment.ID, *returnedComment.ID)
+			assert.Equal(t, *tc.expectedComment.Body, *returnedComment.Body)
+
+			// Only check Path, Line, and Side if they exist in the expected comment
+			if tc.expectedComment.Path != nil {
+				assert.Equal(t, *tc.expectedComment.Path, *returnedComment.Path)
+			}
+			if tc.expectedComment.Line != nil {
+				assert.Equal(t, *tc.expectedComment.Line, *returnedComment.Line)
+			}
+			if tc.expectedComment.Side != nil {
+				assert.Equal(t, *tc.expectedComment.Side, *returnedComment.Side)
+			}
+		})
+	}
+}

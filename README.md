@@ -288,6 +288,21 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `draft`: Create as draft PR (boolean, optional)
   - `maintainer_can_modify`: Allow maintainer edits (boolean, optional)
 
+- **add_pull_request_review_comment** - Add a review comment to a pull request or reply to an existing comment
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `pull_number`: Pull request number (number, required)
+  - `body`: The text of the review comment (string, required)
+  - `commit_id`: The SHA of the commit to comment on (string, required unless using in_reply_to)
+  - `path`: The relative path to the file that necessitates a comment (string, required unless using in_reply_to)
+  - `line`: The line of the blob in the pull request diff that the comment applies to (number, optional)
+  - `side`: The side of the diff to comment on (LEFT or RIGHT) (string, optional)
+  - `start_line`: For multi-line comments, the first line of the range (number, optional)
+  - `start_side`: For multi-line comments, the starting side of the diff (LEFT or RIGHT) (string, optional)
+  - `subject_type`: The level at which the comment is targeted (line or file) (string, optional)
+  - `in_reply_to`: The ID of the review comment to reply to (number, optional). When specified, only body is required and other parameters are ignored.
+
 - **update_pull_request** - Update an existing pull request in a GitHub repository
 
   - `owner`: Repository owner (string, required)
