@@ -13,6 +13,7 @@ import (
 	iolog "github.com/github/github-mcp-server/pkg/log"
 	"github.com/github/github-mcp-server/pkg/translations"
 	gogithub "github.com/google/go-github/v69/github"
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -137,11 +138,19 @@ func runStdioServer(cfg runConfig) error {
 
 	t, dumpTranslations := translations.TranslationHelper()
 
+	beforeInit := func(_ context.Context, _ any, message *mcp.InitializeRequest) {
+		ghClient.UserAgent = fmt.Sprintf("github-mcp-server/%s (%s/%s)", version, message.Params.ClientInfo.Name, message.Params.ClientInfo.Version)
+	}
+
 	getClient := func(_ context.Context) (*gogithub.Client, error) {
 		return ghClient, nil // closing over client
 	}
+
+	hooks := &server.Hooks{
+		OnBeforeInitialize: []server.OnBeforeInitializeFunc{beforeInit},
+	}
 	// Create
-	ghServer := github.NewServer(getClient, version, cfg.readOnly, t)
+	ghServer := github.NewServer(getClient, version, cfg.readOnly, t, server.WithHooks(hooks))
 	stdioServer := server.NewStdioServer(ghServer)
 
 	stdLogger := stdlog.New(cfg.logger.Writer(), "stdioserver", 0)
