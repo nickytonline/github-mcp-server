@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,8 +11,6 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
-
-	"crypto/rand"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -161,7 +160,7 @@ func main() {
 	_ = rootCmd.MarkPersistentFlagRequired("stdio-server-cmd")
 
 	// Add global flag for pretty printing
-	rootCmd.PersistentFlags().Bool("pretty", true, "Pretty print MCP response (only for JSON responses)")
+	rootCmd.PersistentFlags().Bool("pretty", true, "Pretty print MCP response (only for JSON or JSONL responses)")
 
 	// Add the tools command to the root command
 	rootCmd.AddCommand(toolsCmd)
@@ -426,15 +425,26 @@ func printResponse(response string, prettyPrint bool) error {
 	// Extract text from content items of type "text"
 	for _, content := range resp.Result.Content {
 		if content.Type == "text" {
-			// Unmarshal the text content
-			var textContent map[string]interface{}
-			if err := json.Unmarshal([]byte(content.Text), &textContent); err != nil {
-				return fmt.Errorf("failed to parse text content: %w", err)
+			var textContentObj map[string]interface{}
+			err := json.Unmarshal([]byte(content.Text), &textContentObj)
+
+			if err == nil {
+				prettyText, err := json.MarshalIndent(textContentObj, "", "  ")
+				if err != nil {
+					return fmt.Errorf("failed to pretty print text content: %w", err)
+				}
+				fmt.Println(string(prettyText))
+				continue
 			}
-			// Pretty print the text content
-			prettyText, err := json.MarshalIndent(textContent, "", "  ")
+
+			// Fallback parsing as JSONL
+			var textContentList []map[string]interface{}
+			if err := json.Unmarshal([]byte(content.Text), &textContentList); err != nil {
+				return fmt.Errorf("failed to parse text content as a list: %w", err)
+			}
+			prettyText, err := json.MarshalIndent(textContentList, "", "  ")
 			if err != nil {
-				return fmt.Errorf("failed to pretty print text content: %w", err)
+				return fmt.Errorf("failed to pretty print array content: %w", err)
 			}
 			fmt.Println(string(prettyText))
 		}
