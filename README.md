@@ -120,7 +120,7 @@ The following sets of tools are available (all are on by default):
 | ----------------------- | ------------------------------------------------------------- |
 | `repos`                 | Repository-related tools (file operations, branches, commits) |
 | `issues`                | Issue-related tools (create, read, update, comment)           |
-| `users `                | Anything relating to GitHub Users                             |
+| `users`                 | Anything relating to GitHub Users                             |
 | `pull_requests`         | Pull request operations (create, merge, review)               |
 | `code_security`         | Code scanning alerts and security features                    |
 | `experiments`           | Experimental features (not considered stable)                 |
