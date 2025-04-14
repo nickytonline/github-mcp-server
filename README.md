@@ -108,6 +108,95 @@ If you don't have Docker, you can use `go build` to build the binary in the
 }
 ```
 
+## Tool Configuration
+
+The GitHub MCP Server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools.
+
+### Available Toolsets
+
+The following sets of tools are available (all are on by default):
+
+| Toolset                 | Description                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| `repos`                 | Repository-related tools (file operations, branches, commits) |
+| `issues`                | Issue-related tools (create, read, update, comment)           |
+| `users `                | Anything relating to GitHub Users                             |
+| `pull_requests`         | Pull request operations (create, merge, review)               |
+| `code_security`         | Code scanning alerts and security features                    |
+| `experiments`           | Experimental features (not considered stable)                 |
+
+#### Specifying Toolsets
+
+To reduce the available tools, you can pass an allow-list in two ways:
+
+1. **Using Command Line Argument**:
+
+   ```bash
+   github-mcp-server --toolsets repos,issues,pull_requests,code_security
+   ```
+
+2. **Using Environment Variable**:
+   ```bash
+   GITHUB_TOOLSETS="repos,issues,pull_requests,code_security" ./github-mcp-server
+   ```
+
+The environment variable `GITHUB_TOOLSETS` takes precedence over the command line argument if both are provided.
+
+Any toolsets you specify will be enabled from the start, including when `--dynamic-toolsets` is on.
+
+You might want to do this if the model is confused about which tools to call and you only require a subset.
+
+
+### Using Toolsets With Docker
+
+When using Docker, you can pass the toolsets as environment variables:
+
+```bash
+docker run -i --rm \
+  -e GITHUB_PERSONAL_ACCESS_TOKEN=<your-token> \
+  -e GITHUB_TOOLSETS="repos,issues,pull_requests,code_security,experiments" \
+  ghcr.io/github/github-mcp-server
+```
+
+### The "all" Toolset
+
+The special toolset `all` can be provided to enable all available toolsets regardless of any other configuration:
+
+```bash
+./github-mcp-server --toolsets all
+```
+
+Or using the environment variable:
+
+```bash
+GITHUB_TOOLSETS="all" ./github-mcp-server
+```
+
+## Dynamic Tool Discovery
+
+Instead of starting with all tools enabled, you can turn on Dynamic Toolset Discovery. 
+This feature provides tools that help the MCP Host application to discover and enable sets of GitHub tools only when needed.
+This helps to avoid situations where models get confused by the shear number of tools available to them, which varies by model.
+
+### Using Dynamic Tool Discovery
+
+When using the binary, you can pass the `--dynamic-toolsets` flag.
+
+```bash
+./github-mcp-server --dynamic-toolsets
+```
+
+When using Docker, you can pass the toolsets as environment variables:
+
+```bash
+docker run -i --rm \
+  -e GITHUB_PERSONAL_ACCESS_TOKEN=<your-token> \
+  -e GITHUB_DYNAMIC_TOOLSETS=1 \
+  ghcr.io/github/github-mcp-server
+```
+
+
+
 ## GitHub Enterprise Server
 
 The flag `--gh-host` and the environment variable `GH_HOST` can be used to set
@@ -329,7 +418,6 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 ### Repositories
 
 - **create_or_update_file** - Create or update a single file in a repository
-
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `path`: File path (string, required)
@@ -339,14 +427,12 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `sha`: File SHA if updating (string, optional)
 
 - **list_branches** - List branches in a GitHub repository
-
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `page`: Page number (number, optional)
   - `perPage`: Results per page (number, optional)
 
 - **push_files** - Push multiple files in a single commit
-
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `branch`: Branch to push to (string, required)
@@ -354,7 +440,6 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `message`: Commit message (string, required)
 
 - **search_repositories** - Search for GitHub repositories
-
   - `query`: Search query (string, required)
   - `sort`: Sort field (string, optional)
   - `order`: Sort order (string, optional)
@@ -362,27 +447,23 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `perPage`: Results per page (number, optional)
 
 - **create_repository** - Create a new GitHub repository
-
   - `name`: Repository name (string, required)
   - `description`: Repository description (string, optional)
   - `private`: Whether the repository is private (boolean, optional)
   - `autoInit`: Auto-initialize with README (boolean, optional)
 
 - **get_file_contents** - Get contents of a file or directory
-
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `path`: File path (string, required)
   - `ref`: Git reference (string, optional)
 
 - **fork_repository** - Fork a repository
-
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `organization`: Target organization name (string, optional)
 
 - **create_branch** - Create a new branch
-
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `branch`: New branch name (string, required)
@@ -403,15 +484,14 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `page`: Page number, for files in the commit (number, optional)
   - `perPage`: Results per page, for files in the commit (number, optional)
 
-### Search
-
-- **search_code** - Search for code across GitHub repositories
-
+  - **search_code** - Search for code across GitHub repositories
   - `query`: Search query (string, required)
   - `sort`: Sort field (string, optional)
   - `order`: Sort order (string, optional)
   - `page`: Page number (number, optional)
   - `perPage`: Results per page (number, optional)
+
+### Users
 
 - **search_users** - Search for GitHub users
   - `query`: Search query (string, required)
