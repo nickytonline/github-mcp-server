@@ -93,7 +93,7 @@ func ListCommits(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 				mcp.Description("Repository name"),
 			),
 			mcp.WithString("sha",
-				mcp.Description("Branch name"),
+				mcp.Description("SHA or Branch name"),
 			),
 			WithPagination(),
 		),
