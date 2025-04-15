@@ -436,6 +436,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `ref`: Git reference (string, optional)
   - `state`: Alert state (string, optional)
   - `severity`: Alert severity (string, optional)
+  - `tool_name`: The name of the tool used for code scanning (string, optional)
 
 ## Resources
 

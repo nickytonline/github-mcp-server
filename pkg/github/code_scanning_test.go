@@ -127,6 +127,7 @@ func Test_ListCodeScanningAlerts(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "ref")
 	assert.Contains(t, tool.InputSchema.Properties, "state")
 	assert.Contains(t, tool.InputSchema.Properties, "severity")
+	assert.Contains(t, tool.InputSchema.Properties, "tool_name")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
 
 	// Setup mock alerts for success case
@@ -159,20 +160,22 @@ func Test_ListCodeScanningAlerts(t *testing.T) {
 				mock.WithRequestMatchHandler(
 					mock.GetReposCodeScanningAlertsByOwnerByRepo,
 					expectQueryParams(t, map[string]string{
-						"ref":      "main",
-						"state":    "open",
-						"severity": "high",
+						"ref":       "main",
+						"state":     "open",
+						"severity":  "high",
+						"tool_name": "codeql",
 					}).andThen(
 						mockResponse(t, http.StatusOK, mockAlerts),
 					),
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":    "owner",
-				"repo":     "repo",
-				"ref":      "main",
-				"state":    "open",
-				"severity": "high",
+				"owner":     "owner",
+				"repo":      "repo",
+				"ref":       "main",
+				"state":     "open",
+				"severity":  "high",
+				"tool_name": "codeql",
 			},
 			expectError:    false,
 			expectedAlerts: mockAlerts,

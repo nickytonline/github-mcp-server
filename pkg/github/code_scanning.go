@@ -94,6 +94,9 @@ func ListCodeScanningAlerts(getClient GetClientFn, t translations.TranslationHel
 				mcp.Description("Filter code scanning alerts by severity"),
 				mcp.Enum("critical", "high", "medium", "low", "warning", "note", "error"),
 			),
+			mcp.WithString("tool_name",
+				mcp.Description("The name of the tool used for code scanning."),
+			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := requiredParam[string](request, "owner")
@@ -116,12 +119,16 @@ func ListCodeScanningAlerts(getClient GetClientFn, t translations.TranslationHel
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+			toolName, err := OptionalParam[string](request, "tool_name")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			client, err := getClient(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
 			}
-			alerts, resp, err := client.CodeScanning.ListAlertsForRepo(ctx, owner, repo, &github.AlertListOptions{Ref: ref, State: state, Severity: severity})
+			alerts, resp, err := client.CodeScanning.ListAlertsForRepo(ctx, owner, repo, &github.AlertListOptions{Ref: ref, State: state, Severity: severity, ToolName: toolName})
 			if err != nil {
 				return nil, fmt.Errorf("failed to list alerts: %w", err)
 			}
