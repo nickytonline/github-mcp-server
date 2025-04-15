@@ -65,7 +65,7 @@ var (
 func init() {
 	cobra.OnInitialize(initConfig)
 
-    rootCmd.SetVersionTemplate("{{.Short}}\n{{.Version}}\n")
+	rootCmd.SetVersionTemplate("{{.Short}}\n{{.Version}}\n")
 
 	// Add global flags that will be shared by all commands
 	rootCmd.PersistentFlags().StringSlice("toolsets", github.DefaultTools, "An optional comma separated list of groups of tools to allow, defaults to enabling all")
