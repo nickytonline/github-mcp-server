@@ -29,7 +29,7 @@ var (
 		Use:     "server",
 		Short:   "GitHub MCP Server",
 		Long:    `A GitHub MCP server that handles various tools and resources.`,
-        Version: version,
+		Version: fmt.Sprintf("Version: %s\nCommit: %s\nBuild Date: %s", version, commit, date),
 	}
 
 	stdioCmd = &cobra.Command{
@@ -65,8 +65,7 @@ var (
 func init() {
 	cobra.OnInitialize(initConfig)
 
-    rootCmd.SetVersionTemplate(fmt.Sprintf(
-        "GitHub MCP Server\nVersion: %s\nCommit: %s\nBuild Date: %s\n", version, commit, date))
+    rootCmd.SetVersionTemplate("{{.Short}}\n{{.Version}}\n")
 
 	// Add global flags that will be shared by all commands
 	rootCmd.PersistentFlags().StringSlice("toolsets", github.DefaultTools, "An optional comma separated list of groups of tools to allow, defaults to enabling all")
