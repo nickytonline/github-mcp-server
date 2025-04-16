@@ -110,7 +110,7 @@ If you don't have Docker, you can use `go build` to build the binary in the
 
 ## Tool Configuration
 
-The GitHub MCP Server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools.
+The GitHub MCP Server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools. Enabling only the toolsets that you need can help the LLM with tool choice and reduce the context size.
 
 ### Available Toolsets
 
@@ -127,7 +127,7 @@ The following sets of tools are available (all are on by default):
 
 #### Specifying Toolsets
 
-To reduce the available tools, you can pass an allow-list in two ways:
+To specify toolsets you want available to the LLM, you can pass an allow-list in two ways:
 
 1. **Using Command Line Argument**:
 
@@ -141,11 +141,6 @@ To reduce the available tools, you can pass an allow-list in two ways:
    ```
 
 The environment variable `GITHUB_TOOLSETS` takes precedence over the command line argument if both are provided.
-
-Any toolsets you specify will be enabled from the start, including when `--dynamic-toolsets` is on.
-
-You might want to do this if the model is confused about which tools to call and you only require a subset.
-
 
 ### Using Toolsets With Docker
 
@@ -174,9 +169,9 @@ GITHUB_TOOLSETS="all" ./github-mcp-server
 
 ## Dynamic Tool Discovery
 
-Instead of starting with all tools enabled, you can turn on Dynamic Toolset Discovery. 
-This feature provides tools that help the MCP Host application to discover and enable sets of GitHub tools only when needed.
-This helps to avoid situations where models get confused by the shear number of tools available to them, which varies by model.
+**Note**: This feature is currently in beta and may not be available in all environments. Please test it out and let us know if you encounter any issues.
+
+Instead of starting with all tools enabled, you can turn on dynamic toolset discovery. Dynamic toolsets allow the MCP host to list and enable toolsets in response to a user prompt. This should help to avoid situations where the model gets confused by the shear number of tools available.
 
 ### Using Dynamic Tool Discovery
 
@@ -194,8 +189,6 @@ docker run -i --rm \
   -e GITHUB_DYNAMIC_TOOLSETS=1 \
   ghcr.io/github/github-mcp-server
 ```
-
-
 
 ## GitHub Enterprise Server
 
