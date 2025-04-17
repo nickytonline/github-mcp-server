@@ -908,30 +908,30 @@ func CreatePullRequestReview(getClient GetClientFn, t translations.TranslationHe
 					map[string]interface{}{
 						"type":                 "object",
 						"additionalProperties": false,
-						"required":             []string{"path", "body"},
+						"required":             []string{"path", "body", "position", "line", "side", "start_line", "start_side"},
 						"properties": map[string]interface{}{
 							"path": map[string]interface{}{
 								"type":        "string",
 								"description": "path to the file",
 							},
 							"position": map[string]interface{}{
-								"type":        "number",
+								"type":        []string{"number", "null"},
 								"description": "position of the comment in the diff",
 							},
 							"line": map[string]interface{}{
-								"type":        "number",
+								"type":        []string{"number", "null"},
 								"description": "line number in the file to comment on. For multi-line comments, the end of the line range",
 							},
 							"side": map[string]interface{}{
-								"type":        "string",
+								"type":        []string{"string", "null"},
 								"description": "The side of the diff on which the line resides. For multi-line comments, this is the side for the end of the line range. (LEFT or RIGHT)",
 							},
 							"start_line": map[string]interface{}{
-								"type":        "number",
+								"type":        []string{"number", "null"},
 								"description": "The first line of the range to which the comment refers. Required for multi-line comments.",
 							},
 							"start_side": map[string]interface{}{
-								"type":        "string",
+								"type":        []string{"string", "null"},
 								"description": "The side of the diff on which the start line resides for multi-line comments. (LEFT or RIGHT)",
 							},
 							"body": map[string]interface{}{
