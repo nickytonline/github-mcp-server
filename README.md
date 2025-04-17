@@ -192,7 +192,7 @@ docker run -i --rm \
 
 ## GitHub Enterprise Server
 
-The flag `--gh-host` and the environment variable `GH_HOST` can be used to set
+The flag `--gh-host` and the environment variable `GITHUB_HOST` can be used to set
 the GitHub Enterprise Server hostname.
 
 ## i18n / Overriding Descriptions
