@@ -23,7 +23,7 @@ The MCP server can use many of the GitHub APIs, so enable the permissions that y
 
 ### Usage with VS Code
 
-For quick installation, use one of the one-click install buttons at the top of this README.
+For quick installation, use one of the one-click install buttons at the top of this README. Once you complete that flow, toggle Agent mode (located by the Copilot Chat text input) and the server will start.
 
 For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
 
