@@ -19,8 +19,6 @@ automation and interaction capabilities for developers and tools.
 3. Lastly you will need to [Create a GitHub Personal Access Token](https://github.com/settings/personal-access-tokens/new).
 The MCP server can use many of the GitHub APIs, so enable the permissions that you feel comfortable granting your AI tools (to learn more about access tokens, please check out the [documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
 
-
-
 ## Installation
 
 ### Usage with VS Code
@@ -437,6 +435,21 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `state`: Alert state (string, optional)
   - `severity`: Alert severity (string, optional)
   - `tool_name`: The name of the tool used for code scanning (string, optional)
+
+### Secret Scanning
+
+- **get_secret_scanning_alert** - Get a secret scanning alert
+
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `alertNumber`: Alert number (number, required)
+
+- **list_secret_scanning_alerts** - List secret scanning alerts for a repository
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `state`: Alert state (string, optional)
+  - `secret_type`: The secret types to be filtered for in a comma-separated list (string, optional)
+  - `resolution`: The resolution status (string, optional)
 
 ## Resources
 
