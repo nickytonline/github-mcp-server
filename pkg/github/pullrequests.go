@@ -915,23 +915,38 @@ func CreatePullRequestReview(getClient GetClientFn, t translations.TranslationHe
 								"description": "path to the file",
 							},
 							"position": map[string]interface{}{
-								"type":        []string{"number", "null"},
+								"anyOf": []interface{}{
+									map[string]string{"type": "number"},
+									map[string]string{"type": "null"},
+								},
 								"description": "position of the comment in the diff",
 							},
 							"line": map[string]interface{}{
-								"type":        []string{"number", "null"},
+								"anyOf": []interface{}{
+									map[string]string{"type": "number"},
+									map[string]string{"type": "null"},
+								},
 								"description": "line number in the file to comment on. For multi-line comments, the end of the line range",
 							},
 							"side": map[string]interface{}{
-								"type":        []string{"string", "null"},
+								"anyOf": []interface{}{
+									map[string]string{"type": "string"},
+									map[string]string{"type": "null"},
+								},
 								"description": "The side of the diff on which the line resides. For multi-line comments, this is the side for the end of the line range. (LEFT or RIGHT)",
 							},
 							"start_line": map[string]interface{}{
-								"type":        []string{"number", "null"},
+								"anyOf": []interface{}{
+									map[string]string{"type": "number"},
+									map[string]string{"type": "null"},
+								},
 								"description": "The first line of the range to which the comment refers. Required for multi-line comments.",
 							},
 							"start_side": map[string]interface{}{
-								"type":        []string{"string", "null"},
+								"anyOf": []interface{}{
+									map[string]string{"type": "string"},
+									map[string]string{"type": "null"},
+								},
 								"description": "The side of the diff on which the start line resides for multi-line comments. (LEFT or RIGHT)",
 							},
 							"body": map[string]interface{}{
