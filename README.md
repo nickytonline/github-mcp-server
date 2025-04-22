@@ -487,7 +487,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 ### Users
 
 - **search_users** - Search for GitHub users
-  - `query`: Search query (string, required)
+  - `q`: Search query (string, required)
   - `sort`: Sort field (string, optional)
   - `order`: Sort order (string, optional)
   - `page`: Page number (number, optional)
