@@ -222,7 +222,27 @@ docker run -i --rm \
 ## GitHub Enterprise Server
 
 The flag `--gh-host` and the environment variable `GITHUB_HOST` can be used to set
-the GitHub Enterprise Server hostname.
+the GitHub Enterprise Server hostname inculding the `https` connection schema:
+
+``` json
+"github": {
+    "command": "docker",
+    "args": [
+    "run",
+    "-i",
+    "--rm",
+    "-e",
+    "GITHUB_PERSONAL_ACCESS_TOKEN",
+    "-e",
+    "GITHUB_HOST",
+    "ghcr.io/github/github-mcp-server"
+    ],
+    "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}",
+        "GITHUB_HOST": "https://your_full_domain_name_dot_com"
+    }
+}
+```
 
 ## i18n / Overriding Descriptions
 
