@@ -27,6 +27,8 @@ func InitToolsets(passedToolsets []string, readOnly bool, getClient GetClientFn,
 			toolsets.NewServerTool(SearchCode(getClient, t)),
 			toolsets.NewServerTool(GetCommit(getClient, t)),
 			toolsets.NewServerTool(ListBranches(getClient, t)),
+			toolsets.NewServerTool(ListTags(getClient, t)),
+			toolsets.NewServerTool(GetTag(getClient, t)),
 		).
 		AddWriteTools(
 			toolsets.NewServerTool(CreateOrUpdateFile(getClient, t)),
