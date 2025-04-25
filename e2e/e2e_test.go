@@ -5,6 +5,7 @@ package e2e_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"slices"
@@ -88,12 +89,6 @@ func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
 		option(opts)
 	}
 
-	// Set the GitHub token and other environment variables
-	t.Setenv("GITHUB_PERSONAL_ACCESS_TOKEN", token)
-	for key, value := range opts.EnvVars {
-		t.Setenv(key, value)
-	}
-
 	// Prepare Docker arguments
 	args := []string{
 		"docker",
@@ -101,7 +96,7 @@ func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
 		"-i",
 		"--rm",
 		"-e",
-		"GITHUB_PERSONAL_ACCESS_TOKEN",
+		"GITHUB_PERSONAL_ACCESS_TOKEN", // Personal access token is all required
 	}
 
 	// Add all environment variables to the Docker arguments
@@ -112,9 +107,16 @@ func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
 	// Add the image name
 	args = append(args, "github/e2e-github-mcp-server")
 
+	// Construct the env vars for the MCP Client to execute docker with
+	dockerEnvVars := make([]string, 0, len(opts.EnvVars)+1)
+	dockerEnvVars = append(dockerEnvVars, fmt.Sprintf("GITHUB_PERSONAL_ACCESS_TOKEN=%s", token))
+	for key, value := range opts.EnvVars {
+		dockerEnvVars = append(dockerEnvVars, fmt.Sprintf("%s=%s", key, value))
+	}
+
 	// Create the client
 	t.Log("Starting Stdio MCP client...")
-	client, err := mcpClient.NewStdioMCPClient(args[0], []string{}, args[1:]...)
+	client, err := mcpClient.NewStdioMCPClient(args[0], dockerEnvVars, args[1:]...)
 	require.NoError(t, err, "expected to create client successfully")
 	t.Cleanup(func() {
 		require.NoError(t, client.Close(), "expected to close client successfully")
@@ -139,6 +141,8 @@ func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
 }
 
 func TestGetMe(t *testing.T) {
+	t.Parallel()
+
 	mcpClient := setupMCPClient(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -173,6 +177,8 @@ func TestGetMe(t *testing.T) {
 }
 
 func TestToolsets(t *testing.T) {
+	t.Parallel()
+
 	mcpClient := setupMCPClient(
 		t,
 		WithEnvVars(map[string]string{
