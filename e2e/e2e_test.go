@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
+	"sync"
 	"testing"
 	"time"
 
@@ -16,16 +17,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	// Shared variables and sync.Once instances to ensure one-time execution
+	getTokenOnce sync.Once
+	e2eToken     string
+
+	buildOnce  sync.Once
+	buildError error
+)
+
+// getE2EToken ensures the environment variable is checked only once and returns the token
+func getE2EToken(t *testing.T) string {
+	getTokenOnce.Do(func() {
+		e2eToken = os.Getenv("GITHUB_MCP_SERVER_E2E_TOKEN")
+		if e2eToken == "" {
+			t.Fatalf("GITHUB_MCP_SERVER_E2E_TOKEN environment variable is not set")
+		}
+	})
+	return e2eToken
+}
+
+// ensureDockerImageBuilt makes sure the Docker image is built only once across all tests
+func ensureDockerImageBuilt(t *testing.T) {
+	buildOnce.Do(func() {
+		t.Log("Building Docker image for e2e tests...")
+		cmd := exec.Command("docker", "build", "-t", "github/e2e-github-mcp-server", ".")
+		cmd.Dir = ".." // Run this in the context of the root, where the Dockerfile is located.
+		output, err := cmd.CombinedOutput()
+		buildError = err
+		if err != nil {
+			t.Logf("Docker build output: %s", string(output))
+		}
+	})
+
+	// Check if the build was successful
+	require.NoError(t, buildError, "expected to build Docker image successfully")
+}
+
 func TestE2E(t *testing.T) {
-	e2eServerToken := os.Getenv("GITHUB_MCP_SERVER_E2E_TOKEN")
-	if e2eServerToken == "" {
-		t.Fatalf("GITHUB_MCP_SERVER_E2E_TOKEN environment variable is not set")
-	}
+	token := getE2EToken(t)
+	ensureDockerImageBuilt(t)
 
-	// Build the Docker image for the MCP server.
-	buildDockerImage(t)
-
-	t.Setenv("GITHUB_PERSONAL_ACCESS_TOKEN", e2eServerToken) // The MCP Client merges the existing environment.
+	t.Setenv("GITHUB_PERSONAL_ACCESS_TOKEN", token) // The MCP Client merges the existing environment.
 	args := []string{
 		"docker",
 		"run",
@@ -81,20 +114,11 @@ func TestE2E(t *testing.T) {
 
 		// Then the login in the response should match the login obtained via the same
 		// token using the GitHub API.
-		client := github.NewClient(nil).WithAuthToken(e2eServerToken)
+		client := github.NewClient(nil).WithAuthToken(token)
 		user, _, err := client.Users.Get(context.Background(), "")
 		require.NoError(t, err, "expected to get user successfully")
 		require.Equal(t, trimmedContent.Login, *user.Login, "expected login to match")
 	})
 
 	require.NoError(t, client.Close(), "expected to close client successfully")
-}
-
-func buildDockerImage(t *testing.T) {
-	t.Log("Building Docker image for e2e tests...")
-
-	cmd := exec.Command("docker", "build", "-t", "github/e2e-github-mcp-server", ".")
-	cmd.Dir = ".." // Run this in the context of the root, where the Dockerfile is located.
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, "expected to build Docker image successfully, output: %s", string(output))
 }
