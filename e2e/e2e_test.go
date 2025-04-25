@@ -20,7 +20,7 @@ import (
 var (
 	// Shared variables and sync.Once instances to ensure one-time execution
 	getTokenOnce sync.Once
-	e2eToken     string
+	token        string
 
 	buildOnce  sync.Once
 	buildError error
@@ -29,12 +29,12 @@ var (
 // getE2EToken ensures the environment variable is checked only once and returns the token
 func getE2EToken(t *testing.T) string {
 	getTokenOnce.Do(func() {
-		e2eToken = os.Getenv("GITHUB_MCP_SERVER_E2E_TOKEN")
-		if e2eToken == "" {
+		token = os.Getenv("GITHUB_MCP_SERVER_E2E_TOKEN")
+		if token == "" {
 			t.Fatalf("GITHUB_MCP_SERVER_E2E_TOKEN environment variable is not set")
 		}
 	})
-	return e2eToken
+	return token
 }
 
 // ensureDockerImageBuilt makes sure the Docker image is built only once across all tests
@@ -54,11 +54,55 @@ func ensureDockerImageBuilt(t *testing.T) {
 	require.NoError(t, buildError, "expected to build Docker image successfully")
 }
 
-func TestE2E(t *testing.T) {
+// ClientOpts holds configuration options for the MCP client setup
+type ClientOpts struct {
+	// Environment variables to set before starting the client
+	EnvVars map[string]string
+	// Whether to initialize the client after creation
+	ShouldInitialize bool
+}
+
+// ClientOption defines a function type for configuring ClientOpts
+type ClientOption func(*ClientOpts)
+
+// WithEnvVars returns an option that adds environment variables to the client options
+func WithEnvVars(envVars map[string]string) ClientOption {
+	return func(opts *ClientOpts) {
+		opts.EnvVars = envVars
+	}
+}
+
+// WithInitialize returns an option that configures the client to be initialized
+func WithInitialize() ClientOption {
+	return func(opts *ClientOpts) {
+		opts.ShouldInitialize = true
+	}
+}
+
+// setupMCPClient sets up the test environment and returns an initialized MCP client
+// It handles token retrieval, Docker image building, and applying the provided options
+func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
+	// Get token and ensure Docker image is built
 	token := getE2EToken(t)
 	ensureDockerImageBuilt(t)
 
-	t.Setenv("GITHUB_PERSONAL_ACCESS_TOKEN", token) // The MCP Client merges the existing environment.
+	// Create and configure options
+	opts := &ClientOpts{
+		EnvVars: make(map[string]string),
+	}
+
+	// Apply all options to configure the opts struct
+	for _, option := range options {
+		option(opts)
+	}
+
+	// Set the GitHub token and other environment variables
+	t.Setenv("GITHUB_PERSONAL_ACCESS_TOKEN", token)
+	for key, value := range opts.EnvVars {
+		t.Setenv(key, value)
+	}
+
+	// Prepare Docker arguments
 	args := []string{
 		"docker",
 		"run",
@@ -66,13 +110,23 @@ func TestE2E(t *testing.T) {
 		"--rm",
 		"-e",
 		"GITHUB_PERSONAL_ACCESS_TOKEN",
-		"github/e2e-github-mcp-server",
 	}
+
+	// Add all environment variables to the Docker arguments
+	for key := range opts.EnvVars {
+		args = append(args, "-e", key)
+	}
+
+	// Add the image name
+	args = append(args, "github/e2e-github-mcp-server")
+
+	// Create the client
 	t.Log("Starting Stdio MCP client...")
 	client, err := mcpClient.NewStdioMCPClient(args[0], []string{}, args[1:]...)
 	require.NoError(t, err, "expected to create client successfully")
 
-	t.Run("Initialize", func(t *testing.T) {
+	// Initialize the client if configured to do so
+	if opts.ShouldInitialize {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
@@ -84,10 +138,16 @@ func TestE2E(t *testing.T) {
 		}
 
 		result, err := client.Initialize(ctx, request)
-		require.NoError(t, err, "expected to initialize successfully")
+		require.NoError(t, err, "failed to initialize client")
+		require.Equal(t, "github-mcp-server", result.ServerInfo.Name, "unexpected server name")
+	}
 
-		require.Equal(t, "github-mcp-server", result.ServerInfo.Name)
-	})
+	return client
+}
+
+func TestE2E(t *testing.T) {
+	// Setup the MCP client with initialization
+	client := setupMCPClient(t, WithInitialize())
 
 	t.Run("CallTool get_me", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -114,7 +174,7 @@ func TestE2E(t *testing.T) {
 
 		// Then the login in the response should match the login obtained via the same
 		// token using the GitHub API.
-		client := github.NewClient(nil).WithAuthToken(token)
+		client := github.NewClient(nil).WithAuthToken(getE2EToken(t))
 		user, _, err := client.Users.Get(context.Background(), "")
 		require.NoError(t, err, "expected to get user successfully")
 		require.Equal(t, trimmedContent.Login, *user.Login, "expected login to match")
