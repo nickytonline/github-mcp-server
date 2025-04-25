@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -115,6 +116,9 @@ func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
 	t.Log("Starting Stdio MCP client...")
 	client, err := mcpClient.NewStdioMCPClient(args[0], []string{}, args[1:]...)
 	require.NoError(t, err, "expected to create client successfully")
+	t.Cleanup(func() {
+		require.NoError(t, client.Close(), "expected to close client successfully")
+	})
 
 	// Initialize the client
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -166,5 +170,33 @@ func TestGetMe(t *testing.T) {
 	require.NoError(t, err, "expected to get user successfully")
 	require.Equal(t, trimmedContent.Login, *user.Login, "expected login to match")
 
-	require.NoError(t, mcpClient.Close(), "expected to close client successfully")
+}
+
+func TestToolsets(t *testing.T) {
+	mcpClient := setupMCPClient(
+		t,
+		WithEnvVars(map[string]string{
+			"GITHUB_TOOLSETS": "repos,issues",
+		}),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	request := mcp.ListToolsRequest{}
+	response, err := mcpClient.ListTools(ctx, request)
+	require.NoError(t, err, "expected to list tools successfully")
+
+	// We could enumerate the tools here, but we'll need to expose that information
+	// declaratively in the MCP server, so for the moment let's just check the existence
+	// of an issue and repo tool, and the non-existence of a pull_request tool.
+	var toolsContains = func(expectedName string) bool {
+		return slices.ContainsFunc(response.Tools, func(tool mcp.Tool) bool {
+			return tool.Name == expectedName
+		})
+	}
+
+	require.True(t, toolsContains("get_issue"), "expected to find 'get_issue' tool")
+	require.True(t, toolsContains("list_branches"), "expected to find 'list_branches' tool")
+	require.False(t, toolsContains("get_pull_request"), "expected not to find 'get_pull_request' tool")
 }

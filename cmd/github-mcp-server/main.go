@@ -45,7 +45,15 @@ var (
 				stdlog.Fatal("Failed to initialize logger:", err)
 			}
 
-			enabledToolsets := viper.GetStringSlice("toolsets")
+			// If you're wondering why we're not using viper.GetStringSlice("toolsets"),
+			// it's because viper doesn't handle comma-separated values correctly for env
+			// vars when using GetStringSlice.
+			// https://github.com/spf13/viper/issues/380
+			var enabledToolsets []string
+			err = viper.UnmarshalKey("toolsets", &enabledToolsets)
+			if err != nil {
+				stdlog.Fatal("Failed to unmarshal toolsets:", err)
+			}
 
 			logCommands := viper.GetBool("enable-command-logging")
 			cfg := runConfig{
