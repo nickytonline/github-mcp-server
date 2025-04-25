@@ -58,8 +58,6 @@ func ensureDockerImageBuilt(t *testing.T) {
 type ClientOpts struct {
 	// Environment variables to set before starting the client
 	EnvVars map[string]string
-	// Whether to initialize the client after creation
-	ShouldInitialize bool
 }
 
 // ClientOption defines a function type for configuring ClientOpts
@@ -69,13 +67,6 @@ type ClientOption func(*ClientOpts)
 func WithEnvVars(envVars map[string]string) ClientOption {
 	return func(opts *ClientOpts) {
 		opts.EnvVars = envVars
-	}
-}
-
-// WithInitialize returns an option that configures the client to be initialized
-func WithInitialize() ClientOption {
-	return func(opts *ClientOpts) {
-		opts.ShouldInitialize = true
 	}
 }
 
@@ -125,60 +116,55 @@ func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
 	client, err := mcpClient.NewStdioMCPClient(args[0], []string{}, args[1:]...)
 	require.NoError(t, err, "expected to create client successfully")
 
-	// Initialize the client if configured to do so
-	if opts.ShouldInitialize {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	// Initialize the client
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-		request := mcp.InitializeRequest{}
-		request.Params.ProtocolVersion = "2025-03-26"
-		request.Params.ClientInfo = mcp.Implementation{
-			Name:    "e2e-test-client",
-			Version: "0.0.1",
-		}
-
-		result, err := client.Initialize(ctx, request)
-		require.NoError(t, err, "failed to initialize client")
-		require.Equal(t, "github-mcp-server", result.ServerInfo.Name, "unexpected server name")
+	request := mcp.InitializeRequest{}
+	request.Params.ProtocolVersion = "2025-03-26"
+	request.Params.ClientInfo = mcp.Implementation{
+		Name:    "e2e-test-client",
+		Version: "0.0.1",
 	}
+
+	result, err := client.Initialize(ctx, request)
+	require.NoError(t, err, "failed to initialize client")
+	require.Equal(t, "github-mcp-server", result.ServerInfo.Name, "unexpected server name")
 
 	return client
 }
 
-func TestE2E(t *testing.T) {
-	// Setup the MCP client with initialization
-	client := setupMCPClient(t, WithInitialize())
+func TestGetMe(t *testing.T) {
+	mcpClient := setupMCPClient(t)
 
-	t.Run("CallTool get_me", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-		// When we call the "get_me" tool
-		request := mcp.CallToolRequest{}
-		request.Params.Name = "get_me"
+	// When we call the "get_me" tool
+	request := mcp.CallToolRequest{}
+	request.Params.Name = "get_me"
 
-		response, err := client.CallTool(ctx, request)
-		require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	response, err := mcpClient.CallTool(ctx, request)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
 
-		require.False(t, response.IsError, "expected result not to be an error")
-		require.Len(t, response.Content, 1, "expected content to have one item")
+	require.False(t, response.IsError, "expected result not to be an error")
+	require.Len(t, response.Content, 1, "expected content to have one item")
 
-		textContent, ok := response.Content[0].(mcp.TextContent)
-		require.True(t, ok, "expected content to be of type TextContent")
+	textContent, ok := response.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
 
-		var trimmedContent struct {
-			Login string `json:"login"`
-		}
-		err = json.Unmarshal([]byte(textContent.Text), &trimmedContent)
-		require.NoError(t, err, "expected to unmarshal text content successfully")
+	var trimmedContent struct {
+		Login string `json:"login"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedContent)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
 
-		// Then the login in the response should match the login obtained via the same
-		// token using the GitHub API.
-		client := github.NewClient(nil).WithAuthToken(getE2EToken(t))
-		user, _, err := client.Users.Get(context.Background(), "")
-		require.NoError(t, err, "expected to get user successfully")
-		require.Equal(t, trimmedContent.Login, *user.Login, "expected login to match")
-	})
+	// Then the login in the response should match the login obtained via the same
+	// token using the GitHub API.
+	ghClient := github.NewClient(nil).WithAuthToken(getE2EToken(t))
+	user, _, err := ghClient.Users.Get(context.Background(), "")
+	require.NoError(t, err, "expected to get user successfully")
+	require.Equal(t, trimmedContent.Login, *user.Login, "expected login to match")
 
-	require.NoError(t, client.Close(), "expected to close client successfully")
+	require.NoError(t, mcpClient.Close(), "expected to close client successfully")
 }
