@@ -7,8 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/github/github-mcp-server/internal/githubv4mock"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
+	"github.com/shurcooL/githubv4"
+
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1192,377 +1195,6 @@ func Test_GetPullRequestReviews(t *testing.T) {
 	}
 }
 
-func Test_CreatePullRequestReview(t *testing.T) {
-	// Verify tool definition once
-	mockClient := github.NewClient(nil)
-	tool, _ := CreatePullRequestReview(stubGetClientFn(mockClient), translations.NullTranslationHelper)
-
-	assert.Equal(t, "create_pull_request_review", tool.Name)
-	assert.NotEmpty(t, tool.Description)
-	assert.Contains(t, tool.InputSchema.Properties, "owner")
-	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
-	assert.Contains(t, tool.InputSchema.Properties, "body")
-	assert.Contains(t, tool.InputSchema.Properties, "event")
-	assert.Contains(t, tool.InputSchema.Properties, "commitId")
-	assert.Contains(t, tool.InputSchema.Properties, "comments")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber", "event"})
-
-	// Setup mock review for success case
-	mockReview := &github.PullRequestReview{
-		ID:      github.Ptr(int64(301)),
-		State:   github.Ptr("APPROVED"),
-		Body:    github.Ptr("Looks good!"),
-		HTMLURL: github.Ptr("https://github.com/owner/repo/pull/42#pullrequestreview-301"),
-		User: &github.User{
-			Login: github.Ptr("reviewer"),
-		},
-		CommitID:    github.Ptr("abcdef123456"),
-		SubmittedAt: &github.Timestamp{Time: time.Now()},
-	}
-
-	tests := []struct {
-		name           string
-		mockedClient   *http.Client
-		requestArgs    map[string]interface{}
-		expectError    bool
-		expectedReview *github.PullRequestReview
-		expectedErrMsg string
-	}{
-		{
-			name: "successful review creation with body only",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					expectRequestBody(t, map[string]interface{}{
-						"body":  "Looks good!",
-						"event": "APPROVE",
-					}).andThen(
-						mockResponse(t, http.StatusOK, mockReview),
-					),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"body":       "Looks good!",
-				"event":      "APPROVE",
-			},
-			expectError:    false,
-			expectedReview: mockReview,
-		},
-		{
-			name: "successful review creation with commitId",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					expectRequestBody(t, map[string]interface{}{
-						"body":      "Looks good!",
-						"event":     "APPROVE",
-						"commit_id": "abcdef123456",
-					}).andThen(
-						mockResponse(t, http.StatusOK, mockReview),
-					),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"body":       "Looks good!",
-				"event":      "APPROVE",
-				"commitId":   "abcdef123456",
-			},
-			expectError:    false,
-			expectedReview: mockReview,
-		},
-		{
-			name: "successful review creation with comments",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					expectRequestBody(t, map[string]interface{}{
-						"body":  "Some issues to fix",
-						"event": "REQUEST_CHANGES",
-						"comments": []interface{}{
-							map[string]interface{}{
-								"path":     "file1.go",
-								"position": float64(10),
-								"body":     "This needs to be fixed",
-							},
-							map[string]interface{}{
-								"path":     "file2.go",
-								"position": float64(20),
-								"body":     "Consider a different approach here",
-							},
-						},
-					}).andThen(
-						mockResponse(t, http.StatusOK, mockReview),
-					),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"body":       "Some issues to fix",
-				"event":      "REQUEST_CHANGES",
-				"comments": []interface{}{
-					map[string]interface{}{
-						"path":     "file1.go",
-						"position": float64(10),
-						"body":     "This needs to be fixed",
-					},
-					map[string]interface{}{
-						"path":     "file2.go",
-						"position": float64(20),
-						"body":     "Consider a different approach here",
-					},
-				},
-			},
-			expectError:    false,
-			expectedReview: mockReview,
-		},
-		{
-			name: "invalid comment format",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusUnprocessableEntity)
-						_, _ = w.Write([]byte(`{"message": "Invalid comment format"}`))
-					}),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"event":      "REQUEST_CHANGES",
-				"comments": []interface{}{
-					map[string]interface{}{
-						"path": "file1.go",
-						// missing position
-						"body": "This needs to be fixed",
-					},
-				},
-			},
-			expectError:    false,
-			expectedErrMsg: "each comment must have either position or line",
-		},
-		{
-			name: "successful review creation with line parameter",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					expectRequestBody(t, map[string]interface{}{
-						"body":  "Code review comments",
-						"event": "COMMENT",
-						"comments": []interface{}{
-							map[string]interface{}{
-								"path": "main.go",
-								"line": float64(42),
-								"body": "Consider adding a comment here",
-							},
-						},
-					}).andThen(
-						mockResponse(t, http.StatusOK, mockReview),
-					),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"body":       "Code review comments",
-				"event":      "COMMENT",
-				"comments": []interface{}{
-					map[string]interface{}{
-						"path": "main.go",
-						"line": float64(42),
-						"body": "Consider adding a comment here",
-					},
-				},
-			},
-			expectError:    false,
-			expectedReview: mockReview,
-		},
-		{
-			name: "successful review creation with multi-line comment",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					expectRequestBody(t, map[string]interface{}{
-						"body":  "Multi-line comment review",
-						"event": "COMMENT",
-						"comments": []interface{}{
-							map[string]interface{}{
-								"path":       "main.go",
-								"start_line": float64(10),
-								"line":       float64(15),
-								"side":       "RIGHT",
-								"body":       "This entire block needs refactoring",
-							},
-						},
-					}).andThen(
-						mockResponse(t, http.StatusOK, mockReview),
-					),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"body":       "Multi-line comment review",
-				"event":      "COMMENT",
-				"comments": []interface{}{
-					map[string]interface{}{
-						"path":       "main.go",
-						"start_line": float64(10),
-						"line":       float64(15),
-						"side":       "RIGHT",
-						"body":       "This entire block needs refactoring",
-					},
-				},
-			},
-			expectError:    false,
-			expectedReview: mockReview,
-		},
-		{
-			name:         "invalid multi-line comment - missing line parameter",
-			mockedClient: mock.NewMockedHTTPClient(),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"event":      "COMMENT",
-				"comments": []interface{}{
-					map[string]interface{}{
-						"path":       "main.go",
-						"start_line": float64(10),
-						// missing line parameter
-						"body": "Invalid multi-line comment",
-					},
-				},
-			},
-			expectError:    false,
-			expectedErrMsg: "each comment must have either position or line", // Updated error message
-		},
-		{
-			name: "invalid comment - mixing position with line parameters",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					mockReview,
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"event":      "COMMENT",
-				"comments": []interface{}{
-					map[string]interface{}{
-						"path":     "main.go",
-						"position": float64(5),
-						"line":     float64(42),
-						"body":     "Invalid parameter combination",
-					},
-				},
-			},
-			expectError:    false,
-			expectedErrMsg: "position cannot be combined with line, side, start_line, or start_side",
-		},
-		{
-			name:         "invalid multi-line comment - missing side parameter",
-			mockedClient: mock.NewMockedHTTPClient(),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"event":      "COMMENT",
-				"comments": []interface{}{
-					map[string]interface{}{
-						"path":       "main.go",
-						"start_line": float64(10),
-						"line":       float64(15),
-						"start_side": "LEFT",
-						// missing side parameter
-						"body": "Invalid multi-line comment",
-					},
-				},
-			},
-			expectError:    false,
-			expectedErrMsg: "if start_side is provided, side must also be provided",
-		},
-		{
-			name: "review creation fails",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsReviewsByOwnerByRepoByPullNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusUnprocessableEntity)
-						_, _ = w.Write([]byte(`{"message": "Invalid comment format"}`))
-					}),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":      "owner",
-				"repo":       "repo",
-				"pullNumber": float64(42),
-				"body":       "Looks good!",
-				"event":      "APPROVE",
-			},
-			expectError:    true,
-			expectedErrMsg: "failed to create pull request review",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			// Setup client with mock
-			client := github.NewClient(tc.mockedClient)
-			_, handler := CreatePullRequestReview(stubGetClientFn(client), translations.NullTranslationHelper)
-
-			// Create call request
-			request := createMCPRequest(tc.requestArgs)
-
-			// Call handler
-			result, err := handler(context.Background(), request)
-
-			// Verify results
-			if tc.expectError {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tc.expectedErrMsg)
-				return
-			}
-
-			require.NoError(t, err)
-
-			// For error messages in the result
-			if tc.expectedErrMsg != "" {
-				textContent := getTextResult(t, result)
-				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
-				return
-			}
-
-			// Parse the result and get the text content if no error
-			textContent := getTextResult(t, result)
-
-			// Unmarshal and verify the result
-			var returnedReview github.PullRequestReview
-			err = json.Unmarshal([]byte(textContent.Text), &returnedReview)
-			require.NoError(t, err)
-			assert.Equal(t, *tc.expectedReview.ID, *returnedReview.ID)
-			assert.Equal(t, *tc.expectedReview.State, *returnedReview.State)
-			assert.Equal(t, *tc.expectedReview.Body, *returnedReview.Body)
-			assert.Equal(t, *tc.expectedReview.User.Login, *returnedReview.User.Login)
-			assert.Equal(t, *tc.expectedReview.HTMLURL, *returnedReview.HTMLURL)
-		})
-	}
-}
-
 func Test_CreatePullRequest(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
@@ -1720,199 +1352,196 @@ func Test_CreatePullRequest(t *testing.T) {
 	}
 }
 
-func Test_AddPullRequestReviewComment(t *testing.T) {
-	mockClient := github.NewClient(nil)
-	tool, _ := AddPullRequestReviewComment(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+func TestCreateAndSubmitPullRequestReview(t *testing.T) {
+	t.Parallel()
 
-	assert.Equal(t, "add_pull_request_review_comment", tool.Name)
+	// Verify tool definition once
+	mockClient := githubv4.NewClient(nil)
+	tool, _ := CreateAndSubmitPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "create_and_submit_pull_request_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
 	assert.Contains(t, tool.InputSchema.Properties, "body")
-	assert.Contains(t, tool.InputSchema.Properties, "commit_id")
-	assert.Contains(t, tool.InputSchema.Properties, "path")
-	// Since we've updated commit_id and path to be optional when using in_reply_to
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number", "body"})
-
-	mockComment := &github.PullRequestComment{
-		ID:   github.Ptr(int64(123)),
-		Body: github.Ptr("Great stuff!"),
-		Path: github.Ptr("file1.txt"),
-		Line: github.Ptr(2),
-		Side: github.Ptr("RIGHT"),
-	}
-
-	mockReply := &github.PullRequestComment{
-		ID:   github.Ptr(int64(456)),
-		Body: github.Ptr("Good point, will fix!"),
-	}
+	assert.Contains(t, tool.InputSchema.Properties, "event")
+	assert.Contains(t, tool.InputSchema.Properties, "commitID")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber", "body", "event"})
 
 	tests := []struct {
-		name            string
-		mockedClient    *http.Client
-		requestArgs     map[string]interface{}
-		expectError     bool
-		expectedComment *github.PullRequestComment
-		expectedErrMsg  string
+		name               string
+		mockedClient       *http.Client
+		requestArgs        map[string]any
+		expectToolError    bool
+		expectedToolErrMsg string
 	}{
 		{
-			name: "successful line comment creation",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusCreated)
-						err := json.NewEncoder(w).Encode(mockComment)
-						if err != nil {
-							http.Error(w, err.Error(), http.StatusInternalServerError)
-							return
-						}
-					}),
+			name: "successful review creation",
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				githubv4mock.NewQueryMatcher(
+					struct {
+						Repository struct {
+							PullRequest struct {
+								ID githubv4.ID
+							} `graphql:"pullRequest(number: $prNum)"`
+						} `graphql:"repository(owner: $owner, name: $repo)"`
+					}{},
+					map[string]any{
+						"owner": githubv4.String("owner"),
+						"repo":  githubv4.String("repo"),
+						"prNum": githubv4.Int(42),
+					},
+					githubv4mock.DataResponse(
+						map[string]any{
+							"repository": map[string]any{
+								"pullRequest": map[string]any{
+									"id": "PR_kwDODKw3uc6WYN1T",
+								},
+							},
+						},
+					),
+				),
+				githubv4mock.NewMutationMatcher(
+					struct {
+						AddPullRequestReview struct {
+							PullRequestReview struct {
+								ID githubv4.ID
+							}
+						} `graphql:"addPullRequestReview(input: $input)"`
+					}{},
+					githubv4.AddPullRequestReviewInput{
+						PullRequestID: githubv4.ID("PR_kwDODKw3uc6WYN1T"),
+						Body:          githubv4.NewString("This is a test review"),
+						Event:         githubv4mock.Ptr(githubv4.PullRequestReviewEventComment),
+						CommitOID:     githubv4.NewGitObjectID("abcd1234"),
+					},
+					nil,
+					githubv4mock.DataResponse(map[string]any{}),
 				),
 			),
-			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(1),
-				"body":        "Great stuff!",
-				"commit_id":   "6dcb09b5b57875f334f61aebed695e2e4193db5e",
-				"path":        "file1.txt",
-				"line":        float64(2),
-				"side":        "RIGHT",
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "This is a test review",
+				"event":      "COMMENT",
+				"commitID":   "abcd1234",
 			},
-			expectError:     false,
-			expectedComment: mockComment,
+			expectToolError: false,
 		},
 		{
-			name: "successful reply using in_reply_to",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusCreated)
-						err := json.NewEncoder(w).Encode(mockReply)
-						if err != nil {
-							http.Error(w, err.Error(), http.StatusInternalServerError)
-							return
-						}
-					}),
+			name: "failure to get pull request",
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				githubv4mock.NewQueryMatcher(
+					struct {
+						Repository struct {
+							PullRequest struct {
+								ID githubv4.ID
+							} `graphql:"pullRequest(number: $prNum)"`
+						} `graphql:"repository(owner: $owner, name: $repo)"`
+					}{},
+					map[string]any{
+						"owner": githubv4.String("owner"),
+						"repo":  githubv4.String("repo"),
+						"prNum": githubv4.Int(42),
+					},
+					githubv4mock.ErrorResponse("expected test failure"),
 				),
 			),
-			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(1),
-				"body":        "Good point, will fix!",
-				"in_reply_to": float64(123),
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "This is a test review",
+				"event":      "COMMENT",
+				"commitID":   "abcd1234",
 			},
-			expectError:     false,
-			expectedComment: mockReply,
+			expectToolError:    true,
+			expectedToolErrMsg: "expected test failure",
 		},
 		{
-			name: "comment creation fails",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusUnprocessableEntity)
-						w.Header().Set("Content-Type", "application/json")
-						_, _ = w.Write([]byte(`{"message": "Validation Failed"}`))
-					}),
+			name: "failure to submit review",
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				githubv4mock.NewQueryMatcher(
+					struct {
+						Repository struct {
+							PullRequest struct {
+								ID githubv4.ID
+							} `graphql:"pullRequest(number: $prNum)"`
+						} `graphql:"repository(owner: $owner, name: $repo)"`
+					}{},
+					map[string]any{
+						"owner": githubv4.String("owner"),
+						"repo":  githubv4.String("repo"),
+						"prNum": githubv4.Int(42),
+					},
+					githubv4mock.DataResponse(
+						map[string]any{
+							"repository": map[string]any{
+								"pullRequest": map[string]any{
+									"id": "PR_kwDODKw3uc6WYN1T",
+								},
+							},
+						},
+					),
+				),
+				githubv4mock.NewMutationMatcher(
+					struct {
+						AddPullRequestReview struct {
+							PullRequestReview struct {
+								ID githubv4.ID
+							}
+						} `graphql:"addPullRequestReview(input: $input)"`
+					}{},
+					githubv4.AddPullRequestReviewInput{
+						PullRequestID: githubv4.ID("PR_kwDODKw3uc6WYN1T"),
+						Body:          githubv4.NewString("This is a test review"),
+						Event:         githubv4mock.Ptr(githubv4.PullRequestReviewEventComment),
+						CommitOID:     githubv4.NewGitObjectID("abcd1234"),
+					},
+					nil,
+					githubv4mock.ErrorResponse("expected test failure"),
 				),
 			),
-			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(1),
-				"body":        "Great stuff!",
-				"commit_id":   "6dcb09b5b57875f334f61aebed695e2e4193db5e",
-				"path":        "file1.txt",
-				"line":        float64(2),
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"body":       "This is a test review",
+				"event":      "COMMENT",
+				"commitID":   "abcd1234",
 			},
-			expectError:    true,
-			expectedErrMsg: "failed to create pull request comment",
-		},
-		{
-			name: "reply creation fails",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.PostReposPullsCommentsByOwnerByRepoByPullNumber,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusNotFound)
-						w.Header().Set("Content-Type", "application/json")
-						_, _ = w.Write([]byte(`{"message": "Comment not found"}`))
-					}),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(1),
-				"body":        "Good point, will fix!",
-				"in_reply_to": float64(999),
-			},
-			expectError:    true,
-			expectedErrMsg: "failed to reply to pull request comment",
-		},
-		{
-			name:         "missing required parameters for comment",
-			mockedClient: mock.NewMockedHTTPClient(),
-			requestArgs: map[string]interface{}{
-				"owner":       "owner",
-				"repo":        "repo",
-				"pull_number": float64(1),
-				"body":        "Great stuff!",
-				// missing commit_id and path
-			},
-			expectError:    false,
-			expectedErrMsg: "missing required parameter: commit_id",
+			expectToolError:    true,
+			expectedToolErrMsg: "expected test failure",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			mockClient := github.NewClient(tc.mockedClient)
+			t.Parallel()
 
-			_, handler := AddPullRequestReviewComment(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+			// Setup client with mock
+			client := githubv4.NewClient(tc.mockedClient)
+			_, handler := CreateAndSubmitPullRequestReview(stubGetGQLClientFn(client), translations.NullTranslationHelper)
 
+			// Create call request
 			request := createMCPRequest(tc.requestArgs)
 
+			// Call handler
 			result, err := handler(context.Background(), request)
-
-			if tc.expectError {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tc.expectedErrMsg)
-				return
-			}
-
 			require.NoError(t, err)
-			assert.NotNil(t, result)
-			require.Len(t, result.Content, 1)
 
 			textContent := getTextResult(t, result)
-			if tc.expectedErrMsg != "" {
-				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
+
+			if tc.expectToolError {
+				require.True(t, result.IsError)
+				assert.Contains(t, textContent.Text, tc.expectedToolErrMsg)
 				return
 			}
 
-			var returnedComment github.PullRequestComment
-			err = json.Unmarshal([]byte(getTextResult(t, result).Text), &returnedComment)
-			require.NoError(t, err)
-
-			assert.Equal(t, *tc.expectedComment.ID, *returnedComment.ID)
-			assert.Equal(t, *tc.expectedComment.Body, *returnedComment.Body)
-
-			// Only check Path, Line, and Side if they exist in the expected comment
-			if tc.expectedComment.Path != nil {
-				assert.Equal(t, *tc.expectedComment.Path, *returnedComment.Path)
-			}
-			if tc.expectedComment.Line != nil {
-				assert.Equal(t, *tc.expectedComment.Line, *returnedComment.Line)
-			}
-			if tc.expectedComment.Side != nil {
-				assert.Equal(t, *tc.expectedComment.Side, *returnedComment.Side)
-			}
+			// Parse the result and get the text content if no error
+			require.Equal(t, textContent.Text, "pull request review submitted successfully")
 		})
 	}
 }
@@ -2024,4 +1653,641 @@ func Test_RequestCopilotReview(t *testing.T) {
 			require.Equal(t, "", textContent.Text)
 		})
 	}
+}
+
+func TestCreatePendingPullRequestReview(t *testing.T) {
+	t.Parallel()
+
+	// Verify tool definition once
+	mockClient := githubv4.NewClient(nil)
+	tool, _ := CreatePendingPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "create_pending_pull_request_review", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.Contains(t, tool.InputSchema.Properties, "commitID")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
+
+	tests := []struct {
+		name               string
+		mockedClient       *http.Client
+		requestArgs        map[string]any
+		expectToolError    bool
+		expectedToolErrMsg string
+	}{
+		{
+			name: "successful review creation",
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				githubv4mock.NewQueryMatcher(
+					struct {
+						Repository struct {
+							PullRequest struct {
+								ID githubv4.ID
+							} `graphql:"pullRequest(number: $prNum)"`
+						} `graphql:"repository(owner: $owner, name: $repo)"`
+					}{},
+					map[string]any{
+						"owner": githubv4.String("owner"),
+						"repo":  githubv4.String("repo"),
+						"prNum": githubv4.Int(42),
+					},
+					githubv4mock.DataResponse(
+						map[string]any{
+							"repository": map[string]any{
+								"pullRequest": map[string]any{
+									"id": "PR_kwDODKw3uc6WYN1T",
+								},
+							},
+						},
+					),
+				),
+				githubv4mock.NewMutationMatcher(
+					struct {
+						AddPullRequestReview struct {
+							PullRequestReview struct {
+								ID githubv4.ID
+							}
+						} `graphql:"addPullRequestReview(input: $input)"`
+					}{},
+					githubv4.AddPullRequestReviewInput{
+						PullRequestID: githubv4.ID("PR_kwDODKw3uc6WYN1T"),
+						CommitOID:     githubv4.NewGitObjectID("abcd1234"),
+					},
+					nil,
+					githubv4mock.DataResponse(map[string]any{}),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"commitID":   "abcd1234",
+			},
+			expectToolError: false,
+		},
+		{
+			name: "failure to get pull request",
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				githubv4mock.NewQueryMatcher(
+					struct {
+						Repository struct {
+							PullRequest struct {
+								ID githubv4.ID
+							} `graphql:"pullRequest(number: $prNum)"`
+						} `graphql:"repository(owner: $owner, name: $repo)"`
+					}{},
+					map[string]any{
+						"owner": githubv4.String("owner"),
+						"repo":  githubv4.String("repo"),
+						"prNum": githubv4.Int(42),
+					},
+					githubv4mock.ErrorResponse("expected test failure"),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"commitID":   "abcd1234",
+			},
+			expectToolError:    true,
+			expectedToolErrMsg: "expected test failure",
+		},
+		{
+			name: "failure to create pending review",
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				githubv4mock.NewQueryMatcher(
+					struct {
+						Repository struct {
+							PullRequest struct {
+								ID githubv4.ID
+							} `graphql:"pullRequest(number: $prNum)"`
+						} `graphql:"repository(owner: $owner, name: $repo)"`
+					}{},
+					map[string]any{
+						"owner": githubv4.String("owner"),
+						"repo":  githubv4.String("repo"),
+						"prNum": githubv4.Int(42),
+					},
+					githubv4mock.DataResponse(
+						map[string]any{
+							"repository": map[string]any{
+								"pullRequest": map[string]any{
+									"id": "PR_kwDODKw3uc6WYN1T",
+								},
+							},
+						},
+					),
+				),
+				githubv4mock.NewMutationMatcher(
+					struct {
+						AddPullRequestReview struct {
+							PullRequestReview struct {
+								ID githubv4.ID
+							}
+						} `graphql:"addPullRequestReview(input: $input)"`
+					}{},
+					githubv4.AddPullRequestReviewInput{
+						PullRequestID: githubv4.ID("PR_kwDODKw3uc6WYN1T"),
+						CommitOID:     githubv4.NewGitObjectID("abcd1234"),
+					},
+					nil,
+					githubv4mock.ErrorResponse("expected test failure"),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"commitID":   "abcd1234",
+			},
+			expectToolError:    true,
+			expectedToolErrMsg: "expected test failure",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup client with mock
+			client := githubv4.NewClient(tc.mockedClient)
+			_, handler := CreatePendingPullRequestReview(stubGetGQLClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+			require.NoError(t, err)
+
+			textContent := getTextResult(t, result)
+
+			if tc.expectToolError {
+				require.True(t, result.IsError)
+				assert.Contains(t, textContent.Text, tc.expectedToolErrMsg)
+				return
+			}
+
+			// Parse the result and get the text content if no error
+			require.Equal(t, textContent.Text, "pending pull request created")
+		})
+	}
+}
+
+func TestAddPullRequestReviewCommentToPendingReview(t *testing.T) {
+	t.Parallel()
+
+	// Verify tool definition once
+	mockClient := githubv4.NewClient(nil)
+	tool, _ := AddPullRequestReviewCommentToPendingReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "add_pull_request_review_comment_to_pending_review", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.Contains(t, tool.InputSchema.Properties, "path")
+	assert.Contains(t, tool.InputSchema.Properties, "body")
+	assert.Contains(t, tool.InputSchema.Properties, "subjectType")
+	assert.Contains(t, tool.InputSchema.Properties, "line")
+	assert.Contains(t, tool.InputSchema.Properties, "side")
+	assert.Contains(t, tool.InputSchema.Properties, "startLine")
+	assert.Contains(t, tool.InputSchema.Properties, "startSide")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber", "path", "body", "subjectType"})
+
+	tests := []struct {
+		name               string
+		mockedClient       *http.Client
+		requestArgs        map[string]any
+		expectToolError    bool
+		expectedToolErrMsg string
+	}{
+		{
+			name: "successful line comment addition",
+			requestArgs: map[string]any{
+				"owner":       "owner",
+				"repo":        "repo",
+				"pullNumber":  float64(42),
+				"path":        "file.go",
+				"body":        "This is a test comment",
+				"subjectType": "LINE",
+				"line":        float64(10),
+				"side":        "RIGHT",
+				"startLine":   float64(5),
+				"startSide":   "RIGHT",
+			},
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				viewerQuery("williammartin"),
+				getLatestPendingReviewQuery(getLatestPendingReviewQueryParams{
+					author: "williammartin",
+					owner:  "owner",
+					repo:   "repo",
+					prNum:  42,
+
+					reviews: []getLatestPendingReviewQueryReview{
+						{
+							id:    "PR_kwDODKw3uc6WYN1T",
+							state: "PENDING",
+							url:   "https://github.com/owner/repo/pull/42",
+						},
+					},
+				}),
+				githubv4mock.NewMutationMatcher(
+					struct {
+						AddPullRequestReviewThread struct {
+							Thread struct {
+								ID githubv4.String // We don't need this, but a selector is required or GQL complains.
+							}
+						} `graphql:"addPullRequestReviewThread(input: $input)"`
+					}{},
+					githubv4.AddPullRequestReviewThreadInput{
+						Path:                githubv4.String("file.go"),
+						Body:                githubv4.String("This is a test comment"),
+						SubjectType:         githubv4mock.Ptr(githubv4.PullRequestReviewThreadSubjectTypeLine),
+						Line:                githubv4.NewInt(10),
+						Side:                githubv4mock.Ptr(githubv4.DiffSideRight),
+						StartLine:           githubv4.NewInt(5),
+						StartSide:           githubv4mock.Ptr(githubv4.DiffSideRight),
+						PullRequestReviewID: githubv4.NewID("PR_kwDODKw3uc6WYN1T"),
+					},
+					nil,
+					githubv4mock.DataResponse(map[string]any{}),
+				),
+			),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup client with mock
+			client := githubv4.NewClient(tc.mockedClient)
+			_, handler := AddPullRequestReviewCommentToPendingReview(stubGetGQLClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+			require.NoError(t, err)
+
+			textContent := getTextResult(t, result)
+
+			if tc.expectToolError {
+				require.True(t, result.IsError)
+				assert.Contains(t, textContent.Text, tc.expectedToolErrMsg)
+				return
+			}
+
+			// Parse the result and get the text content if no error
+			require.Equal(t, textContent.Text, "pull request review comment successfully added to pending review")
+		})
+	}
+}
+
+func TestSubmitPendingPullRequestReview(t *testing.T) {
+	t.Parallel()
+
+	// Verify tool definition once
+	mockClient := githubv4.NewClient(nil)
+	tool, _ := SubmitPendingPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "submit_pending_pull_request_review", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.Contains(t, tool.InputSchema.Properties, "event")
+	assert.Contains(t, tool.InputSchema.Properties, "body")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber", "event"})
+
+	tests := []struct {
+		name               string
+		mockedClient       *http.Client
+		requestArgs        map[string]any
+		expectToolError    bool
+		expectedToolErrMsg string
+	}{
+		{
+			name: "successful review submission",
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+				"event":      "COMMENT",
+				"body":       "This is a test review",
+			},
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				viewerQuery("williammartin"),
+				getLatestPendingReviewQuery(getLatestPendingReviewQueryParams{
+					author: "williammartin",
+					owner:  "owner",
+					repo:   "repo",
+					prNum:  42,
+
+					reviews: []getLatestPendingReviewQueryReview{
+						{
+							id:    "PR_kwDODKw3uc6WYN1T",
+							state: "PENDING",
+							url:   "https://github.com/owner/repo/pull/42",
+						},
+					},
+				}),
+				githubv4mock.NewMutationMatcher(
+					struct {
+						SubmitPullRequestReview struct {
+							PullRequestReview struct {
+								ID githubv4.ID
+							}
+						} `graphql:"submitPullRequestReview(input: $input)"`
+					}{},
+					githubv4.SubmitPullRequestReviewInput{
+						PullRequestReviewID: githubv4.NewID("PR_kwDODKw3uc6WYN1T"),
+						Event:               githubv4.PullRequestReviewEventComment,
+						Body:                githubv4.NewString("This is a test review"),
+					},
+					nil,
+					githubv4mock.DataResponse(map[string]any{}),
+				),
+			),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup client with mock
+			client := githubv4.NewClient(tc.mockedClient)
+			_, handler := SubmitPendingPullRequestReview(stubGetGQLClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+			require.NoError(t, err)
+
+			textContent := getTextResult(t, result)
+
+			if tc.expectToolError {
+				require.True(t, result.IsError)
+				assert.Contains(t, textContent.Text, tc.expectedToolErrMsg)
+				return
+			}
+
+			// Parse the result and get the text content if no error
+			require.Equal(t, "pending pull request review successfully submitted", textContent.Text)
+		})
+	}
+}
+
+func TestDeletePendingPullRequestReview(t *testing.T) {
+	t.Parallel()
+
+	// Verify tool definition once
+	mockClient := githubv4.NewClient(nil)
+	tool, _ := DeletePendingPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "delete_pending_pull_request_review", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
+
+	tests := []struct {
+		name               string
+		requestArgs        map[string]any
+		mockedClient       *http.Client
+		expectToolError    bool
+		expectedToolErrMsg string
+	}{
+		{
+			name: "successful review deletion",
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+			},
+			mockedClient: githubv4mock.NewMockedHTTPClient(
+				viewerQuery("williammartin"),
+				getLatestPendingReviewQuery(getLatestPendingReviewQueryParams{
+					author: "williammartin",
+					owner:  "owner",
+					repo:   "repo",
+					prNum:  42,
+
+					reviews: []getLatestPendingReviewQueryReview{
+						{
+							id:    "PR_kwDODKw3uc6WYN1T",
+							state: "PENDING",
+							url:   "https://github.com/owner/repo/pull/42",
+						},
+					},
+				}),
+				githubv4mock.NewMutationMatcher(
+					struct {
+						DeletePullRequestReview struct {
+							PullRequestReview struct {
+								ID githubv4.ID
+							}
+						} `graphql:"deletePullRequestReview(input: $input)"`
+					}{},
+					githubv4.DeletePullRequestReviewInput{
+						PullRequestReviewID: githubv4.NewID("PR_kwDODKw3uc6WYN1T"),
+					},
+					nil,
+					githubv4mock.DataResponse(map[string]any{}),
+				),
+			),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup client with mock
+			client := githubv4.NewClient(tc.mockedClient)
+			_, handler := DeletePendingPullRequestReview(stubGetGQLClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+			require.NoError(t, err)
+
+			textContent := getTextResult(t, result)
+
+			if tc.expectToolError {
+				require.True(t, result.IsError)
+				assert.Contains(t, textContent.Text, tc.expectedToolErrMsg)
+				return
+			}
+
+			// Parse the result and get the text content if no error
+			require.Equal(t, "pending pull request review successfully deleted", textContent.Text)
+		})
+	}
+}
+
+func TestGetPullRequestDiff(t *testing.T) {
+	t.Parallel()
+
+	// Verify tool definition once
+	mockClient := github.NewClient(nil)
+	tool, _ := GetPullRequestDiff(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+
+	assert.Equal(t, "get_pull_request_diff", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
+
+	stubbedDiff := `diff --git a/README.md b/README.md
+index 5d6e7b2..8a4f5c3 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,6 @@
+ # Hello-World
+
+ Hello World project for GitHub
+
++## New Section
++
++This is a new section added in the pull request.`
+
+	tests := []struct {
+		name               string
+		requestArgs        map[string]any
+		mockedClient       *http.Client
+		expectToolError    bool
+		expectedToolErrMsg string
+	}{
+		{
+			name: "successful diff retrieval",
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(42),
+			},
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetReposPullsByOwnerByRepoByPullNumber,
+					// Should also expect Accept header to be application/vnd.github.v3.diff
+					expectPath(t, "/repos/owner/repo/pulls/42").andThen(
+						mockResponse(t, http.StatusOK, stubbedDiff),
+					),
+				),
+			),
+			expectToolError: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := GetPullRequestDiff(stubGetClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+			require.NoError(t, err)
+
+			textContent := getTextResult(t, result)
+
+			if tc.expectToolError {
+				require.True(t, result.IsError)
+				assert.Contains(t, textContent.Text, tc.expectedToolErrMsg)
+				return
+			}
+
+			// Parse the result and get the text content if no error
+			require.Equal(t, stubbedDiff, textContent.Text)
+		})
+	}
+}
+
+func viewerQuery(login string) githubv4mock.Matcher {
+	return githubv4mock.NewQueryMatcher(
+		struct {
+			Viewer struct {
+				Login githubv4.String
+			} `graphql:"viewer"`
+		}{},
+		map[string]any{},
+		githubv4mock.DataResponse(map[string]any{
+			"viewer": map[string]any{
+				"login": login,
+			},
+		}),
+	)
+}
+
+type getLatestPendingReviewQueryReview struct {
+	id    string
+	state string
+	url   string
+}
+
+type getLatestPendingReviewQueryParams struct {
+	author string
+	owner  string
+	repo   string
+	prNum  int32
+
+	reviews []getLatestPendingReviewQueryReview
+}
+
+func getLatestPendingReviewQuery(p getLatestPendingReviewQueryParams) githubv4mock.Matcher {
+	return githubv4mock.NewQueryMatcher(
+		struct {
+			Repository struct {
+				PullRequest struct {
+					Reviews struct {
+						Nodes []struct {
+							ID    githubv4.ID
+							State githubv4.PullRequestReviewState
+							URL   githubv4.URI
+						}
+					} `graphql:"reviews(first: 1, author: $author)"`
+				} `graphql:"pullRequest(number: $prNum)"`
+			} `graphql:"repository(owner: $owner, name: $name)"`
+		}{},
+		map[string]any{
+			"author": githubv4.String(p.author),
+			"owner":  githubv4.String(p.owner),
+			"name":   githubv4.String(p.repo),
+			"prNum":  githubv4.Int(p.prNum),
+		},
+		githubv4mock.DataResponse(
+			map[string]any{
+				"repository": map[string]any{
+					"pullRequest": map[string]any{
+						"reviews": map[string]any{
+							"nodes": []any{
+								map[string]any{
+									"id":    p.reviews[0].id,
+									"state": p.reviews[0].state,
+									"url":   p.reviews[0].url,
+								},
+							},
+						},
+					},
+				},
+			},
+		),
+	)
 }

@@ -6,11 +6,18 @@ import (
 	"testing"
 
 	"github.com/google/go-github/v69/github"
+	"github.com/shurcooL/githubv4"
 	"github.com/stretchr/testify/assert"
 )
 
 func stubGetClientFn(client *github.Client) GetClientFn {
 	return func(_ context.Context) (*github.Client, error) {
+		return client, nil
+	}
+}
+
+func stubGetGQLClientFn(client *githubv4.Client) GetGQLClientFn {
+	return func(_ context.Context) (*githubv4.Client, error) {
 		return client, nil
 	}
 }
@@ -157,7 +164,7 @@ func Test_OptionalStringParam(t *testing.T) {
 	}
 }
 
-func Test_RequiredNumberParam(t *testing.T) {
+func Test_RequiredInt(t *testing.T) {
 	tests := []struct {
 		name        string
 		params      map[string]interface{}
@@ -202,8 +209,7 @@ func Test_RequiredNumberParam(t *testing.T) {
 		})
 	}
 }
-
-func Test_OptionalNumberParam(t *testing.T) {
+func Test_OptionalIntParam(t *testing.T) {
 	tests := []struct {
 		name        string
 		params      map[string]interface{}

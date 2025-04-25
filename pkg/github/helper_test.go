@@ -94,6 +94,14 @@ func mockResponse(t *testing.T, code int, body interface{}) http.HandlerFunc {
 	t.Helper()
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(code)
+		// Some tests do not expect to return a JSON object, such as fetching a raw pull request diff,
+		// so allow strings to be returned directly.
+		s, ok := body.(string)
+		if ok {
+			_, _ = w.Write([]byte(s))
+			return
+		}
+
 		b, err := json.Marshal(body)
 		require.NoError(t, err)
 		_, _ = w.Write(b)

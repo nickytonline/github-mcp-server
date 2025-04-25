@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/github/github-mcp-server/pkg/github"
@@ -15,6 +18,7 @@ import (
 	gogithub "github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/shurcooL/githubv4"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,25 +48,43 @@ type MCPServerConfig struct {
 }
 
 func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
-	ghClient := gogithub.NewClient(nil).WithAuthToken(cfg.Token)
-	ghClient.UserAgent = fmt.Sprintf("github-mcp-server/%s", cfg.Version)
-
-	if cfg.Host != "" {
-		var err error
-		ghClient, err = ghClient.WithEnterpriseURLs(cfg.Host, cfg.Host)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create GitHub client with host: %w", err)
-		}
+	apiHost, err := parseAPIHost(cfg.Host)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse API host: %w", err)
 	}
+
+	// Construct our REST client
+	restClient := gogithub.NewClient(nil).WithAuthToken(cfg.Token)
+	restClient.UserAgent = fmt.Sprintf("github-mcp-server/%s", cfg.Version)
+	restClient.BaseURL = apiHost.baseRESTURL
+	restClient.UploadURL = apiHost.uploadURL
+
+	// Construct our GraphQL client
+	// We're using NewEnterpriseClient here unconditionally as opposed to NewClient because we already
+	// did the necessary API host parsing so that github.com will return the correct URL anyway.
+	gqlHTTPClient := &http.Client{
+		Transport: &bearerAuthTransport{
+			transport: http.DefaultTransport,
+			token:     cfg.Token,
+		},
+	} // We're going to wrap the Transport later in beforeInit
+	gqlClient := githubv4.NewEnterpriseClient(apiHost.graphqlURL.String(), gqlHTTPClient)
 
 	// When a client send an initialize request, update the user agent to include the client info.
 	beforeInit := func(_ context.Context, _ any, message *mcp.InitializeRequest) {
-		ghClient.UserAgent = fmt.Sprintf(
+		userAgent := fmt.Sprintf(
 			"github-mcp-server/%s (%s/%s)",
 			cfg.Version,
 			message.Params.ClientInfo.Name,
 			message.Params.ClientInfo.Version,
 		)
+
+		restClient.UserAgent = userAgent
+
+		gqlHTTPClient.Transport = &userAgentTransport{
+			transport: gqlHTTPClient.Transport,
+			agent:     userAgent,
+		}
 	}
 
 	hooks := &server.Hooks{
@@ -83,7 +105,11 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 	}
 
 	getClient := func(_ context.Context) (*gogithub.Client, error) {
-		return ghClient, nil // closing over client
+		return restClient, nil // closing over client
+	}
+
+	getGQLClient := func(_ context.Context) (*githubv4.Client, error) {
+		return gqlClient, nil // closing over client
 	}
 
 	// Create default toolsets
@@ -91,6 +117,7 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 		enabledToolsets,
 		cfg.ReadOnly,
 		getClient,
+		getGQLClient,
 		cfg.Translator,
 	)
 	if err != nil {
@@ -212,4 +239,142 @@ func RunStdioServer(cfg StdioServerConfig) error {
 	}
 
 	return nil
+}
+
+type apiHost struct {
+	baseRESTURL *url.URL
+	graphqlURL  *url.URL
+	uploadURL   *url.URL
+}
+
+func newDotcomHost() (apiHost, error) {
+	baseRestURL, err := url.Parse("https://api.github.com/")
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse dotcom REST URL: %w", err)
+	}
+
+	gqlURL, err := url.Parse("https://api.github.com/graphql")
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse dotcom GraphQL URL: %w", err)
+	}
+
+	uploadURL, err := url.Parse("https://uploads.github.com")
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse dotcom Upload URL: %w", err)
+	}
+
+	return apiHost{
+		baseRESTURL: baseRestURL,
+		graphqlURL:  gqlURL,
+		uploadURL:   uploadURL,
+	}, nil
+}
+
+func newGHECHost(hostname string) (apiHost, error) {
+	u, err := url.Parse(hostname)
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHEC URL: %w", err)
+	}
+
+	// Unsecured GHEC would be an error
+	if u.Scheme == "http" {
+		return apiHost{}, fmt.Errorf("GHEC URL must be HTTPS")
+	}
+
+	restURL, err := url.Parse(fmt.Sprintf("https://api.%s/", u.Hostname()))
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHEC REST URL: %w", err)
+	}
+
+	gqlURL, err := url.Parse(fmt.Sprintf("https://api.%s/graphql", u.Hostname()))
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHEC GraphQL URL: %w", err)
+	}
+
+	uploadURL, err := url.Parse(fmt.Sprintf("https://uploads.%s", u.Hostname()))
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHEC Upload URL: %w", err)
+	}
+
+	return apiHost{
+		baseRESTURL: restURL,
+		graphqlURL:  gqlURL,
+		uploadURL:   uploadURL,
+	}, nil
+}
+
+func newGHESHost(hostname string) (apiHost, error) {
+	u, err := url.Parse(hostname)
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHES URL: %w", err)
+	}
+
+	restURL, err := url.Parse(fmt.Sprintf("%s://%s/api/v3/", u.Scheme, u.Hostname()))
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHES REST URL: %w", err)
+	}
+
+	gqlURL, err := url.Parse(fmt.Sprintf("%s://%s/api/graphql", u.Scheme, u.Hostname()))
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHES GraphQL URL: %w", err)
+	}
+
+	uploadURL, err := url.Parse(fmt.Sprintf("%s://%s/api/uploads/", u.Scheme, u.Hostname()))
+	if err != nil {
+		return apiHost{}, fmt.Errorf("failed to parse GHES Upload URL: %w", err)
+	}
+
+	return apiHost{
+		baseRESTURL: restURL,
+		graphqlURL:  gqlURL,
+		uploadURL:   uploadURL,
+	}, nil
+}
+
+// Note that this does not handle ports yet, so development environments are out.
+func parseAPIHost(s string) (apiHost, error) {
+	if s == "" {
+		return newDotcomHost()
+	}
+
+	u, err := url.Parse(s)
+	if err != nil {
+		return apiHost{}, fmt.Errorf("could not parse host as URL: %s", s)
+	}
+
+	if u.Scheme == "" {
+		return apiHost{}, fmt.Errorf("host must have a scheme (http or https): %s", s)
+	}
+
+	if strings.HasSuffix(u.Hostname(), "github.com") {
+		return newDotcomHost()
+	}
+
+	if strings.HasSuffix(u.Hostname(), "ghe.com") {
+		return newGHECHost(s)
+	}
+
+	return newGHESHost(s)
+}
+
+type userAgentTransport struct {
+	transport http.RoundTripper
+	agent     string
+}
+
+func (t *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("User-Agent", t.agent)
+	return t.transport.RoundTrip(req)
+}
+
+type bearerAuthTransport struct {
+	transport http.RoundTripper
+	token     string
+}
+
+func (t *bearerAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("Authorization", "Bearer "+t.token)
+	return t.transport.RoundTrip(req)
 }
