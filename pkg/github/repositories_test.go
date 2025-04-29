@@ -1545,7 +1545,7 @@ func Test_ListTags(t *testing.T) {
 		{
 			Name: github.Ptr("v1.0.0"),
 			Commit: &github.Commit{
-				SHA: github.Ptr("abc123"),
+				SHA: github.Ptr("v1.0.0-tag-sha"),
 				URL: github.Ptr("https://api.github.com/repos/owner/repo/commits/abc123"),
 			},
 			ZipballURL: github.Ptr("https://github.com/owner/repo/zipball/v1.0.0"),
@@ -1554,7 +1554,7 @@ func Test_ListTags(t *testing.T) {
 		{
 			Name: github.Ptr("v0.9.0"),
 			Commit: &github.Commit{
-				SHA: github.Ptr("def456"),
+				SHA: github.Ptr("v0.9.0-tag-sha"),
 				URL: github.Ptr("https://api.github.com/repos/owner/repo/commits/def456"),
 			},
 			ZipballURL: github.Ptr("https://github.com/owner/repo/zipball/v0.9.0"),
@@ -1573,9 +1573,14 @@ func Test_ListTags(t *testing.T) {
 		{
 			name: "successful tags list",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposTagsByOwnerByRepo,
-					mockTags,
+					expectPath(
+						t,
+						"/repos/owner/repo/tags",
+					).andThen(
+						mockResponse(t, http.StatusOK, mockTags),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
@@ -1659,12 +1664,12 @@ func Test_GetTag(t *testing.T) {
 	mockTagRef := &github.Reference{
 		Ref: github.Ptr("refs/tags/v1.0.0"),
 		Object: &github.GitObject{
-			SHA: github.Ptr("tag123"),
+			SHA: github.Ptr("v1.0.0-tag-sha"),
 		},
 	}
 
 	mockTagObj := &github.Tag{
-		SHA:     github.Ptr("tag123"),
+		SHA:     github.Ptr("v1.0.0-tag-sha"),
 		Tag:     github.Ptr("v1.0.0"),
 		Message: github.Ptr("Release v1.0.0"),
 		Object: &github.GitObject{
@@ -1684,13 +1689,23 @@ func Test_GetTag(t *testing.T) {
 		{
 			name: "successful tag retrieval",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposGitRefByOwnerByRepoByRef,
-					mockTagRef,
+					expectPath(
+						t,
+						"/repos/owner/repo/git/ref/tags/v1.0.0",
+					).andThen(
+						mockResponse(t, http.StatusOK, mockTagRef),
+					),
 				),
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.GetReposGitTagsByOwnerByRepoByTagSha,
-					mockTagObj,
+					expectPath(
+						t,
+						"/repos/owner/repo/git/tags/v1.0.0-tag-sha",
+					).andThen(
+						mockResponse(t, http.StatusOK, mockTagObj),
+					),
 				),
 			),
 			requestArgs: map[string]interface{}{
