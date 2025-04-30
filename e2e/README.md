@@ -81,4 +81,6 @@ FAIL
 
 The current test suite is intentionally very limited in scope. This is because the maintenance costs on e2e tests tend to increase significantly over time. To read about some challenges with GitHub integration tests, see [go-github integration tests README](https://github.com/google/go-github/blob/5b75aa86dba5cf4af2923afa0938774f37fa0a67/test/README.md). We will expand this suite circumspectly!
 
-Currently, visibility into failures is not particularly good.
+The tests are quite repetitive and verbose. This is intentional as we want to see them develop more before committing to abstractions.
+
+Currently, visibility into failures is not particularly good. We're hoping that we can pull apart the mcp-go client and have it hook into streams representing stdio without requiring an exec. This way we can get breakpoints in the debugger easily.

@@ -206,3 +206,139 @@ func TestToolsets(t *testing.T) {
 	require.True(t, toolsContains("list_branches"), "expected to find 'list_branches' tool")
 	require.False(t, toolsContains("get_pull_request"), "expected not to find 'get_pull_request' tool")
 }
+
+func TestTags(t *testing.T) {
+	mcpClient := setupMCPClient(t)
+
+	ctx := context.Background()
+
+	// First, who am I
+	getMeRequest := mcp.CallToolRequest{}
+	getMeRequest.Params.Name = "get_me"
+
+	t.Log("Getting current user...")
+	resp, err := mcpClient.CallTool(ctx, getMeRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	require.False(t, resp.IsError, "expected result not to be an error")
+	require.Len(t, resp.Content, 1, "expected content to have one item")
+
+	textContent, ok := resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetMeText struct {
+		Login string `json:"login"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetMeText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	currentOwner := trimmedGetMeText.Login
+
+	// Then create a repository with a README (via autoInit)
+	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	createRepoRequest := mcp.CallToolRequest{}
+	createRepoRequest.Params.Name = "create_repository"
+	createRepoRequest.Params.Arguments = map[string]any{
+		"name":     repoName,
+		"private":  true,
+		"autoInit": true,
+	}
+
+	t.Logf("Creating repository %s/%s...", currentOwner, repoName)
+	_, err = mcpClient.CallTool(ctx, createRepoRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Cleanup the repository after the test
+	t.Cleanup(func() {
+		// MCP Server doesn't support deletions, but we can use the GitHub Client
+		ghClient := github.NewClient(nil).WithAuthToken(getE2EToken(t))
+		t.Logf("Deleting repository %s/%s...", currentOwner, repoName)
+		_, err := ghClient.Repositories.Delete(context.Background(), currentOwner, repoName)
+		require.NoError(t, err, "expected to delete repository successfully")
+	})
+
+	// Then create a tag
+	// MCP Server doesn't support tag creation, but we can use the GitHub Client
+	ghClient := github.NewClient(nil).WithAuthToken(getE2EToken(t))
+	t.Logf("Creating tag %s/%s:%s...", currentOwner, repoName, "v0.0.1")
+	ref, _, err := ghClient.Git.GetRef(context.Background(), currentOwner, repoName, "refs/heads/main")
+	require.NoError(t, err, "expected to get ref successfully")
+
+	tagObj, _, err := ghClient.Git.CreateTag(context.Background(), currentOwner, repoName, &github.Tag{
+		Tag:     github.Ptr("v0.0.1"),
+		Message: github.Ptr("v0.0.1"),
+		Object: &github.GitObject{
+			SHA:  ref.Object.SHA,
+			Type: github.Ptr("commit"),
+		},
+	})
+	require.NoError(t, err, "expected to create tag object successfully")
+
+	_, _, err = ghClient.Git.CreateRef(context.Background(), currentOwner, repoName, &github.Reference{
+		Ref: github.Ptr("refs/tags/v0.0.1"),
+		Object: &github.GitObject{
+			SHA: tagObj.SHA,
+		},
+	})
+	require.NoError(t, err, "expected to create tag ref successfully")
+
+	// List the tags
+	listTagsRequest := mcp.CallToolRequest{}
+	listTagsRequest.Params.Name = "list_tags"
+	listTagsRequest.Params.Arguments = map[string]any{
+		"owner": currentOwner,
+		"repo":  repoName,
+	}
+
+	t.Logf("Listing tags for %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, listTagsRequest)
+	require.NoError(t, err, "expected to call 'list_tags' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	require.False(t, resp.IsError, "expected result not to be an error")
+	require.Len(t, resp.Content, 1, "expected content to have one item")
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedTags []struct {
+		Name   string `json:"name"`
+		Commit struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedTags)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	require.Len(t, trimmedTags, 1, "expected to find one tag")
+	require.Equal(t, "v0.0.1", trimmedTags[0].Name, "expected tag name to match")
+	require.Equal(t, *ref.Object.SHA, trimmedTags[0].Commit.SHA, "expected tag SHA to match")
+
+	// And fetch an individual tag
+	getTagRequest := mcp.CallToolRequest{}
+	getTagRequest.Params.Name = "get_tag"
+	getTagRequest.Params.Arguments = map[string]any{
+		"owner": currentOwner,
+		"repo":  repoName,
+		"tag":   "v0.0.1",
+	}
+
+	t.Logf("Getting tag %s/%s:%s...", currentOwner, repoName, "v0.0.1")
+	resp, err = mcpClient.CallTool(ctx, getTagRequest)
+	require.NoError(t, err, "expected to call 'get_tag' tool successfully")
+	require.False(t, resp.IsError, "expected result not to be an error")
+
+	var trimmedTag []struct { // don't understand why this is an array
+		Name   string `json:"name"`
+		Commit struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedTag)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	require.Len(t, trimmedTag, 1, "expected to find one tag")
+	require.Equal(t, "v0.0.1", trimmedTag[0].Name, "expected tag name to match")
+	require.Equal(t, *ref.Object.SHA, trimmedTag[0].Commit.SHA, "expected tag SHA to match")
+}
