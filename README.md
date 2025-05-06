@@ -222,7 +222,8 @@ docker run -i --rm \
 ## GitHub Enterprise Server
 
 The flag `--gh-host` and the environment variable `GITHUB_HOST` can be used to set
-the GitHub Enterprise Server hostname inculding the `https` connection schema:
+the GitHub Enterprise Server hostname.
+Prefix the hostname with the `https://` URI scheme, as it otherwise defaults to `http://` which GitHub Enterprise Server does not support.
 
 ``` json
 "github": {
