@@ -240,7 +240,7 @@ Prefix the hostname with the `https://` URI scheme, as it otherwise defaults to 
     ],
     "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}",
-        "GITHUB_HOST": "https://your_full_domain_name_dot_com"
+        "GITHUB_HOST": "https://<your GHES domain name>"
     }
 }
 ```
