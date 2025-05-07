@@ -77,6 +77,12 @@ FAIL    github.com/github/github-mcp-server/e2e 1.433s
 FAIL
 ```
 
+## Debugging the Tests
+
+It is possible to provide `GITHUB_MCP_SERVER_E2E_DEBUG=true` to run the e2e tests with an in-process version of the MCP server. This has slightly reduced coverage as it doesn't integrate with Docker, or make use of the cobra/viper configuration parsing. However, it allows for placing breakpoints in the MCP Server internals, supporting much better debugging flows than the fully black-box tests.
+
+One might argue that the lack of visibility into failures for the black box tests also indicates a product need, but this solves for the immediate pain point felt as a maintainer.
+
 ## Limitations
 
 The current test suite is intentionally very limited in scope. This is because the maintenance costs on e2e tests tend to increase significantly over time. To read about some challenges with GitHub integration tests, see [go-github integration tests README](https://github.com/google/go-github/blob/5b75aa86dba5cf4af2923afa0938774f37fa0a67/test/README.md). We will expand this suite circumspectly!

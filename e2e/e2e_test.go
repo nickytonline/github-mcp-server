@@ -9,11 +9,15 @@ import (
 	"os"
 	"os/exec"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v69/github"
+	"github.com/github/github-mcp-server/internal/ghmcp"
+	"github.com/github/github-mcp-server/pkg/github"
+	"github.com/github/github-mcp-server/pkg/translations"
+	gogithub "github.com/google/go-github/v69/github"
 	mcpClient "github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/require"
@@ -56,68 +60,91 @@ func ensureDockerImageBuilt(t *testing.T) {
 	require.NoError(t, buildError, "expected to build Docker image successfully")
 }
 
-// ClientOpts holds configuration options for the MCP client setup
-type ClientOpts struct {
-	// Environment variables to set before starting the client
-	EnvVars map[string]string
+// clientOpts holds configuration options for the MCP client setup
+type clientOpts struct {
+	// Toolsets to enable in the MCP server
+	enabledToolsets []string
 }
 
-// ClientOption defines a function type for configuring ClientOpts
-type ClientOption func(*ClientOpts)
+// clientOption defines a function type for configuring ClientOpts
+type clientOption func(*clientOpts)
 
-// WithEnvVars returns an option that adds environment variables to the client options
-func WithEnvVars(envVars map[string]string) ClientOption {
-	return func(opts *ClientOpts) {
-		opts.EnvVars = envVars
+// withToolsets returns an option that either sets an Env Var when executing in docker,
+// or sets the toolsets in the MCP server when running in-process.
+func withToolsets(toolsets []string) clientOption {
+	return func(opts *clientOpts) {
+		opts.enabledToolsets = toolsets
 	}
 }
 
-// setupMCPClient sets up the test environment and returns an initialized MCP client
-// It handles token retrieval, Docker image building, and applying the provided options
-func setupMCPClient(t *testing.T, options ...ClientOption) *mcpClient.Client {
+func setupMCPClient(t *testing.T, options ...clientOption) *mcpClient.Client {
 	// Get token and ensure Docker image is built
 	token := getE2EToken(t)
-	ensureDockerImageBuilt(t)
 
 	// Create and configure options
-	opts := &ClientOpts{
-		EnvVars: make(map[string]string),
-	}
+	opts := &clientOpts{}
 
 	// Apply all options to configure the opts struct
 	for _, option := range options {
 		option(opts)
 	}
 
-	// Prepare Docker arguments
-	args := []string{
-		"docker",
-		"run",
-		"-i",
-		"--rm",
-		"-e",
-		"GITHUB_PERSONAL_ACCESS_TOKEN", // Personal access token is all required
+	// By default, we run the tests including the Docker image, but with DEBUG
+	// enabled, we run the server in-process, allowing for easier debugging.
+	var client *mcpClient.Client
+	if os.Getenv("GITHUB_MCP_SERVER_E2E_DEBUG") == "" {
+		ensureDockerImageBuilt(t)
+
+		// Prepare Docker arguments
+		args := []string{
+			"docker",
+			"run",
+			"-i",
+			"--rm",
+			"-e",
+			"GITHUB_PERSONAL_ACCESS_TOKEN", // Personal access token is all required
+		}
+
+		// Add toolsets environment variable to the Docker arguments
+		if len(opts.enabledToolsets) > 0 {
+			args = append(args, "-e", "GITHUB_TOOLSETS")
+		}
+
+		// Add the image name
+		args = append(args, "github/e2e-github-mcp-server")
+
+		// Construct the env vars for the MCP Client to execute docker with
+		dockerEnvVars := []string{
+			fmt.Sprintf("GITHUB_PERSONAL_ACCESS_TOKEN=%s", token),
+			fmt.Sprintf("GITHUB_TOOLSETS=%s", strings.Join(opts.enabledToolsets, ",")),
+		}
+
+		// Create the client
+		t.Log("Starting Stdio MCP client...")
+		var err error
+		client, err = mcpClient.NewStdioMCPClient(args[0], dockerEnvVars, args[1:]...)
+		require.NoError(t, err, "expected to create client successfully")
+	} else {
+		// We need this because the fully compiled server has a default for the viper config, which is
+		// not in scope for using the MCP server directly. This probably indicates that we should refactor
+		// so that there is a shared setup mechanism, but let's wait till we feel more friction.
+		enabledToolsets := opts.enabledToolsets
+		if enabledToolsets == nil {
+			enabledToolsets = github.DefaultTools
+		}
+
+		ghServer, err := ghmcp.NewMCPServer(ghmcp.MCPServerConfig{
+			Token:           token,
+			EnabledToolsets: enabledToolsets,
+			Translator:      translations.NullTranslationHelper,
+		})
+		require.NoError(t, err, "expected to construct MCP server successfully")
+
+		t.Log("Starting In Process MCP client...")
+		client, err = mcpClient.NewInProcessClient(ghServer)
+		require.NoError(t, err, "expected to create in-process client successfully")
 	}
 
-	// Add all environment variables to the Docker arguments
-	for key := range opts.EnvVars {
-		args = append(args, "-e", key)
-	}
-
-	// Add the image name
-	args = append(args, "github/e2e-github-mcp-server")
-
-	// Construct the env vars for the MCP Client to execute docker with
-	dockerEnvVars := make([]string, 0, len(opts.EnvVars)+1)
-	dockerEnvVars = append(dockerEnvVars, fmt.Sprintf("GITHUB_PERSONAL_ACCESS_TOKEN=%s", token))
-	for key, value := range opts.EnvVars {
-		dockerEnvVars = append(dockerEnvVars, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	// Create the client
-	t.Log("Starting Stdio MCP client...")
-	client, err := mcpClient.NewStdioMCPClient(args[0], dockerEnvVars, args[1:]...)
-	require.NoError(t, err, "expected to create client successfully")
 	t.Cleanup(func() {
 		require.NoError(t, client.Close(), "expected to close client successfully")
 	})
@@ -169,7 +196,7 @@ func TestGetMe(t *testing.T) {
 
 	// Then the login in the response should match the login obtained via the same
 	// token using the GitHub API.
-	ghClient := github.NewClient(nil).WithAuthToken(getE2EToken(t))
+	ghClient := gogithub.NewClient(nil).WithAuthToken(getE2EToken(t))
 	user, _, err := ghClient.Users.Get(context.Background(), "")
 	require.NoError(t, err, "expected to get user successfully")
 	require.Equal(t, trimmedContent.Login, *user.Login, "expected login to match")
@@ -181,9 +208,7 @@ func TestToolsets(t *testing.T) {
 
 	mcpClient := setupMCPClient(
 		t,
-		WithEnvVars(map[string]string{
-			"GITHUB_TOOLSETS": "repos,issues",
-		}),
+		withToolsets([]string{"repos", "issues"}),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -208,6 +233,8 @@ func TestToolsets(t *testing.T) {
 }
 
 func TestTags(t *testing.T) {
+	t.Parallel()
+
 	mcpClient := setupMCPClient(t)
 
 	ctx := context.Background()
@@ -253,7 +280,7 @@ func TestTags(t *testing.T) {
 	// Cleanup the repository after the test
 	t.Cleanup(func() {
 		// MCP Server doesn't support deletions, but we can use the GitHub Client
-		ghClient := github.NewClient(nil).WithAuthToken(getE2EToken(t))
+		ghClient := gogithub.NewClient(nil).WithAuthToken(getE2EToken(t))
 		t.Logf("Deleting repository %s/%s...", currentOwner, repoName)
 		_, err := ghClient.Repositories.Delete(context.Background(), currentOwner, repoName)
 		require.NoError(t, err, "expected to delete repository successfully")
@@ -261,24 +288,24 @@ func TestTags(t *testing.T) {
 
 	// Then create a tag
 	// MCP Server doesn't support tag creation, but we can use the GitHub Client
-	ghClient := github.NewClient(nil).WithAuthToken(getE2EToken(t))
+	ghClient := gogithub.NewClient(nil).WithAuthToken(getE2EToken(t))
 	t.Logf("Creating tag %s/%s:%s...", currentOwner, repoName, "v0.0.1")
 	ref, _, err := ghClient.Git.GetRef(context.Background(), currentOwner, repoName, "refs/heads/main")
 	require.NoError(t, err, "expected to get ref successfully")
 
-	tagObj, _, err := ghClient.Git.CreateTag(context.Background(), currentOwner, repoName, &github.Tag{
-		Tag:     github.Ptr("v0.0.1"),
-		Message: github.Ptr("v0.0.1"),
-		Object: &github.GitObject{
+	tagObj, _, err := ghClient.Git.CreateTag(context.Background(), currentOwner, repoName, &gogithub.Tag{
+		Tag:     gogithub.Ptr("v0.0.1"),
+		Message: gogithub.Ptr("v0.0.1"),
+		Object: &gogithub.GitObject{
 			SHA:  ref.Object.SHA,
-			Type: github.Ptr("commit"),
+			Type: gogithub.Ptr("commit"),
 		},
 	})
 	require.NoError(t, err, "expected to create tag object successfully")
 
-	_, _, err = ghClient.Git.CreateRef(context.Background(), currentOwner, repoName, &github.Reference{
-		Ref: github.Ptr("refs/tags/v0.0.1"),
-		Object: &github.GitObject{
+	_, _, err = ghClient.Git.CreateRef(context.Background(), currentOwner, repoName, &gogithub.Reference{
+		Ref: gogithub.Ptr("refs/tags/v0.0.1"),
+		Object: &gogithub.GitObject{
 			SHA: tagObj.SHA,
 		},
 	})
