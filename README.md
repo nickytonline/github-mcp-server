@@ -200,7 +200,7 @@ GITHUB_TOOLSETS="all" ./github-mcp-server
 
 **Note**: This feature is currently in beta and may not be available in all environments. Please test it out and let us know if you encounter any issues.
 
-Instead of starting with all tools enabled, you can turn on dynamic toolset discovery. Dynamic toolsets allow the MCP host to list and enable toolsets in response to a user prompt. This should help to avoid situations where the model gets confused by the shear number of tools available.
+Instead of starting with all tools enabled, you can turn on dynamic toolset discovery. Dynamic toolsets allow the MCP host to list and enable toolsets in response to a user prompt. This should help to avoid situations where the model gets confused by the sheer number of tools available.
 
 ### Using Dynamic Tool Discovery
 
