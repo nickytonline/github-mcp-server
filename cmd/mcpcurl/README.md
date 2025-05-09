@@ -17,7 +17,7 @@ be executed against the configured MCP server.
 
 ## Usage
 
-```bash
+```console
 mcpcurl --stdio-server-cmd="<command to start MCP server>" <command> [flags]
 ```
 
@@ -33,7 +33,7 @@ The `--stdio-server-cmd` flag is required for all commands and specifies the com
 
 List available tools in Anthropic's MCP server:
 
-```bash
+```console
 % ./mcpcurl --stdio-server-cmd "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN mcp/github" tools --help
 Contains all dynamically generated tool commands from the schema
 
@@ -72,7 +72,7 @@ Use "mcpcurl tools [command] --help" for more information about a command.
 
 Get help for a specific tool:
 
-```bash
+```console
  % ./mcpcurl --stdio-server-cmd "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN mcp/github" tools get_issue --help
 Get details of a specific issue in a GitHub repository
 
@@ -93,7 +93,7 @@ Global Flags:
 
 Use one of the tools:
 
-```bash
+```console
  % ./mcpcurl --stdio-server-cmd "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN mcp/github" tools get_issue --owner golang --repo go --issue_number 1
 {
   "active_lock_reason": null,
