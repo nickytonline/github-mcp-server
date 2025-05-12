@@ -1248,9 +1248,15 @@ func CreatePullRequest(getClient GetClientFn, t translations.TranslationHelperFu
 }
 
 // RequestCopilotReview creates a tool to request a Copilot review for a pull request.
-func RequestCopilotReview(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+// Note that this tool will not work on GHES where this feature is unsupported. In future, we should not expose this
+// tool if the configured host does not support it.
+func RequestCopilotReview(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.Tool, server.ToolHandlerFunc) {
 	return mcp.NewTool("request_copilot_review",
 			mcp.WithDescription(t("TOOL_REQUEST_COPILOT_REVIEW_DESCRIPTION", "Request a GitHub Copilot review for a pull request. Note: This feature depends on GitHub API support and may not be available for all users.")),
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{
+				Title:        t("TOOL_REQUEST_COPILOT_REVIEW_USER_TITLE", "Request Copilot review"),
+				ReadOnlyHint: toBoolPtr(false),
+			}),
 			mcp.WithString("owner",
 				mcp.Required(),
 				mcp.Description("Repository owner"),
@@ -1259,7 +1265,7 @@ func RequestCopilotReview(getClient GetClientFn, t translations.TranslationHelpe
 				mcp.Required(),
 				mcp.Description("Repository name"),
 			),
-			mcp.WithNumber("pull_number",
+			mcp.WithNumber("pullNumber",
 				mcp.Required(),
 				mcp.Description("Pull request number"),
 			),
@@ -1269,17 +1275,46 @@ func RequestCopilotReview(getClient GetClientFn, t translations.TranslationHelpe
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+
 			repo, err := requiredParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			pullNumber, err := RequiredInt(request, "pull_number")
+
+			pullNumber, err := RequiredInt(request, "pullNumber")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			// As of now, GitHub API does not support Copilot as a reviewer programmatically.
-			// This is a placeholder for future support.
-			return mcp.NewToolResultError(fmt.Sprintf("Requesting a Copilot review for PR #%d in %s/%s is not currently supported by the GitHub API. Please request a Copilot review via the GitHub UI.", pullNumber, owner, repo)), nil
+			client, err := getClient(ctx)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			_, resp, err := client.PullRequests.RequestReviewers(
+				ctx,
+				owner,
+				repo,
+				pullNumber,
+				github.ReviewersRequest{
+					// The login name of the copilot reviewer bot
+					Reviewers: []string{"copilot-pull-request-reviewer[bot]"},
+				},
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to request copilot review: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusCreated {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to request copilot review: %s", string(body))), nil
+			}
+
+			// Return nothing on success, as there's not much value in returning the Pull Request itself
+			return mcp.NewToolResultText(""), nil
 		}
 }

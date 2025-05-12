@@ -772,3 +772,148 @@ func TestDirectoryDeletion(t *testing.T) {
 	require.Equal(t, "test-dir/test-file.txt", trimmedGetCommitText.Files[0].Filename, "expected filename to match")
 	require.Equal(t, 1, trimmedGetCommitText.Files[0].Deletions, "expected one deletion")
 }
+
+func TestRequestCopilotReview(t *testing.T) {
+	t.Parallel()
+
+	mcpClient := setupMCPClient(t)
+
+	ctx := context.Background()
+
+	// First, who am I
+	getMeRequest := mcp.CallToolRequest{}
+	getMeRequest.Params.Name = "get_me"
+
+	t.Log("Getting current user...")
+	resp, err := mcpClient.CallTool(ctx, getMeRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	require.False(t, resp.IsError, "expected result not to be an error")
+	require.Len(t, resp.Content, 1, "expected content to have one item")
+
+	textContent, ok := resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetMeText struct {
+		Login string `json:"login"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetMeText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	currentOwner := trimmedGetMeText.Login
+
+	// Then create a repository with a README (via autoInit)
+	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	createRepoRequest := mcp.CallToolRequest{}
+	createRepoRequest.Params.Name = "create_repository"
+	createRepoRequest.Params.Arguments = map[string]any{
+		"name":     repoName,
+		"private":  true,
+		"autoInit": true,
+	}
+
+	t.Logf("Creating repository %s/%s...", currentOwner, repoName)
+	_, err = mcpClient.CallTool(ctx, createRepoRequest)
+	require.NoError(t, err, "expected to call 'create_repository' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Cleanup the repository after the test
+	t.Cleanup(func() {
+		// MCP Server doesn't support deletions, but we can use the GitHub Client
+		ghClient := gogithub.NewClient(nil).WithAuthToken(getE2EToken(t))
+		t.Logf("Deleting repository %s/%s...", currentOwner, repoName)
+		_, err := ghClient.Repositories.Delete(context.Background(), currentOwner, repoName)
+		require.NoError(t, err, "expected to delete repository successfully")
+	})
+
+	// Create a branch on which to create a new commit
+	createBranchRequest := mcp.CallToolRequest{}
+	createBranchRequest.Params.Name = "create_branch"
+	createBranchRequest.Params.Arguments = map[string]any{
+		"owner":       currentOwner,
+		"repo":        repoName,
+		"branch":      "test-branch",
+		"from_branch": "main",
+	}
+
+	t.Logf("Creating branch in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, createBranchRequest)
+	require.NoError(t, err, "expected to call 'create_branch' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Create a commit with a new file
+	commitRequest := mcp.CallToolRequest{}
+	commitRequest.Params.Name = "create_or_update_file"
+	commitRequest.Params.Arguments = map[string]any{
+		"owner":   currentOwner,
+		"repo":    repoName,
+		"path":    "test-file.txt",
+		"content": fmt.Sprintf("Created by e2e test %s", t.Name()),
+		"message": "Add test file",
+		"branch":  "test-branch",
+	}
+
+	t.Logf("Creating commit with new file in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, commitRequest)
+	require.NoError(t, err, "expected to call 'create_or_update_file' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedCommitText struct {
+		SHA string `json:"sha"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedCommitText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	commitId := trimmedCommitText.SHA
+
+	// Create a pull request
+	prRequest := mcp.CallToolRequest{}
+	prRequest.Params.Name = "create_pull_request"
+	prRequest.Params.Arguments = map[string]any{
+		"owner":    currentOwner,
+		"repo":     repoName,
+		"title":    "Test PR",
+		"body":     "This is a test PR",
+		"head":     "test-branch",
+		"base":     "main",
+		"commitId": commitId,
+	}
+
+	t.Logf("Creating pull request in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, prRequest)
+	require.NoError(t, err, "expected to call 'create_pull_request' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Request a copilot review
+	requestCopilotReviewRequest := mcp.CallToolRequest{}
+	requestCopilotReviewRequest.Params.Name = "request_copilot_review"
+	requestCopilotReviewRequest.Params.Arguments = map[string]any{
+		"owner":      currentOwner,
+		"repo":       repoName,
+		"pullNumber": 1,
+	}
+
+	t.Logf("Requesting Copilot review for pull request in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, requestCopilotReviewRequest)
+	require.NoError(t, err, "expected to call 'request_copilot_review' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+	require.Equal(t, "", textContent.Text, "expected content to be empty")
+
+	// Finally, get requested reviews and see copilot is in there
+	// MCP Server doesn't support requesting reviews yet, but we can use the GitHub Client
+	ghClient := gogithub.NewClient(nil).WithAuthToken(getE2EToken(t))
+	t.Logf("Getting reviews for pull request in %s/%s...", currentOwner, repoName)
+	reviewRequests, _, err := ghClient.PullRequests.ListReviewers(context.Background(), currentOwner, repoName, 1, nil)
+	require.NoError(t, err, "expected to get review requests successfully")
+
+	// Check that there is one review request from copilot
+	require.Len(t, reviewRequests.Users, 1, "expected to find one review request")
+	require.Equal(t, "Copilot", *reviewRequests.Users[0].Login, "expected review request to be for Copilot")
+	require.Equal(t, "Bot", *reviewRequests.Users[0].Type, "expected review request to be for Bot")
+}

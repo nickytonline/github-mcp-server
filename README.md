@@ -462,8 +462,8 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pull_number`: Pull request number (number, required)
-  - _Note: As of now, requesting a Copilot review programmatically is not supported by the GitHub API. This tool will return an error until GitHub exposes this functionality._
+  - `pullNumber`: Pull request number (number, required)
+  - _Note: Currently, this tool will only work for github.com
 
 ### Repositories
 

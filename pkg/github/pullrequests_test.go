@@ -1918,25 +1918,110 @@ func Test_AddPullRequestReviewComment(t *testing.T) {
 }
 
 func Test_RequestCopilotReview(t *testing.T) {
+	t.Parallel()
+
 	mockClient := github.NewClient(nil)
-	tool, handler := RequestCopilotReview(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	tool, _ := RequestCopilotReview(stubGetClientFn(mockClient), translations.NullTranslationHelper)
 
 	assert.Equal(t, "request_copilot_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
-	assert.Contains(t, tool.InputSchema.Properties, "pull_number")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pull_number"})
+	assert.Contains(t, tool.InputSchema.Properties, "pullNumber")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "pullNumber"})
 
-	request := createMCPRequest(map[string]interface{}{
-		"owner":       "owner",
-		"repo":        "repo",
-		"pull_number": float64(42),
-	})
+	// Setup mock PR for success case
+	mockPR := &github.PullRequest{
+		Number:  github.Ptr(42),
+		Title:   github.Ptr("Test PR"),
+		State:   github.Ptr("open"),
+		HTMLURL: github.Ptr("https://github.com/owner/repo/pull/42"),
+		Head: &github.PullRequestBranch{
+			SHA: github.Ptr("abcd1234"),
+			Ref: github.Ptr("feature-branch"),
+		},
+		Base: &github.PullRequestBranch{
+			Ref: github.Ptr("main"),
+		},
+		Body: github.Ptr("This is a test PR"),
+		User: &github.User{
+			Login: github.Ptr("testuser"),
+		},
+	}
 
-	result, err := handler(context.Background(), request)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	textContent := getTextResult(t, result)
-	assert.Contains(t, textContent.Text, "not currently supported by the GitHub API")
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]any
+		expectError    bool
+		expectedErrMsg string
+	}{
+		{
+			name: "successful request",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsRequestedReviewersByOwnerByRepoByPullNumber,
+					expect(t, expectations{
+						path: "/repos/owner/repo/pulls/1/requested_reviewers",
+						requestBody: map[string]any{
+							"reviewers": []any{"copilot-pull-request-reviewer[bot]"},
+						},
+					}).andThen(
+						mockResponse(t, http.StatusCreated, mockPR),
+					),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(1),
+			},
+			expectError: false,
+		},
+		{
+			name: "request fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostReposPullsRequestedReviewersByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusNotFound)
+						_, _ = w.Write([]byte(`{"message": "Not Found"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner":      "owner",
+				"repo":       "repo",
+				"pullNumber": float64(999),
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to request copilot review",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := github.NewClient(tc.mockedClient)
+			_, handler := RequestCopilotReview(stubGetClientFn(client), translations.NullTranslationHelper)
+
+			request := createMCPRequest(tc.requestArgs)
+
+			result, err := handler(context.Background(), request)
+
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotNil(t, result)
+			assert.Len(t, result.Content, 1)
+
+			textContent := getTextResult(t, result)
+			require.Equal(t, "", textContent.Text)
+		})
+	}
 }
