@@ -77,7 +77,7 @@ type (
 		Arguments map[string]interface{} `json:"arguments"`
 	}
 
-	// Define structure to match the response format
+	// Content matches the response format of a text content response
 	Content struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
@@ -284,10 +284,10 @@ func addCommandFromTool(toolsCmd *cobra.Command, tool *Tool, prettyPrint bool) {
 			cmd.Flags().Bool(name, false, description)
 		case "array":
 			if prop.Items != nil {
-				if prop.Items.Type == "string" {
+				switch prop.Items.Type {
+				case "string":
 					cmd.Flags().StringSlice(name, []string{}, description)
-				} else if prop.Items.Type == "object" {
-					// For complex objects in arrays, we'll use a JSON string that users can provide
+				case "object":
 					cmd.Flags().String(name+"-json", "", description+" (provide as JSON array)")
 				}
 			}
@@ -327,11 +327,12 @@ func buildArgumentsMap(cmd *cobra.Command, tool *Tool) (map[string]interface{}, 
 			}
 		case "array":
 			if prop.Items != nil {
-				if prop.Items.Type == "string" {
+				switch prop.Items.Type {
+				case "string":
 					if values, _ := cmd.Flags().GetStringSlice(name); len(values) > 0 {
 						arguments[name] = values
 					}
-				} else if prop.Items.Type == "object" {
+				case "object":
 					if jsonStr, _ := cmd.Flags().GetString(name + "-json"); jsonStr != "" {
 						var jsonArray []interface{}
 						if err := json.Unmarshal([]byte(jsonStr), &jsonArray); err != nil {

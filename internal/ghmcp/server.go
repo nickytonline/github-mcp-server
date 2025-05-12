@@ -14,7 +14,6 @@ import (
 	"github.com/github/github-mcp-server/pkg/translations"
 	gogithub "github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
-
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/sirupsen/logrus"
 )
@@ -170,7 +169,7 @@ func RunStdioServer(cfg StdioServerConfig) error {
 
 	logrusLogger := logrus.New()
 	if cfg.LogFilePath != "" {
-		file, err := os.OpenFile(cfg.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		file, err := os.OpenFile(cfg.LogFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			return fmt.Errorf("failed to open log file: %w", err)
 		}

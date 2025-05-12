@@ -56,7 +56,7 @@ func TranslationHelper() (TranslationHelperFunc, func()) {
 		}
 }
 
-// dump translationKeyMap to a json file called github-mcp-server-config.json
+// DumpTranslationKeyMap writes the translation map to a json file called github-mcp-server-config.json
 func DumpTranslationKeyMap(translationKeyMap map[string]string) error {
 	file, err := os.Create("github-mcp-server-config.json")
 	if err != nil {
