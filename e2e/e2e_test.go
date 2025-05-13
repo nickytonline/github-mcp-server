@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -368,4 +369,406 @@ func TestTags(t *testing.T) {
 	require.Len(t, trimmedTag, 1, "expected to find one tag")
 	require.Equal(t, "v0.0.1", trimmedTag[0].Name, "expected tag name to match")
 	require.Equal(t, *ref.Object.SHA, trimmedTag[0].Commit.SHA, "expected tag SHA to match")
+}
+
+func TestFileDeletion(t *testing.T) {
+	t.Parallel()
+
+	mcpClient := setupMCPClient(t)
+
+	ctx := context.Background()
+
+	// First, who am I
+	getMeRequest := mcp.CallToolRequest{}
+	getMeRequest.Params.Name = "get_me"
+
+	t.Log("Getting current user...")
+	resp, err := mcpClient.CallTool(ctx, getMeRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	require.False(t, resp.IsError, "expected result not to be an error")
+	require.Len(t, resp.Content, 1, "expected content to have one item")
+
+	textContent, ok := resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetMeText struct {
+		Login string `json:"login"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetMeText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	currentOwner := trimmedGetMeText.Login
+
+	// Then create a repository with a README (via autoInit)
+	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	createRepoRequest := mcp.CallToolRequest{}
+	createRepoRequest.Params.Name = "create_repository"
+	createRepoRequest.Params.Arguments = map[string]any{
+		"name":     repoName,
+		"private":  true,
+		"autoInit": true,
+	}
+	t.Logf("Creating repository %s/%s...", currentOwner, repoName)
+	_, err = mcpClient.CallTool(ctx, createRepoRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Cleanup the repository after the test
+	t.Cleanup(func() {
+		// MCP Server doesn't support deletions, but we can use the GitHub Client
+		ghClient := gogithub.NewClient(nil).WithAuthToken(getE2EToken(t))
+		t.Logf("Deleting repository %s/%s...", currentOwner, repoName)
+		_, err := ghClient.Repositories.Delete(context.Background(), currentOwner, repoName)
+		require.NoError(t, err, "expected to delete repository successfully")
+	})
+
+	// Create a branch on which to create a new commit
+	createBranchRequest := mcp.CallToolRequest{}
+	createBranchRequest.Params.Name = "create_branch"
+	createBranchRequest.Params.Arguments = map[string]any{
+		"owner":       currentOwner,
+		"repo":        repoName,
+		"branch":      "test-branch",
+		"from_branch": "main",
+	}
+
+	t.Logf("Creating branch in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, createBranchRequest)
+	require.NoError(t, err, "expected to call 'create_branch' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Create a commit with a new file
+	commitRequest := mcp.CallToolRequest{}
+	commitRequest.Params.Name = "create_or_update_file"
+	commitRequest.Params.Arguments = map[string]any{
+		"owner":   currentOwner,
+		"repo":    repoName,
+		"path":    "test-file.txt",
+		"content": fmt.Sprintf("Created by e2e test %s", t.Name()),
+		"message": "Add test file",
+		"branch":  "test-branch",
+	}
+
+	t.Logf("Creating commit with new file in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, commitRequest)
+	require.NoError(t, err, "expected to call 'create_or_update_file' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedCommitText struct {
+		SHA string `json:"sha"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedCommitText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	// Check the file exists
+	getFileContentsRequest := mcp.CallToolRequest{}
+	getFileContentsRequest.Params.Name = "get_file_contents"
+	getFileContentsRequest.Params.Arguments = map[string]any{
+		"owner":  currentOwner,
+		"repo":   repoName,
+		"path":   "test-file.txt",
+		"branch": "test-branch",
+	}
+
+	t.Logf("Getting file contents in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, getFileContentsRequest)
+	require.NoError(t, err, "expected to call 'get_file_contents' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetFileText struct {
+		Content string `json:"content"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetFileText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	b, err := base64.StdEncoding.DecodeString(trimmedGetFileText.Content)
+	require.NoError(t, err, "expected to decode base64 content successfully")
+	require.Equal(t, fmt.Sprintf("Created by e2e test %s", t.Name()), string(b), "expected file content to match")
+
+	// Delete the file
+	deleteFileRequest := mcp.CallToolRequest{}
+	deleteFileRequest.Params.Name = "delete_file"
+	deleteFileRequest.Params.Arguments = map[string]any{
+		"owner":   currentOwner,
+		"repo":    repoName,
+		"path":    "test-file.txt",
+		"message": "Delete test file",
+		"branch":  "test-branch",
+	}
+
+	t.Logf("Deleting file in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, deleteFileRequest)
+	require.NoError(t, err, "expected to call 'delete_file' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// See that there is a commit that removes the file
+	listCommitsRequest := mcp.CallToolRequest{}
+	listCommitsRequest.Params.Name = "list_commits"
+	listCommitsRequest.Params.Arguments = map[string]any{
+		"owner": currentOwner,
+		"repo":  repoName,
+		"sha":   "test-branch", // can be SHA or branch, which is an unfortunate API design
+	}
+
+	t.Logf("Listing commits in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, listCommitsRequest)
+	require.NoError(t, err, "expected to call 'list_commits' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedListCommitsText []struct {
+		SHA    string `json:"sha"`
+		Commit struct {
+			Message string `json:"message"`
+		}
+		Files []struct {
+			Filename  string `json:"filename"`
+			Deletions int    `json:"deletions"`
+		}
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedListCommitsText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	require.GreaterOrEqual(t, len(trimmedListCommitsText), 1, "expected to find at least one commit")
+
+	deletionCommit := trimmedListCommitsText[0]
+	require.Equal(t, "Delete test file", deletionCommit.Commit.Message, "expected commit message to match")
+
+	// Now get the commit so we can look at the file changes because list_commits doesn't include them
+	getCommitRequest := mcp.CallToolRequest{}
+	getCommitRequest.Params.Name = "get_commit"
+	getCommitRequest.Params.Arguments = map[string]any{
+		"owner": currentOwner,
+		"repo":  repoName,
+		"sha":   deletionCommit.SHA,
+	}
+
+	t.Logf("Getting commit %s/%s:%s...", currentOwner, repoName, deletionCommit.SHA)
+	resp, err = mcpClient.CallTool(ctx, getCommitRequest)
+	require.NoError(t, err, "expected to call 'get_commit' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetCommitText struct {
+		Files []struct {
+			Filename  string `json:"filename"`
+			Deletions int    `json:"deletions"`
+		}
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetCommitText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	require.Len(t, trimmedGetCommitText.Files, 1, "expected to find one file change")
+	require.Equal(t, "test-file.txt", trimmedGetCommitText.Files[0].Filename, "expected filename to match")
+	require.Equal(t, 1, trimmedGetCommitText.Files[0].Deletions, "expected one deletion")
+}
+
+func TestDirectoryDeletion(t *testing.T) {
+	t.Parallel()
+
+	mcpClient := setupMCPClient(t)
+
+	ctx := context.Background()
+
+	// First, who am I
+	getMeRequest := mcp.CallToolRequest{}
+	getMeRequest.Params.Name = "get_me"
+
+	t.Log("Getting current user...")
+	resp, err := mcpClient.CallTool(ctx, getMeRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	require.False(t, resp.IsError, "expected result not to be an error")
+	require.Len(t, resp.Content, 1, "expected content to have one item")
+
+	textContent, ok := resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetMeText struct {
+		Login string `json:"login"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetMeText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	currentOwner := trimmedGetMeText.Login
+
+	// Then create a repository with a README (via autoInit)
+	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	createRepoRequest := mcp.CallToolRequest{}
+	createRepoRequest.Params.Name = "create_repository"
+	createRepoRequest.Params.Arguments = map[string]any{
+		"name":     repoName,
+		"private":  true,
+		"autoInit": true,
+	}
+	t.Logf("Creating repository %s/%s...", currentOwner, repoName)
+	_, err = mcpClient.CallTool(ctx, createRepoRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Cleanup the repository after the test
+	t.Cleanup(func() {
+		// MCP Server doesn't support deletions, but we can use the GitHub Client
+		ghClient := gogithub.NewClient(nil).WithAuthToken(getE2EToken(t))
+		t.Logf("Deleting repository %s/%s...", currentOwner, repoName)
+		_, err := ghClient.Repositories.Delete(context.Background(), currentOwner, repoName)
+		require.NoError(t, err, "expected to delete repository successfully")
+	})
+
+	// Create a branch on which to create a new commit
+	createBranchRequest := mcp.CallToolRequest{}
+	createBranchRequest.Params.Name = "create_branch"
+	createBranchRequest.Params.Arguments = map[string]any{
+		"owner":       currentOwner,
+		"repo":        repoName,
+		"branch":      "test-branch",
+		"from_branch": "main",
+	}
+
+	t.Logf("Creating branch in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, createBranchRequest)
+	require.NoError(t, err, "expected to call 'create_branch' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Create a commit with a new file
+	commitRequest := mcp.CallToolRequest{}
+	commitRequest.Params.Name = "create_or_update_file"
+	commitRequest.Params.Arguments = map[string]any{
+		"owner":   currentOwner,
+		"repo":    repoName,
+		"path":    "test-dir/test-file.txt",
+		"content": fmt.Sprintf("Created by e2e test %s", t.Name()),
+		"message": "Add test file",
+		"branch":  "test-branch",
+	}
+
+	t.Logf("Creating commit with new file in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, commitRequest)
+	require.NoError(t, err, "expected to call 'create_or_update_file' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedCommitText struct {
+		SHA string `json:"sha"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedCommitText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	// Check the file exists
+	getFileContentsRequest := mcp.CallToolRequest{}
+	getFileContentsRequest.Params.Name = "get_file_contents"
+	getFileContentsRequest.Params.Arguments = map[string]any{
+		"owner":  currentOwner,
+		"repo":   repoName,
+		"path":   "test-dir/test-file.txt",
+		"branch": "test-branch",
+	}
+
+	t.Logf("Getting file contents in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, getFileContentsRequest)
+	require.NoError(t, err, "expected to call 'get_file_contents' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetFileText struct {
+		Content string `json:"content"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetFileText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	b, err := base64.StdEncoding.DecodeString(trimmedGetFileText.Content)
+	require.NoError(t, err, "expected to decode base64 content successfully")
+	require.Equal(t, fmt.Sprintf("Created by e2e test %s", t.Name()), string(b), "expected file content to match")
+
+	// Delete the directory containing the file
+	deleteFileRequest := mcp.CallToolRequest{}
+	deleteFileRequest.Params.Name = "delete_file"
+	deleteFileRequest.Params.Arguments = map[string]any{
+		"owner":   currentOwner,
+		"repo":    repoName,
+		"path":    "test-dir",
+		"message": "Delete test directory",
+		"branch":  "test-branch",
+	}
+
+	t.Logf("Deleting directory in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, deleteFileRequest)
+	require.NoError(t, err, "expected to call 'delete_file' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// See that there is a commit that removes the directory
+	listCommitsRequest := mcp.CallToolRequest{}
+	listCommitsRequest.Params.Name = "list_commits"
+	listCommitsRequest.Params.Arguments = map[string]any{
+		"owner": currentOwner,
+		"repo":  repoName,
+		"sha":   "test-branch", // can be SHA or branch, which is an unfortunate API design
+	}
+
+	t.Logf("Listing commits in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, listCommitsRequest)
+	require.NoError(t, err, "expected to call 'list_commits' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedListCommitsText []struct {
+		SHA    string `json:"sha"`
+		Commit struct {
+			Message string `json:"message"`
+		}
+		Files []struct {
+			Filename  string `json:"filename"`
+			Deletions int    `json:"deletions"`
+		} `json:"files"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedListCommitsText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	require.GreaterOrEqual(t, len(trimmedListCommitsText), 1, "expected to find at least one commit")
+
+	deletionCommit := trimmedListCommitsText[0]
+	require.Equal(t, "Delete test directory", deletionCommit.Commit.Message, "expected commit message to match")
+
+	// Now get the commit so we can look at the file changes because list_commits doesn't include them
+	getCommitRequest := mcp.CallToolRequest{}
+	getCommitRequest.Params.Name = "get_commit"
+	getCommitRequest.Params.Arguments = map[string]any{
+		"owner": currentOwner,
+		"repo":  repoName,
+		"sha":   deletionCommit.SHA,
+	}
+
+	t.Logf("Getting commit %s/%s:%s...", currentOwner, repoName, deletionCommit.SHA)
+	resp, err = mcpClient.CallTool(ctx, getCommitRequest)
+	require.NoError(t, err, "expected to call 'get_commit' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetCommitText struct {
+		Files []struct {
+			Filename  string `json:"filename"`
+			Deletions int    `json:"deletions"`
+		}
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetCommitText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+	require.Len(t, trimmedGetCommitText.Files, 1, "expected to find one file change")
+	require.Equal(t, "test-dir/test-file.txt", trimmedGetCommitText.Files[0].Filename, "expected filename to match")
+	require.Equal(t, 1, trimmedGetCommitText.Files[0].Deletions, "expected one deletion")
 }

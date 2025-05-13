@@ -287,7 +287,7 @@ func CreateOrUpdateFile(getClient GetClientFn, t translations.TranslationHelperF
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			// Convert content to base64
+			// json.Marshal encodes byte arrays with base64, which is required for the API.
 			contentBytes := []byte(content)
 
 			// Create the file options
@@ -548,6 +548,166 @@ func ForkRepository(getClient GetClientFn, t translations.TranslationHelperFunc)
 			}
 
 			r, err := json.Marshal(forkedRepo)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}
+
+// DeleteFile creates a tool to delete a file in a GitHub repository.
+// This tool uses a more roundabout way of deleting a file than just using the client.Repositories.DeleteFile.
+// This is because REST file deletion endpoint (and client.Repositories.DeleteFile) don't add commit signing to the deletion commit,
+// unlike how the endpoint backing the create_or_update_files tool does. This appears to be a quirk of the API.
+// The approach implemented here gets automatic commit signing when used with either the github-actions user or as an app,
+// both of which suit an LLM well.
+func DeleteFile(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("delete_file",
+			mcp.WithDescription(t("TOOL_DELETE_FILE_DESCRIPTION", "Delete a file from a GitHub repository")),
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{
+				Title:           t("TOOL_DELETE_FILE_USER_TITLE", "Delete file"),
+				ReadOnlyHint:    toBoolPtr(false),
+				DestructiveHint: toBoolPtr(true),
+			}),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner (username or organization)"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithString("path",
+				mcp.Required(),
+				mcp.Description("Path to the file to delete"),
+			),
+			mcp.WithString("message",
+				mcp.Required(),
+				mcp.Description("Commit message"),
+			),
+			mcp.WithString("branch",
+				mcp.Required(),
+				mcp.Description("Branch to delete the file from"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner, err := requiredParam[string](request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := requiredParam[string](request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			path, err := requiredParam[string](request, "path")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			message, err := requiredParam[string](request, "message")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			branch, err := requiredParam[string](request, "branch")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
+
+			// Get the reference for the branch
+			ref, resp, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+branch)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get branch reference: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			// Get the commit object that the branch points to
+			baseCommit, resp, err := client.Git.GetCommit(ctx, owner, repo, *ref.Object.SHA)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get base commit: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to get commit: %s", string(body))), nil
+			}
+
+			// Create a tree entry for the file deletion by setting SHA to nil
+			treeEntries := []*github.TreeEntry{
+				{
+					Path: github.Ptr(path),
+					Mode: github.Ptr("100644"), // Regular file mode
+					Type: github.Ptr("blob"),
+					SHA:  nil, // Setting SHA to nil deletes the file
+				},
+			}
+
+			// Create a new tree with the deletion
+			newTree, resp, err := client.Git.CreateTree(ctx, owner, repo, *baseCommit.Tree.SHA, treeEntries)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create tree: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusCreated {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to create tree: %s", string(body))), nil
+			}
+
+			// Create a new commit with the new tree
+			commit := &github.Commit{
+				Message: github.Ptr(message),
+				Tree:    newTree,
+				Parents: []*github.Commit{{SHA: baseCommit.SHA}},
+			}
+			newCommit, resp, err := client.Git.CreateCommit(ctx, owner, repo, commit, nil)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create commit: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusCreated {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to create commit: %s", string(body))), nil
+			}
+
+			// Update the branch reference to point to the new commit
+			ref.Object.SHA = newCommit.SHA
+			_, resp, err = client.Git.UpdateRef(ctx, owner, repo, ref, false)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update reference: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to update reference: %s", string(body))), nil
+			}
+
+			// Create a response similar to what the DeleteFile API would return
+			response := map[string]interface{}{
+				"commit":  newCommit,
+				"content": nil,
+			}
+
+			r, err := json.Marshal(response)
 			if err != nil {
 				return nil, fmt.Errorf("failed to marshal response: %w", err)
 			}
