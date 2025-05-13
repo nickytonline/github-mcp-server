@@ -1252,7 +1252,7 @@ func CreatePullRequest(getClient GetClientFn, t translations.TranslationHelperFu
 // tool if the configured host does not support it.
 func RequestCopilotReview(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.Tool, server.ToolHandlerFunc) {
 	return mcp.NewTool("request_copilot_review",
-			mcp.WithDescription(t("TOOL_REQUEST_COPILOT_REVIEW_DESCRIPTION", "Request a GitHub Copilot review for a pull request. Note: This feature depends on GitHub API support and may not be available for all users.")),
+			mcp.WithDescription(t("TOOL_REQUEST_COPILOT_REVIEW_DESCRIPTION", "Request a GitHub Copilot code review for a pull request. Use this for automated feedback on pull requests, usually before requesting a human reviewer.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_REQUEST_COPILOT_REVIEW_USER_TITLE", "Request Copilot review"),
 				ReadOnlyHint: toBoolPtr(false),
