@@ -463,7 +463,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `pullNumber`: Pull request number (number, required)
-  - _Note: Currently, this tool will only work for github.com
+  - _Note_: Currently, this tool will only work for github.com
 
 ### Repositories
 
