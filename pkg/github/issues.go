@@ -20,7 +20,7 @@ func GetIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (tool
 			mcp.WithDescription(t("TOOL_GET_ISSUE_DESCRIPTION", "Get details of a specific issue in a GitHub repository.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_GET_ISSUE_USER_TITLE", "Get issue details"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("owner",
 				mcp.Required(),
@@ -82,7 +82,7 @@ func AddIssueComment(getClient GetClientFn, t translations.TranslationHelperFunc
 			mcp.WithDescription(t("TOOL_ADD_ISSUE_COMMENT_DESCRIPTION", "Add a comment to a specific issue in a GitHub repository.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_ADD_ISSUE_COMMENT_USER_TITLE", "Add comment to issue"),
-				ReadOnlyHint: false,
+				ReadOnlyHint: toBoolPtr(false),
 			}),
 			mcp.WithString("owner",
 				mcp.Required(),
@@ -156,7 +156,7 @@ func SearchIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (
 			mcp.WithDescription(t("TOOL_SEARCH_ISSUES_DESCRIPTION", "Search for issues in GitHub repositories.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_ISSUES_USER_TITLE", "Search issues"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("q",
 				mcp.Required(),
@@ -244,7 +244,7 @@ func CreateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			mcp.WithDescription(t("TOOL_CREATE_ISSUE_DESCRIPTION", "Create a new issue in a GitHub repository.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_CREATE_ISSUE_USER_TITLE", "Open new issue"),
-				ReadOnlyHint: false,
+				ReadOnlyHint: toBoolPtr(false),
 			}),
 			mcp.WithString("owner",
 				mcp.Required(),
@@ -366,7 +366,7 @@ func ListIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			mcp.WithDescription(t("TOOL_LIST_ISSUES_DESCRIPTION", "List issues in a GitHub repository.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_LIST_ISSUES_USER_TITLE", "List issues"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("owner",
 				mcp.Required(),
@@ -488,7 +488,7 @@ func UpdateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			mcp.WithDescription(t("TOOL_UPDATE_ISSUE_DESCRIPTION", "Update an existing issue in a GitHub repository.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_UPDATE_ISSUE_USER_TITLE", "Edit issue"),
-				ReadOnlyHint: false,
+				ReadOnlyHint: toBoolPtr(false),
 			}),
 			mcp.WithString("owner",
 				mcp.Required(),
@@ -634,7 +634,7 @@ func GetIssueComments(getClient GetClientFn, t translations.TranslationHelperFun
 			mcp.WithDescription(t("TOOL_GET_ISSUE_COMMENTS_DESCRIPTION", "Get comments for a specific issue in a GitHub repository.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_GET_ISSUE_COMMENTS_USER_TITLE", "Get issue comments"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("owner",
 				mcp.Required(),

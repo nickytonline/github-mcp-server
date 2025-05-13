@@ -18,7 +18,7 @@ func SearchRepositories(getClient GetClientFn, t translations.TranslationHelperF
 			mcp.WithDescription(t("TOOL_SEARCH_REPOSITORIES_DESCRIPTION", "Search for GitHub repositories")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_REPOSITORIES_USER_TITLE", "Search repositories"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("query",
 				mcp.Required(),
@@ -76,7 +76,7 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			mcp.WithDescription(t("TOOL_SEARCH_CODE_DESCRIPTION", "Search for code across GitHub repositories")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_CODE_USER_TITLE", "Search code"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("q",
 				mcp.Required(),
@@ -152,7 +152,7 @@ func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			mcp.WithDescription(t("TOOL_SEARCH_USERS_DESCRIPTION", "Search for GitHub users")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_USERS_USER_TITLE", "Search users"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("q",
 				mcp.Required(),

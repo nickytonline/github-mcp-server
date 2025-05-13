@@ -59,7 +59,7 @@ func (t *Toolset) SetReadOnly() {
 func (t *Toolset) AddWriteTools(tools ...server.ServerTool) *Toolset {
 	// Silently ignore if the toolset is read-only to avoid any breach of that contract
 	for _, tool := range tools {
-		if tool.Tool.Annotations.ReadOnlyHint {
+		if *tool.Tool.Annotations.ReadOnlyHint {
 			panic(fmt.Sprintf("tool (%s) is incorrectly annotated as read-only", tool.Tool.Name))
 		}
 	}
@@ -71,12 +71,8 @@ func (t *Toolset) AddWriteTools(tools ...server.ServerTool) *Toolset {
 
 func (t *Toolset) AddReadTools(tools ...server.ServerTool) *Toolset {
 	for _, tool := range tools {
-		if !tool.Tool.Annotations.ReadOnlyHint {
+		if !*tool.Tool.Annotations.ReadOnlyHint {
 			panic(fmt.Sprintf("tool (%s) must be annotated as read-only", tool.Tool.Name))
-		}
-		tool.Tool.Annotations = mcp.ToolAnnotation{
-			ReadOnlyHint: true,
-			Title:        tool.Tool.Annotations.Title,
 		}
 	}
 	t.readTools = append(t.readTools, tools...)

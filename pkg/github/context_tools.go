@@ -18,7 +18,7 @@ func GetMe(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mc
 			mcp.WithDescription(t("TOOL_GET_ME_DESCRIPTION", "Get details of the authenticated GitHub user. Use this when a request include \"me\", \"my\"...")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_GET_ME_USER_TITLE", "Get my user profile"),
-				ReadOnlyHint: true,
+				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("reason",
 				mcp.Description("Optional: reason the session was created"),

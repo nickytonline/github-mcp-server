@@ -124,3 +124,7 @@ func InitDynamicToolset(s *server.MCPServer, tsg *toolsets.ToolsetGroup, t trans
 	dynamicToolSelection.Enabled = true
 	return dynamicToolSelection
 }
+
+func toBoolPtr(b bool) *bool {
+	return &b
+}
