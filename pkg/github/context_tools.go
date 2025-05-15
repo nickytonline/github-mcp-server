@@ -21,7 +21,7 @@ func GetMe(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mc
 				ReadOnlyHint: toBoolPtr(true),
 			}),
 			mcp.WithString("reason",
-				mcp.Description("Optional: reason the session was created"),
+				mcp.Description("Optional: the reason for requesting the user information"),
 			),
 		),
 		func(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
