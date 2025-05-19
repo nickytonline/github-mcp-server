@@ -90,3 +90,7 @@ The current test suite is intentionally very limited in scope. This is because t
 The tests are quite repetitive and verbose. This is intentional as we want to see them develop more before committing to abstractions.
 
 Currently, visibility into failures is not particularly good. We're hoping that we can pull apart the mcp-go client and have it hook into streams representing stdio without requiring an exec. This way we can get breakpoints in the debugger easily.
+
+### Global State Mutation Tests
+
+Some tools (such as those that mark all notifications as read) would change the global state for the tester, and are also not idempotent, so they offer little value for end to end tests and instead should rely on unit testing and manual verifications.

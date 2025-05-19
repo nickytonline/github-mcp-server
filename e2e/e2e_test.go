@@ -62,7 +62,8 @@ func getRESTClient(t *testing.T) *gogithub.Client {
 
 	// Create a new GitHub client with the token
 	ghClient := gogithub.NewClient(nil).WithAuthToken(token)
-	if host := getE2EHost(); host != "https://github.com" {
+
+	if host := getE2EHost(); host != "" && host != "https://github.com" {
 		var err error
 		// Currently this works for GHEC because the API is exposed at the api subdomain and the path prefix
 		// but it would be preferable to extract the host parsing from the main server logic, and use it here.

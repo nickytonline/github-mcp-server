@@ -581,6 +581,39 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `secret_type`: The secret types to be filtered for in a comma-separated list (string, optional)
   - `resolution`: The resolution status (string, optional)
 
+### Notifications
+
+- **list_notifications** – List notifications for a GitHub user
+  - `filter`: Filter to apply to the response (`default`, `include_read_notifications`, `only_participating`)
+  - `since`: Only show notifications updated after the given time (ISO 8601 format)
+  - `before`: Only show notifications updated before the given time (ISO 8601 format)
+  - `owner`: Optional repository owner (string)
+  - `repo`: Optional repository name (string)
+  - `page`: Page number (number, optional)
+  - `perPage`: Results per page (number, optional)
+
+
+- **get_notification_details** – Get detailed information for a specific GitHub notification
+  - `notificationID`: The ID of the notification (string, required)
+
+- **dismiss_notification** – Dismiss a notification by marking it as read or done
+  - `threadID`: The ID of the notification thread (string, required)
+  - `state`: The new state of the notification (`read` or `done`)
+
+- **mark_all_notifications_read** – Mark all notifications as read
+  - `lastReadAt`: Describes the last point that notifications were checked (optional, RFC3339/ISO8601 string, default: now)
+  - `owner`: Optional repository owner (string)
+  - `repo`: Optional repository name (string)
+
+- **manage_notification_subscription** – Manage a notification subscription (ignore, watch, or delete) for a notification thread
+  - `notificationID`: The ID of the notification thread (string, required)
+  - `action`: Action to perform: `ignore`, `watch`, or `delete` (string, required)
+
+- **manage_repository_notification_subscription** – Manage a repository notification subscription (ignore, watch, or delete)
+  - `owner`: The account owner of the repository (string, required)
+  - `repo`: The name of the repository (string, required)
+  - `action`: Action to perform: `ignore`, `watch`, or `delete` (string, required)
+
 ## Resources
 
 ### Repository Content
