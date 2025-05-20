@@ -1,6 +1,8 @@
 // The contents of this file are taken from https://github.com/stretchr/testify/blob/016e2e9c269209287f33ec203f340a9a723fe22c/assert/assertions.go#L166
 // because I do not want to take a dependency on the entire testify module just to use this equality check.
 //
+// There is a modification in objectsAreEqual to check that typed nils are equal, even if their types are different.
+//
 // The original license, copied from https://github.com/stretchr/testify/blob/016e2e9c269209287f33ec203f340a9a723fe22c/LICENSE
 //
 // MIT License
@@ -69,8 +71,10 @@ func objectsAreEqualValues(expected, actual any) bool {
 //
 // This function does no assertion of any kind.
 func objectsAreEqual(expected, actual any) bool {
-	if expected == nil || actual == nil {
-		return expected == actual
+	// There is a modification in objectsAreEqual to check that typed nils are equal, even if their types are different.
+	// This is required because when a nil is provided as a variable, the type is not known.
+	if isNil(expected) && isNil(actual) {
+		return true
 	}
 
 	exp, ok := expected.([]byte)
@@ -93,4 +97,17 @@ func objectsAreEqual(expected, actual any) bool {
 // float32, float64, complex64, complex128
 func isNumericType(t reflect.Type) bool {
 	return t.Kind() >= reflect.Int && t.Kind() <= reflect.Complex128
+}
+
+func isNil(i any) bool {
+	if i == nil {
+		return true
+	}
+	v := reflect.ValueOf(i)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }

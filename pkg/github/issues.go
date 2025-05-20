@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/github/github-mcp-server/pkg/translations"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/google/go-github/v69/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/shurcooL/githubv4"
 )
 
 // GetIssue creates a tool to get details of a specific issue in a GitHub repository.
@@ -264,7 +267,7 @@ func CreateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			mcp.WithArray("assignees",
 				mcp.Description("Usernames to assign to this issue"),
 				mcp.Items(
-					map[string]interface{}{
+					map[string]any{
 						"type": "string",
 					},
 				),
@@ -272,7 +275,7 @@ func CreateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			mcp.WithArray("labels",
 				mcp.Description("Labels to apply to this issue"),
 				mcp.Items(
-					map[string]interface{}{
+					map[string]any{
 						"type": "string",
 					},
 				),
@@ -709,6 +712,200 @@ func GetIssueComments(getClient GetClientFn, t translations.TranslationHelperFun
 
 			return mcp.NewToolResultText(string(r)), nil
 		}
+}
+
+// mvpDescription is an MVP idea for generating tool descriptions from structured data in a shared format.
+// It is not intended for widespread usage and is not a complete implementation.
+type mvpDescription struct {
+	summary        string
+	outcomes       []string
+	referenceLinks []string
+}
+
+func (d *mvpDescription) String() string {
+	var sb strings.Builder
+	sb.WriteString(d.summary)
+	if len(d.outcomes) > 0 {
+		sb.WriteString("\n\n")
+		sb.WriteString("This tool can help with the following outcomes:\n")
+		for _, outcome := range d.outcomes {
+			sb.WriteString(fmt.Sprintf("- %s\n", outcome))
+		}
+	}
+
+	if len(d.referenceLinks) > 0 {
+		sb.WriteString("\n\n")
+		sb.WriteString("More information can be found at:\n")
+		for _, link := range d.referenceLinks {
+			sb.WriteString(fmt.Sprintf("- %s\n", link))
+		}
+	}
+
+	return sb.String()
+}
+
+func AssignCopilotToIssue(getGQLClient GetGQLClientFn, t translations.TranslationHelperFunc) (mcp.Tool, server.ToolHandlerFunc) {
+	description := mvpDescription{
+		summary: "Assign Copilot to a specific issue in a GitHub repository.",
+		outcomes: []string{
+			"a Pull Request created with source code changes to resolve the issue",
+		},
+		referenceLinks: []string{
+			"https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent-to-work-on-tasks/about-assigning-tasks-to-copilot",
+		},
+	}
+
+	return mcp.NewTool("assign_copilot_to_issue",
+			mcp.WithDescription(t("TOOL_ASSIGN_COPILOT_TO_ISSUE_DESCRIPTION", description.String())),
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{
+				Title:          t("TOOL_ASSIGN_COPILOT_TO_ISSUE_USER_TITLE", "Assign Copilot to issue"),
+				ReadOnlyHint:   toBoolPtr(false),
+				IdempotentHint: toBoolPtr(true),
+			}),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("Repository owner"),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("Repository name"),
+			),
+			mcp.WithNumber("issueNumber",
+				mcp.Required(),
+				mcp.Description("Issue number"),
+			),
+		),
+		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			var params struct {
+				Owner       string
+				Repo        string
+				IssueNumber int32
+			}
+			if err := mapstructure.Decode(request.Params.Arguments, &params); err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			client, err := getGQLClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
+
+			// Firstly, we try to find the copilot bot in the suggested actors for the repository.
+			// Although as I write this, we would expect copilot to be at the top of the list, in future, maybe
+			// it will not be on the first page of responses, thus we will keep paginating until we find it.
+			type botAssignee struct {
+				ID       githubv4.ID
+				Login    string
+				TypeName string `graphql:"__typename"`
+			}
+
+			type suggestedActorsQuery struct {
+				Repository struct {
+					SuggestedActors struct {
+						Nodes []struct {
+							Bot botAssignee `graphql:"... on Bot"`
+						}
+						PageInfo struct {
+							HasNextPage bool
+							EndCursor   string
+						}
+					} `graphql:"suggestedActors(first: 100, after: $endCursor, capabilities: CAN_BE_ASSIGNED)"`
+				} `graphql:"repository(owner: $owner, name: $name)"`
+			}
+
+			variables := map[string]any{
+				"owner":     githubv4.String(params.Owner),
+				"name":      githubv4.String(params.Repo),
+				"endCursor": (*githubv4.String)(nil),
+			}
+
+			var copilotAssignee *botAssignee
+			for {
+				var query suggestedActorsQuery
+				err := client.Query(ctx, &query, variables)
+				if err != nil {
+					return nil, err
+				}
+
+				// Iterate all the returned nodes looking for the copilot bot, which is supposed to have the
+				// same name on each host. We need this in order to get the ID for later assignment.
+				for _, node := range query.Repository.SuggestedActors.Nodes {
+					if node.Bot.Login == "copilot-swe-agent" {
+						copilotAssignee = &node.Bot
+						break
+					}
+				}
+
+				if !query.Repository.SuggestedActors.PageInfo.HasNextPage {
+					break
+				}
+				variables["endCursor"] = githubv4.String(query.Repository.SuggestedActors.PageInfo.EndCursor)
+			}
+
+			// If we didn't find the copilot bot, we can't proceed any further.
+			if copilotAssignee == nil {
+				// The e2e tests depend upon this specific message to skip the test.
+				return mcp.NewToolResultError("copilot isn't available as an assignee for this issue. Please inform the user to visit https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent-to-work-on-tasks/about-assigning-tasks-to-copilot for more information."), nil
+			}
+
+			// Next let's get the GQL Node ID and current assignees for this issue because the only way to
+			// assign copilot is to use replaceActorsForAssignable which requires the full list.
+			var getIssueQuery struct {
+				Repository struct {
+					Issue struct {
+						ID        githubv4.ID
+						Assignees struct {
+							Nodes []struct {
+								ID githubv4.ID
+							}
+						} `graphql:"assignees(first: 100)"`
+					} `graphql:"issue(number: $number)"`
+				} `graphql:"repository(owner: $owner, name: $name)"`
+			}
+
+			variables = map[string]any{
+				"owner":  githubv4.String(params.Owner),
+				"name":   githubv4.String(params.Repo),
+				"number": githubv4.Int(params.IssueNumber),
+			}
+
+			if err := client.Query(ctx, &getIssueQuery, variables); err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("failed to get issue ID: %v", err)), nil
+			}
+
+			// Finally, do the assignment. Just for reference, assigning copilot to an issue that it is already
+			// assigned to seems to have no impact (which is a good thing).
+			var assignCopilotMutation struct {
+				ReplaceActorsForAssignable struct {
+					Typename string `graphql:"__typename"` // Not required but we need a selector or GQL errors
+				} `graphql:"replaceActorsForAssignable(input: $input)"`
+			}
+
+			actorIDs := make([]githubv4.ID, len(getIssueQuery.Repository.Issue.Assignees.Nodes)+1)
+			for i, node := range getIssueQuery.Repository.Issue.Assignees.Nodes {
+				actorIDs[i] = node.ID
+			}
+			actorIDs[len(getIssueQuery.Repository.Issue.Assignees.Nodes)] = copilotAssignee.ID
+
+			if err := client.Mutate(
+				ctx,
+				&assignCopilotMutation,
+				ReplaceActorsForAssignableInput{
+					AssignableID: getIssueQuery.Repository.Issue.ID,
+					ActorIDs:     actorIDs,
+				},
+				nil,
+			); err != nil {
+				return nil, fmt.Errorf("failed to replace actors for assignable: %w", err)
+			}
+
+			return mcp.NewToolResultText("successfully assigned copilot to issue"), nil
+		}
+}
+
+type ReplaceActorsForAssignableInput struct {
+	AssignableID githubv4.ID   `json:"assignableId"`
+	ActorIDs     []githubv4.ID `json:"actorIds"`
 }
 
 // parseISOTimestamp parses an ISO 8601 timestamp string into a time.Time object.

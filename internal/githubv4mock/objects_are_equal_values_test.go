@@ -1,5 +1,7 @@
 // The contents of this file are taken from https://github.com/stretchr/testify/blob/016e2e9c269209287f33ec203f340a9a723fe22c/assert/assertions_test.go#L140-L174
 //
+// There is a modification to test objectsAreEqualValues to check that typed nils are equal, even if their types are different.
+
 // The original license, copied from https://github.com/stretchr/testify/blob/016e2e9c269209287f33ec203f340a9a723fe22c/LICENSE
 //
 // MIT License
@@ -55,6 +57,8 @@ func TestObjectsAreEqualValues(t *testing.T) {
 		{3.14, complex128(1e+100 + 1e+100i), false},
 		{complex128(1e+10 + 1e+10i), complex64(1e+10 + 1e+10i), true},
 		{complex64(1e+10 + 1e+10i), complex128(1e+10 + 1e+10i), true},
+		{(*string)(nil), nil, true},         // typed nil vs untyped nil
+		{(*string)(nil), (*int)(nil), true}, // different typed nils
 	}
 
 	for _, c := range cases {

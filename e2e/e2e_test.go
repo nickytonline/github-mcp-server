@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"slices"
@@ -210,7 +211,6 @@ func TestGetMe(t *testing.T) {
 	t.Parallel()
 
 	mcpClient := setupMCPClient(t)
-
 	ctx := context.Background()
 
 	// When we call the "get_me" tool
@@ -795,14 +795,13 @@ func TestDirectoryDeletion(t *testing.T) {
 }
 
 func TestRequestCopilotReview(t *testing.T) {
+	t.Parallel()
+
 	if getE2EHost() != "" && getE2EHost() != "https://github.com" {
 		t.Skip("Skipping test because the host does not support copilot reviews")
 	}
 
-	t.Parallel()
-
 	mcpClient := setupMCPClient(t)
-
 	ctx := context.Background()
 
 	// First, who am I
@@ -941,6 +940,112 @@ func TestRequestCopilotReview(t *testing.T) {
 	require.Len(t, reviewRequests.Users, 1, "expected to find one review request")
 	require.Equal(t, "Copilot", *reviewRequests.Users[0].Login, "expected review request to be for Copilot")
 	require.Equal(t, "Bot", *reviewRequests.Users[0].Type, "expected review request to be for Bot")
+}
+
+func TestAssignCopilotToIssue(t *testing.T) {
+	t.Parallel()
+
+	if getE2EHost() != "" && getE2EHost() != "https://github.com" {
+		t.Skip("Skipping test because the host does not support copilot being assigned to issues")
+	}
+
+	mcpClient := setupMCPClient(t)
+	ctx := context.Background()
+
+	// First, who am I
+	getMeRequest := mcp.CallToolRequest{}
+	getMeRequest.Params.Name = "get_me"
+
+	t.Log("Getting current user...")
+	resp, err := mcpClient.CallTool(ctx, getMeRequest)
+	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	require.False(t, resp.IsError, "expected result not to be an error")
+	require.Len(t, resp.Content, 1, "expected content to have one item")
+
+	textContent, ok := resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	var trimmedGetMeText struct {
+		Login string `json:"login"`
+	}
+	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetMeText)
+	require.NoError(t, err, "expected to unmarshal text content successfully")
+
+	currentOwner := trimmedGetMeText.Login
+
+	// Then create a repository with a README (via autoInit)
+	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	createRepoRequest := mcp.CallToolRequest{}
+	createRepoRequest.Params.Name = "create_repository"
+	createRepoRequest.Params.Arguments = map[string]any{
+		"name":     repoName,
+		"private":  true,
+		"autoInit": true,
+	}
+
+	t.Logf("Creating repository %s/%s...", currentOwner, repoName)
+	_, err = mcpClient.CallTool(ctx, createRepoRequest)
+	require.NoError(t, err, "expected to call 'create_repository' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Cleanup the repository after the test
+	t.Cleanup(func() {
+		// MCP Server doesn't support deletions, but we can use the GitHub Client
+		ghClient := getRESTClient(t)
+		t.Logf("Deleting repository %s/%s...", currentOwner, repoName)
+		_, err := ghClient.Repositories.Delete(context.Background(), currentOwner, repoName)
+		require.NoError(t, err, "expected to delete repository successfully")
+	})
+
+	// Create an issue
+	createIssueRequest := mcp.CallToolRequest{}
+	createIssueRequest.Params.Name = "create_issue"
+	createIssueRequest.Params.Arguments = map[string]any{
+		"owner": currentOwner,
+		"repo":  repoName,
+		"title": "Test issue to assign copilot to",
+	}
+
+	t.Logf("Creating issue in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, createIssueRequest)
+	require.NoError(t, err, "expected to call 'create_issue' tool successfully")
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	// Assign copilot to the issue
+	assignCopilotRequest := mcp.CallToolRequest{}
+	assignCopilotRequest.Params.Name = "assign_copilot_to_issue"
+	assignCopilotRequest.Params.Arguments = map[string]any{
+		"owner":       currentOwner,
+		"repo":        repoName,
+		"issueNumber": 1,
+	}
+
+	t.Logf("Assigning copilot to issue in %s/%s...", currentOwner, repoName)
+	resp, err = mcpClient.CallTool(ctx, assignCopilotRequest)
+	require.NoError(t, err, "expected to call 'assign_copilot_to_issue' tool successfully")
+
+	textContent, ok = resp.Content[0].(mcp.TextContent)
+	require.True(t, ok, "expected content to be of type TextContent")
+
+	possibleExpectedFailure := "copilot isn't available as an assignee for this issue. Please inform the user to visit https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent-to-work-on-tasks/about-assigning-tasks-to-copilot for more information."
+	if resp.IsError && textContent.Text == possibleExpectedFailure {
+		t.Skip("skipping because copilot wasn't available as an assignee on this issue, it's likely that the owner doesn't have copilot enabled in their settings")
+	}
+
+	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
+
+	require.Equal(t, "successfully assigned copilot to issue", textContent.Text)
+
+	// Check that copilot is assigned to the issue
+	// MCP Server doesn't support getting assignees yet
+	ghClient := getRESTClient(t)
+	assignees, response, err := ghClient.Issues.Get(context.Background(), currentOwner, repoName, 1)
+	require.NoError(t, err, "expected to get issue successfully")
+	require.Equal(t, http.StatusOK, response.StatusCode, "expected to get issue successfully")
+	require.Len(t, assignees.Assignees, 1, "expected to find one assignee")
+	require.Equal(t, "Copilot", *assignees.Assignees[0].Login, "expected copilot to be assigned to the issue")
 }
 
 func TestPullRequestAtomicCreateAndSubmit(t *testing.T) {
@@ -1145,7 +1250,7 @@ func TestPullRequestReviewCommentSubmit(t *testing.T) {
 
 	t.Logf("Creating repository %s/%s...", currentOwner, repoName)
 	_, err = mcpClient.CallTool(ctx, createRepoRequest)
-	require.NoError(t, err, "expected to call 'get_me' tool successfully")
+	require.NoError(t, err, "expected to call 'create_repository' tool successfully")
 	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
 
 	// Cleanup the repository after the test
