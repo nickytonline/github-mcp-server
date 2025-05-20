@@ -9,7 +9,6 @@ import (
 
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
-	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -188,17 +187,7 @@ func Test_AddIssueComment(t *testing.T) {
 			_, handler := AddIssueComment(stubGetClientFn(client), translations.NullTranslationHelper)
 
 			// Create call request
-			request := mcp.CallToolRequest{
-				Params: struct {
-					Name      string                 `json:"name"`
-					Arguments map[string]interface{} `json:"arguments,omitempty"`
-					Meta      *struct {
-						ProgressToken mcp.ProgressToken `json:"progressToken,omitempty"`
-					} `json:"_meta,omitempty"`
-				}{
-					Arguments: tc.requestArgs,
-				},
-			}
+			request := createMCPRequest(tc.requestArgs)
 
 			// Call handler
 			result, err := handler(context.Background(), request)
