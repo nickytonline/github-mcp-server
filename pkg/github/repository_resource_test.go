@@ -94,7 +94,6 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 		requestArgs    map[string]any
 		expectError    string
 		expectedResult any
-		expectedErrMsg string
 	}{
 		{
 			name: "missing owner",
@@ -233,7 +232,7 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 			resp, err := handler(context.TODO(), request)
 
 			if tc.expectError != "" {
-				require.ErrorContains(t, err, tc.expectedErrMsg)
+				require.ErrorContains(t, err, tc.expectError)
 				return
 			}
 
