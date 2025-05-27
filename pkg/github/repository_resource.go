@@ -201,6 +201,7 @@ func RepositoryResourceContentsHandler(getClient GetClientFn) func(ctx context.C
 			}
 		}
 
+		// This should be unreachable because GetContents should return an error if neither file nor directory content is found.
 		return nil, errors.New("no repository resource content found")
 	}
 }

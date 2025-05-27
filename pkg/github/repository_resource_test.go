@@ -181,21 +181,6 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 			expectedResult: expectedDirContent,
 		},
 		{
-			name: "no data",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposContentsByOwnerByRepoByPath,
-				),
-			),
-			requestArgs: map[string]any{
-				"owner": []string{"owner"},
-				"repo":  []string{"repo"},
-				"path":  []string{"src"},
-			},
-			expectedResult: nil,
-			expectError:    "no repository resource content found",
-		},
-		{
 			name: "empty data",
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatch(
