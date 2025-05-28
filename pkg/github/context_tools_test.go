@@ -3,10 +3,10 @@ package github
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"testing"
 	"time"
 
+	"github.com/github/github-mcp-server/internal/toolsnaps"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v69/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
@@ -15,14 +15,14 @@ import (
 )
 
 func Test_GetMe(t *testing.T) {
-	// Verify tool definition
-	mockClient := github.NewClient(nil)
-	tool, _ := GetMe(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	t.Parallel()
 
+	tool, _ := GetMe(nil, translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
+	// Verify some basic very important properties
 	assert.Equal(t, "get_me", tool.Name)
-	assert.NotEmpty(t, tool.Description)
-	assert.Contains(t, tool.InputSchema.Properties, "reason")
-	assert.Empty(t, tool.InputSchema.Required) // No required parameters
+	assert.True(t, *tool.Annotations.ReadOnlyHint, "get_me tool should be read-only")
 
 	// Setup mock user response
 	mockUser := &github.User{
@@ -41,79 +41,80 @@ func Test_GetMe(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		mockedClient   *http.Client
-		requestArgs    map[string]interface{}
-		expectError    bool
-		expectedUser   *github.User
-		expectedErrMsg string
+		name               string
+		stubbedGetClientFn GetClientFn
+		requestArgs        map[string]any
+		expectToolError    bool
+		expectedUser       *github.User
+		expectedToolErrMsg string
 	}{
 		{
 			name: "successful get user",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetUser,
-					mockUser,
+			stubbedGetClientFn: stubGetClientFromHTTPFn(
+				mock.NewMockedHTTPClient(
+					mock.WithRequestMatch(
+						mock.GetUser,
+						mockUser,
+					),
 				),
 			),
-			requestArgs:  map[string]interface{}{},
-			expectError:  false,
-			expectedUser: mockUser,
+			requestArgs:     map[string]any{},
+			expectToolError: false,
+			expectedUser:    mockUser,
 		},
 		{
 			name: "successful get user with reason",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetUser,
-					mockUser,
+			stubbedGetClientFn: stubGetClientFromHTTPFn(
+				mock.NewMockedHTTPClient(
+					mock.WithRequestMatch(
+						mock.GetUser,
+						mockUser,
+					),
 				),
 			),
-			requestArgs: map[string]interface{}{
+			requestArgs: map[string]any{
 				"reason": "Testing API",
 			},
-			expectError:  false,
-			expectedUser: mockUser,
+			expectToolError: false,
+			expectedUser:    mockUser,
+		},
+		{
+			name:               "getting client fails",
+			stubbedGetClientFn: stubGetClientFnErr("expected test error"),
+			requestArgs:        map[string]any{},
+			expectToolError:    true,
+			expectedToolErrMsg: "failed to get GitHub client: expected test error",
 		},
 		{
 			name: "get user fails",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.GetUser,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusUnauthorized)
-						_, _ = w.Write([]byte(`{"message": "Unauthorized"}`))
-					}),
+			stubbedGetClientFn: stubGetClientFromHTTPFn(
+				mock.NewMockedHTTPClient(
+					mock.WithRequestMatchHandler(
+						mock.GetUser,
+						badRequestHandler("expected test failure"),
+					),
 				),
 			),
-			requestArgs:    map[string]interface{}{},
-			expectError:    true,
-			expectedErrMsg: "failed to get user",
+			requestArgs:        map[string]any{},
+			expectToolError:    true,
+			expectedToolErrMsg: "expected test failure",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup client with mock
-			client := github.NewClient(tc.mockedClient)
-			_, handler := GetMe(stubGetClientFn(client), translations.NullTranslationHelper)
+			_, handler := GetMe(tc.stubbedGetClientFn, translations.NullTranslationHelper)
 
-			// Create call request
 			request := createMCPRequest(tc.requestArgs)
-
-			// Call handler
 			result, err := handler(context.Background(), request)
+			require.NoError(t, err)
+			textContent := getTextResult(t, result)
 
-			// Verify results
-			if tc.expectError {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+			if tc.expectToolError {
+				assert.True(t, result.IsError, "expected tool call result to be an error")
+				assert.Contains(t, textContent.Text, tc.expectedToolErrMsg)
 				return
 			}
-
-			require.NoError(t, err)
-
-			// Parse result and get text content if no error
-			textContent := getTextResult(t, result)
 
 			// Unmarshal and verify the result
 			var returnedUser github.User

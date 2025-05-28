@@ -4,14 +4,8 @@ import (
 	"testing"
 )
 
-func TestNewToolsetGroup(t *testing.T) {
+func TestNewToolsetGroupIsEmptyWithoutEverythingOn(t *testing.T) {
 	tsg := NewToolsetGroup(false)
-	if tsg == nil {
-		t.Fatal("Expected NewToolsetGroup to return a non-nil pointer")
-	}
-	if tsg.Toolsets == nil {
-		t.Fatal("Expected Toolsets map to be initialized")
-	}
 	if len(tsg.Toolsets) != 0 {
 		t.Fatalf("Expected Toolsets map to be empty, got %d items", len(tsg.Toolsets))
 	}
