@@ -113,26 +113,22 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 	}
 
 	// Create default toolsets
-	toolsets, err := github.InitToolsets(
-		enabledToolsets,
-		cfg.ReadOnly,
-		getClient,
-		getGQLClient,
-		cfg.Translator,
-	)
+	tsg := github.DefaultToolsetGroup(cfg.ReadOnly, getClient, getGQLClient, cfg.Translator)
+	err = tsg.EnableToolsets(enabledToolsets)
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize toolsets: %w", err)
+		return nil, fmt.Errorf("failed to enable toolsets: %w", err)
 	}
 
 	context := github.InitContextToolset(getClient, cfg.Translator)
 	github.RegisterResources(ghServer, getClient, cfg.Translator)
 
 	// Register the tools with the server
-	toolsets.RegisterTools(ghServer)
+	tsg.RegisterTools(ghServer)
 	context.RegisterTools(ghServer)
 
 	if cfg.DynamicToolsets {
-		dynamic := github.InitDynamicToolset(ghServer, toolsets, cfg.Translator)
+		dynamic := github.InitDynamicToolset(ghServer, tsg, cfg.Translator)
 		dynamic.RegisterTools(ghServer)
 	}
 

@@ -7,6 +7,28 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+type ToolsetDoesNotExistError struct {
+	Name string
+}
+
+func (e *ToolsetDoesNotExistError) Error() string {
+	return fmt.Sprintf("toolset %s does not exist", e.Name)
+}
+
+func (e *ToolsetDoesNotExistError) Is(target error) bool {
+	if target == nil {
+		return false
+	}
+	if _, ok := target.(*ToolsetDoesNotExistError); ok {
+		return true
+	}
+	return false
+}
+
+func NewToolsetDoesNotExistError(name string) *ToolsetDoesNotExistError {
+	return &ToolsetDoesNotExistError{Name: name}
+}
+
 func NewServerTool(tool mcp.Tool, handler server.ToolHandlerFunc) server.ServerTool {
 	return server.ServerTool{Tool: tool, Handler: handler}
 }
@@ -150,7 +172,7 @@ func (tg *ToolsetGroup) EnableToolsets(names []string) error {
 func (tg *ToolsetGroup) EnableToolset(name string) error {
 	toolset, exists := tg.Toolsets[name]
 	if !exists {
-		return fmt.Errorf("toolset %s does not exist", name)
+		return NewToolsetDoesNotExistError(name)
 	}
 	toolset.Enabled = true
 	tg.Toolsets[name] = toolset
@@ -161,4 +183,12 @@ func (tg *ToolsetGroup) RegisterTools(s *server.MCPServer) {
 	for _, toolset := range tg.Toolsets {
 		toolset.RegisterTools(s)
 	}
+}
+
+func (tg *ToolsetGroup) GetToolset(name string) (*Toolset, error) {
+	toolset, exists := tg.Toolsets[name]
+	if !exists {
+		return nil, NewToolsetDoesNotExistError(name)
+	}
+	return toolset, nil
 }

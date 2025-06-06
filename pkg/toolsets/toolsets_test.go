@@ -1,6 +1,7 @@
 package toolsets
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -151,6 +152,9 @@ func TestEnableToolsets(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error when enabling list with non-existent toolset")
 	}
+	if !errors.Is(err, NewToolsetDoesNotExistError("non-existent")) {
+		t.Errorf("Expected ToolsetDoesNotExistError when enabling non-existent toolset, got: %v", err)
+	}
 
 	// Test with empty list
 	err = tsg.EnableToolsets([]string{})
@@ -207,7 +211,7 @@ func TestEnableEverything(t *testing.T) {
 func TestIsEnabledWithEverythingOn(t *testing.T) {
 	tsg := NewToolsetGroup(false)
 
-	// Enable "everything"
+	// Enable "all"
 	err := tsg.EnableToolsets([]string{"all"})
 	if err != nil {
 		t.Errorf("Expected no error when enabling 'all', got: %v", err)
@@ -220,5 +224,29 @@ func TestIsEnabledWithEverythingOn(t *testing.T) {
 
 	if !tsg.IsEnabled("another-toolset") {
 		t.Error("Expected IsEnabled to return true for any toolset when everythingOn is true")
+	}
+}
+
+func TestToolsetGroup_GetToolset(t *testing.T) {
+	tsg := NewToolsetGroup(false)
+	toolset := NewToolset("my-toolset", "desc")
+	tsg.AddToolset(toolset)
+
+	// Should find the toolset
+	got, err := tsg.GetToolset("my-toolset")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if got != toolset {
+		t.Errorf("expected to get the same toolset instance")
+	}
+
+	// Should not find a non-existent toolset
+	_, err = tsg.GetToolset("does-not-exist")
+	if err == nil {
+		t.Error("expected error for missing toolset, got nil")
+	}
+	if !errors.Is(err, NewToolsetDoesNotExistError("does-not-exist")) {
+		t.Errorf("expected error to be ToolsetDoesNotExistError, got %v", err)
 	}
 }
