@@ -146,6 +146,19 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 		}
 }
 
+type MinimalUser struct {
+	Login      string `json:"login"`
+	ID         int64  `json:"id,omitempty"`
+	ProfileURL string `json:"profile_url,omitempty"`
+	AvatarURL  string `json:"avatar_url,omitempty"`
+}
+
+type MinimalSearchUsersResult struct {
+	TotalCount        int           `json:"total_count"`
+	IncompleteResults bool          `json:"incomplete_results"`
+	Items             []MinimalUser `json:"items"`
+}
+
 // SearchUsers creates a tool to search for GitHub users.
 func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_users",
@@ -200,7 +213,7 @@ func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
 			}
 
-			result, resp, err := client.Search.Users(ctx, query, opts)
+			result, resp, err := client.Search.Users(ctx, "type:user "+query, opts)
 			if err != nil {
 				return nil, fmt.Errorf("failed to search users: %w", err)
 			}
@@ -214,11 +227,28 @@ func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 				return mcp.NewToolResultError(fmt.Sprintf("failed to search users: %s", string(body))), nil
 			}
 
-			r, err := json.Marshal(result)
+			minimalUsers := make([]MinimalUser, 0, len(result.Users))
+			for _, user := range result.Users {
+				mu := MinimalUser{
+					Login:      user.GetLogin(),
+					ID:         user.GetID(),
+					ProfileURL: user.GetHTMLURL(),
+					AvatarURL:  user.GetAvatarURL(),
+				}
+
+				minimalUsers = append(minimalUsers, mu)
+			}
+
+			minimalResp := MinimalSearchUsersResult{
+				TotalCount:        result.GetTotal(),
+				IncompleteResults: result.GetIncompleteResults(),
+				Items:             minimalUsers,
+			}
+
+			r, err := json.Marshal(minimalResp)
 			if err != nil {
 				return nil, fmt.Errorf("failed to marshal response: %w", err)
 			}
-
 			return mcp.NewToolResultText(string(r)), nil
 		}
 }

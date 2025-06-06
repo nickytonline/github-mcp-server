@@ -335,9 +335,6 @@ func Test_SearchUsers(t *testing.T) {
 				ID:        github.Ptr(int64(1001)),
 				HTMLURL:   github.Ptr("https://github.com/user1"),
 				AvatarURL: github.Ptr("https://avatars.githubusercontent.com/u/1001"),
-				Type:      github.Ptr("User"),
-				Followers: github.Ptr(100),
-				Following: github.Ptr(50),
 			},
 			{
 				Login:     github.Ptr("user2"),
@@ -345,8 +342,6 @@ func Test_SearchUsers(t *testing.T) {
 				HTMLURL:   github.Ptr("https://github.com/user2"),
 				AvatarURL: github.Ptr("https://avatars.githubusercontent.com/u/1002"),
 				Type:      github.Ptr("User"),
-				Followers: github.Ptr(200),
-				Following: github.Ptr(75),
 			},
 		},
 	}
@@ -365,7 +360,7 @@ func Test_SearchUsers(t *testing.T) {
 				mock.WithRequestMatchHandler(
 					mock.GetSearchUsers,
 					expectQueryParams(t, map[string]string{
-						"q":        "location:finland language:go",
+						"q":        "type:user location:finland language:go",
 						"sort":     "followers",
 						"order":    "desc",
 						"page":     "1",
@@ -391,7 +386,7 @@ func Test_SearchUsers(t *testing.T) {
 				mock.WithRequestMatchHandler(
 					mock.GetSearchUsers,
 					expectQueryParams(t, map[string]string{
-						"q":        "location:finland language:go",
+						"q":        "type:user location:finland language:go",
 						"page":     "1",
 						"per_page": "30",
 					}).andThen(
@@ -451,19 +446,17 @@ func Test_SearchUsers(t *testing.T) {
 			textContent := getTextResult(t, result)
 
 			// Unmarshal and verify the result
-			var returnedResult github.UsersSearchResult
+			var returnedResult MinimalSearchUsersResult
 			err = json.Unmarshal([]byte(textContent.Text), &returnedResult)
 			require.NoError(t, err)
-			assert.Equal(t, *tc.expectedResult.Total, *returnedResult.Total)
-			assert.Equal(t, *tc.expectedResult.IncompleteResults, *returnedResult.IncompleteResults)
-			assert.Len(t, returnedResult.Users, len(tc.expectedResult.Users))
-			for i, user := range returnedResult.Users {
-				assert.Equal(t, *tc.expectedResult.Users[i].Login, *user.Login)
-				assert.Equal(t, *tc.expectedResult.Users[i].ID, *user.ID)
-				assert.Equal(t, *tc.expectedResult.Users[i].HTMLURL, *user.HTMLURL)
-				assert.Equal(t, *tc.expectedResult.Users[i].AvatarURL, *user.AvatarURL)
-				assert.Equal(t, *tc.expectedResult.Users[i].Type, *user.Type)
-				assert.Equal(t, *tc.expectedResult.Users[i].Followers, *user.Followers)
+			assert.Equal(t, *tc.expectedResult.Total, returnedResult.TotalCount)
+			assert.Equal(t, *tc.expectedResult.IncompleteResults, returnedResult.IncompleteResults)
+			assert.Len(t, returnedResult.Items, len(tc.expectedResult.Users))
+			for i, user := range returnedResult.Items {
+				assert.Equal(t, *tc.expectedResult.Users[i].Login, user.Login)
+				assert.Equal(t, *tc.expectedResult.Users[i].ID, user.ID)
+				assert.Equal(t, *tc.expectedResult.Users[i].HTMLURL, user.ProfileURL)
+				assert.Equal(t, *tc.expectedResult.Users[i].AvatarURL, user.AvatarURL)
 			}
 		})
 	}
