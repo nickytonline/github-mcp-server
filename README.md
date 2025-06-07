@@ -219,6 +219,23 @@ docker run -i --rm \
   ghcr.io/github/github-mcp-server
 ```
 
+## Read-Only Mode
+
+To run the server in read-only mode, you can use the `--read-only` flag. This will only offer read-only tools, preventing any modifications to repositories, issues, pull requests, etc.
+
+```bash
+./github-mcp-server --read-only
+```
+
+When using Docker, you can pass the read-only mode as an environment variable:
+
+```bash
+docker run -i --rm \
+  -e GITHUB_PERSONAL_ACCESS_TOKEN=<your-token> \
+  -e GITHUB_READ_ONLY=1 \
+  ghcr.io/github/github-mcp-server
+```
+
 ## GitHub Enterprise Server and Enterprise Cloud with data residency (ghe.com)
 
 The flag `--gh-host` and the environment variable `GITHUB_HOST` can be used to set
