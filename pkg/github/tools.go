@@ -144,6 +144,7 @@ func InitDynamicToolset(s *server.MCPServer, tsg *toolsets.ToolsetGroup, t trans
 	return dynamicToolSelection
 }
 
-func toBoolPtr(b bool) *bool {
+// ToBoolPtr converts a bool to a *bool pointer.
+func ToBoolPtr(b bool) *bool {
 	return &b
 }

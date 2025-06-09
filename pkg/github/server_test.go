@@ -129,7 +129,7 @@ func Test_RequiredStringParam(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			request := createMCPRequest(tc.params)
-			result, err := requiredParam[string](request, tc.paramName)
+			result, err := RequiredParam[string](request, tc.paramName)
 
 			if tc.expectError {
 				assert.Error(t, err)

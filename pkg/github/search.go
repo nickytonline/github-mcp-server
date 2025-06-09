@@ -18,7 +18,7 @@ func SearchRepositories(getClient GetClientFn, t translations.TranslationHelperF
 			mcp.WithDescription(t("TOOL_SEARCH_REPOSITORIES_DESCRIPTION", "Search for GitHub repositories")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_REPOSITORIES_USER_TITLE", "Search repositories"),
-				ReadOnlyHint: toBoolPtr(true),
+				ReadOnlyHint: ToBoolPtr(true),
 			}),
 			mcp.WithString("query",
 				mcp.Required(),
@@ -27,7 +27,7 @@ func SearchRepositories(getClient GetClientFn, t translations.TranslationHelperF
 			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := requiredParam[string](request, "query")
+			query, err := RequiredParam[string](request, "query")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -76,7 +76,7 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			mcp.WithDescription(t("TOOL_SEARCH_CODE_DESCRIPTION", "Search for code across GitHub repositories")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_CODE_USER_TITLE", "Search code"),
-				ReadOnlyHint: toBoolPtr(true),
+				ReadOnlyHint: ToBoolPtr(true),
 			}),
 			mcp.WithString("q",
 				mcp.Required(),
@@ -92,7 +92,7 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := requiredParam[string](request, "q")
+			query, err := RequiredParam[string](request, "q")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -165,7 +165,7 @@ func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			mcp.WithDescription(t("TOOL_SEARCH_USERS_DESCRIPTION", "Search for GitHub users")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_USERS_USER_TITLE", "Search users"),
-				ReadOnlyHint: toBoolPtr(true),
+				ReadOnlyHint: ToBoolPtr(true),
 			}),
 			mcp.WithString("q",
 				mcp.Required(),
@@ -182,7 +182,7 @@ func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := requiredParam[string](request, "q")
+			query, err := RequiredParam[string](request, "q")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

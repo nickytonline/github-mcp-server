@@ -25,7 +25,7 @@ func EnableToolset(s *server.MCPServer, toolsetGroup *toolsets.ToolsetGroup, t t
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title: t("TOOL_ENABLE_TOOLSET_USER_TITLE", "Enable a toolset"),
 				// Not modifying GitHub data so no need to show a warning
-				ReadOnlyHint: toBoolPtr(true),
+				ReadOnlyHint: ToBoolPtr(true),
 			}),
 			mcp.WithString("toolset",
 				mcp.Required(),
@@ -35,7 +35,7 @@ func EnableToolset(s *server.MCPServer, toolsetGroup *toolsets.ToolsetGroup, t t
 		),
 		func(_ context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			// We need to convert the toolsets back to a map for JSON serialization
-			toolsetName, err := requiredParam[string](request, "toolset")
+			toolsetName, err := RequiredParam[string](request, "toolset")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -64,7 +64,7 @@ func ListAvailableToolsets(toolsetGroup *toolsets.ToolsetGroup, t translations.T
 			mcp.WithDescription(t("TOOL_LIST_AVAILABLE_TOOLSETS_DESCRIPTION", "List all available toolsets this GitHub MCP server can offer, providing the enabled status of each. Use this when a task could be achieved with a GitHub tool and the currently available tools aren't enough. Call get_toolset_tools with these toolset names to discover specific tools you can call")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_LIST_AVAILABLE_TOOLSETS_USER_TITLE", "List available toolsets"),
-				ReadOnlyHint: toBoolPtr(true),
+				ReadOnlyHint: ToBoolPtr(true),
 			}),
 		),
 		func(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -98,7 +98,7 @@ func GetToolsetsTools(toolsetGroup *toolsets.ToolsetGroup, t translations.Transl
 			mcp.WithDescription(t("TOOL_GET_TOOLSET_TOOLS_DESCRIPTION", "Lists all the capabilities that are enabled with the specified toolset, use this to get clarity on whether enabling a toolset would help you to complete a task")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_GET_TOOLSET_TOOLS_USER_TITLE", "List all tools in a toolset"),
-				ReadOnlyHint: toBoolPtr(true),
+				ReadOnlyHint: ToBoolPtr(true),
 			}),
 			mcp.WithString("toolset",
 				mcp.Required(),
@@ -108,7 +108,7 @@ func GetToolsetsTools(toolsetGroup *toolsets.ToolsetGroup, t translations.Transl
 		),
 		func(_ context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			// We need to convert the toolsetGroup back to a map for JSON serialization
-			toolsetName, err := requiredParam[string](request, "toolset")
+			toolsetName, err := RequiredParam[string](request, "toolset")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
