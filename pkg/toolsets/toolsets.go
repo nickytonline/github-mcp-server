@@ -33,6 +33,20 @@ func NewServerTool(tool mcp.Tool, handler server.ToolHandlerFunc) server.ServerT
 	return server.ServerTool{Tool: tool, Handler: handler}
 }
 
+func NewServerResourceTemplate(resourceTemplate mcp.ResourceTemplate, handler server.ResourceTemplateHandlerFunc) ServerResourceTemplate {
+	return ServerResourceTemplate{
+		resourceTemplate: resourceTemplate,
+		handler:          handler,
+	}
+}
+
+// ServerResourceTemplate represents a resource template that can be registered with the MCP server.
+type ServerResourceTemplate struct {
+	resourceTemplate mcp.ResourceTemplate
+	handler          server.ResourceTemplateHandlerFunc
+}
+
+// Toolset represents a collection of MCP functionality that can be enabled or disabled as a group.
 type Toolset struct {
 	Name        string
 	Description string
@@ -40,6 +54,9 @@ type Toolset struct {
 	readOnly    bool
 	writeTools  []server.ServerTool
 	readTools   []server.ServerTool
+	// resources are not tools, but the community seems to be moving towards namespaces as a broader concept
+	// and in order to have multiple servers running concurrently, we want to avoid overlapping resources too.
+	resourceTemplates []ServerResourceTemplate
 }
 
 func (t *Toolset) GetActiveTools() []server.ServerTool {
@@ -70,6 +87,31 @@ func (t *Toolset) RegisterTools(s *server.MCPServer) {
 		for _, tool := range t.writeTools {
 			s.AddTool(tool.Tool, tool.Handler)
 		}
+	}
+}
+
+func (t *Toolset) AddResourceTemplates(templates ...ServerResourceTemplate) *Toolset {
+	t.resourceTemplates = append(t.resourceTemplates, templates...)
+	return t
+}
+
+func (t *Toolset) GetActiveResourceTemplates() []ServerResourceTemplate {
+	if !t.Enabled {
+		return nil
+	}
+	return t.resourceTemplates
+}
+
+func (t *Toolset) GetAvailableResourceTemplates() []ServerResourceTemplate {
+	return t.resourceTemplates
+}
+
+func (t *Toolset) RegisterResourcesTemplates(s *server.MCPServer) {
+	if !t.Enabled {
+		return
+	}
+	for _, resource := range t.resourceTemplates {
+		s.AddResourceTemplate(resource.resourceTemplate, resource.handler)
 	}
 }
 
@@ -179,9 +221,10 @@ func (tg *ToolsetGroup) EnableToolset(name string) error {
 	return nil
 }
 
-func (tg *ToolsetGroup) RegisterTools(s *server.MCPServer) {
+func (tg *ToolsetGroup) RegisterAll(s *server.MCPServer) {
 	for _, toolset := range tg.Toolsets {
 		toolset.RegisterTools(s)
+		toolset.RegisterResourcesTemplates(s)
 	}
 }
 

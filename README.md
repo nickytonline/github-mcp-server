@@ -141,17 +141,22 @@ If you don't have Docker, you can use `go build` to build the binary in the
 
 The GitHub MCP Server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools. Enabling only the toolsets that you need can help the LLM with tool choice and reduce the context size.
 
+_Toolsets are not limited to Tools. Relevent MCP Resources and Prompts are also included where applicable._
+
 ### Available Toolsets
 
 The following sets of tools are available (all are on by default):
 
 | Toolset                 | Description                                                   |
 | ----------------------- | ------------------------------------------------------------- |
-| `repos`                 | Repository-related tools (file operations, branches, commits) |
-| `issues`                | Issue-related tools (create, read, update, comment)           |
-| `users`                 | Anything relating to GitHub Users                             |
-| `pull_requests`         | Pull request operations (create, merge, review)               |
+| `context`               | **Strongly recommended**: Tools that provide context about the current user and GitHub context you are operating in |
 | `code_security`         | Code scanning alerts and security features                    |
+| `issues`                | Issue-related tools (create, read, update, comment)           |
+| `notifications`         | GitHub Notifications related tools                            |
+| `pull_requests`         | Pull request operations (create, merge, review)               |
+| `repos`                 | Repository-related tools (file operations, branches, commits) |
+| `secret_protection`     | Secret protection related tools, such as GitHub Secret Scanning |
+| `users`                 | Anything relating to GitHub Users                             |
 | `experiments`           | Experimental features (not considered stable)                 |
 
 #### Specifying Toolsets
