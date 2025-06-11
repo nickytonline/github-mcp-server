@@ -141,7 +141,7 @@ If you don't have Docker, you can use `go build` to build the binary in the
 
 The GitHub MCP Server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools. Enabling only the toolsets that you need can help the LLM with tool choice and reduce the context size.
 
-_Toolsets are not limited to Tools. Relevent MCP Resources and Prompts are also included where applicable._
+_Toolsets are not limited to Tools. Relevant MCP Resources and Prompts are also included where applicable._
 
 ### Available Toolsets
 
