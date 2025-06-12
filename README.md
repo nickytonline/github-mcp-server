@@ -21,7 +21,6 @@ The remote GitHub MCP Server is hosted by GitHub and provides the easiest method
 ## Prerequisites
 
 1. An MCP host that supports the latest MCP specification and remote servers, such as [VS Code](https://code.visualstudio.com/).
-2. OAuth support in the host application and a registered OAuth app on GitHub associated with that host (optional; required if authenticating with OAuth).
 
 ## Installation
 
@@ -31,7 +30,7 @@ For quick installation, use one of the one-click install buttons above. Once you
 
 ### Usage in other MCP Hosts
 
-Add the following JSON block to your MCP host’s configuration:
+For MCP Hosts that have been [configured to use the remote GitHub MCP Server](docs/host-integration.md), add the following JSON block to the host's configuration:
 
 ```json
 {
