@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	ghErrors "github.com/github/github-mcp-server/pkg/errors"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -118,7 +119,11 @@ func ListNotifications(getClient GetClientFn, t translations.TranslationHelperFu
 				notifications, resp, err = client.Activity.ListNotifications(ctx, opts)
 			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to get notifications: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to list notifications",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -187,7 +192,11 @@ func DismissNotification(getclient GetClientFn, t translations.TranslationHelper
 			}
 
 			if err != nil {
-				return nil, fmt.Errorf("failed to mark notification as %s: %w", state, err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to mark notification as %s", state),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -262,7 +271,11 @@ func MarkAllNotificationsRead(getClient GetClientFn, t translations.TranslationH
 				resp, err = client.Activity.MarkNotificationsRead(ctx, markReadOptions)
 			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to mark all notifications as read: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to mark all notifications as read",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -304,7 +317,11 @@ func GetNotificationDetails(getClient GetClientFn, t translations.TranslationHel
 
 			thread, resp, err := client.Activity.GetThread(ctx, notificationID)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get notification details: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to get notification details for ID '%s'", notificationID),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -385,7 +402,11 @@ func ManageNotificationSubscription(getClient GetClientFn, t translations.Transl
 			}
 
 			if apiErr != nil {
-				return nil, fmt.Errorf("failed to %s notification subscription: %w", action, apiErr)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to %s notification subscription", action),
+					resp,
+					apiErr,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -474,7 +495,11 @@ func ManageRepositoryNotificationSubscription(getClient GetClientFn, t translati
 			}
 
 			if apiErr != nil {
-				return nil, fmt.Errorf("failed to %s repository subscription: %w", action, apiErr)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to %s repository subscription", action),
+					resp,
+					apiErr,
+				)
 			}
 			if resp != nil {
 				defer func() { _ = resp.Body.Close() }()

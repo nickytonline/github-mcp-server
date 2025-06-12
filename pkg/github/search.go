@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	ghErrors "github.com/github/github-mcp-server/pkg/errors"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -49,7 +50,11 @@ func SearchRepositories(getClient GetClientFn, t translations.TranslationHelperF
 			}
 			result, resp, err := client.Search.Repositories(ctx, query, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to search repositories: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to search repositories with query '%s'", query),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -125,7 +130,11 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 
 			result, resp, err := client.Search.Code(ctx, query, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to search code: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to search code with query '%s'", query),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -215,7 +224,11 @@ func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 
 			result, resp, err := client.Search.Users(ctx, "type:user "+query, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to search users: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to search users with query '%s'", query),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 

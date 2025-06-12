@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	ghErrors "github.com/github/github-mcp-server/pkg/errors"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -54,7 +55,11 @@ func GetCodeScanningAlert(getClient GetClientFn, t translations.TranslationHelpe
 
 			alert, resp, err := client.CodeScanning.GetAlert(ctx, owner, repo, int64(alertNumber))
 			if err != nil {
-				return nil, fmt.Errorf("failed to get alert: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to get alert",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -138,7 +143,11 @@ func ListCodeScanningAlerts(getClient GetClientFn, t translations.TranslationHel
 			}
 			alerts, resp, err := client.CodeScanning.ListAlertsForRepo(ctx, owner, repo, &github.AlertListOptions{Ref: ref, State: state, Severity: severity, ToolName: toolName})
 			if err != nil {
-				return nil, fmt.Errorf("failed to list alerts: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to list alerts",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 

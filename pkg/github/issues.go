@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	ghErrors "github.com/github/github-mcp-server/pkg/errors"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/google/go-github/v72/github"
@@ -58,7 +59,11 @@ func GetIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (tool
 			}
 			issue, resp, err := client.Issues.Get(ctx, owner, repo, issueNumber)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get issue: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to get issue with number '%d'", issueNumber),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -132,7 +137,11 @@ func AddIssueComment(getClient GetClientFn, t translations.TranslationHelperFunc
 			}
 			createdComment, resp, err := client.Issues.CreateComment(ctx, owner, repo, issueNumber, comment)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create comment: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to create comment on issue '%d'", issueNumber),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -220,7 +229,11 @@ func SearchIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (
 			}
 			result, resp, err := client.Search.Issues(ctx, query, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to search issues: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to search issues",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -342,7 +355,11 @@ func CreateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			}
 			issue, resp, err := client.Issues.Create(ctx, owner, repo, issueRequest)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create issue: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to create issue",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -464,7 +481,11 @@ func ListIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			}
 			issues, resp, err := client.Issues.ListByRepo(ctx, owner, repo, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to list issues: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to list issues",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -610,7 +631,11 @@ func UpdateIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			}
 			updatedIssue, resp, err := client.Issues.Edit(ctx, owner, repo, issueNumber, issueRequest)
 			if err != nil {
-				return nil, fmt.Errorf("failed to update issue: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to update issue",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -693,7 +718,11 @@ func GetIssueComments(getClient GetClientFn, t translations.TranslationHelperFun
 			}
 			comments, resp, err := client.Issues.ListComments(ctx, owner, repo, issueNumber, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get issue comments: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					"failed to get issue comments",
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -824,7 +853,10 @@ func AssignCopilotToIssue(getGQLClient GetGQLClientFn, t translations.Translatio
 				var query suggestedActorsQuery
 				err := client.Query(ctx, &query, variables)
 				if err != nil {
-					return nil, err
+					return nil, ghErrors.NewGitHubGraphQLError(
+						"failed to list suggested actors",
+						err,
+					)
 				}
 
 				// Iterate all the returned nodes looking for the copilot bot, which is supposed to have the
@@ -870,7 +902,10 @@ func AssignCopilotToIssue(getGQLClient GetGQLClientFn, t translations.Translatio
 			}
 
 			if err := client.Query(ctx, &getIssueQuery, variables); err != nil {
-				return mcp.NewToolResultError(fmt.Sprintf("failed to get issue ID: %v", err)), nil
+				return nil, ghErrors.NewGitHubGraphQLError(
+					"failed to get issue ID",
+					err,
+				)
 			}
 
 			// Finally, do the assignment. Just for reference, assigning copilot to an issue that it is already
@@ -896,7 +931,10 @@ func AssignCopilotToIssue(getGQLClient GetGQLClientFn, t translations.Translatio
 				},
 				nil,
 			); err != nil {
-				return nil, fmt.Errorf("failed to replace actors for assignable: %w", err)
+				return nil, ghErrors.NewGitHubGraphQLError(
+					"failed to replace actors for assignable",
+					err,
+				)
 			}
 
 			return mcp.NewToolResultText("successfully assigned copilot to issue"), nil

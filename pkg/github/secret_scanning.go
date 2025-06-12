@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	ghErrors "github.com/github/github-mcp-server/pkg/errors"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -55,7 +56,11 @@ func GetSecretScanningAlert(getClient GetClientFn, t translations.TranslationHel
 
 			alert, resp, err := client.SecretScanning.GetAlert(ctx, owner, repo, int64(alertNumber))
 			if err != nil {
-				return nil, fmt.Errorf("failed to get alert: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to get alert with number '%d'", alertNumber),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -132,7 +137,11 @@ func ListSecretScanningAlerts(getClient GetClientFn, t translations.TranslationH
 			}
 			alerts, resp, err := client.SecretScanning.ListAlertsForRepo(ctx, owner, repo, &github.SecretScanningAlertListOptions{State: state, SecretType: secretType, Resolution: resolution})
 			if err != nil {
-				return nil, fmt.Errorf("failed to list alerts: %w", err)
+				return nil, ghErrors.NewGitHubAPIError(
+					fmt.Sprintf("failed to list alerts for repository '%s/%s'", owner, repo),
+					resp,
+					err,
+				)
 			}
 			defer func() { _ = resp.Body.Close() }()
 
