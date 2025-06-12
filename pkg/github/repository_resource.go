@@ -9,8 +9,10 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/github/github-mcp-server/pkg/raw"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -18,52 +20,52 @@ import (
 )
 
 // GetRepositoryResourceContent defines the resource template and handler for getting repository content.
-func GetRepositoryResourceContent(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+func GetRepositoryResourceContent(getClient GetClientFn, getRawClient raw.GetRawClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
 	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_DESCRIPTION", "Repository Content"),
 		),
-		RepositoryResourceContentsHandler(getClient)
+		RepositoryResourceContentsHandler(getClient, getRawClient)
 }
 
 // GetRepositoryResourceBranchContent defines the resource template and handler for getting repository content for a branch.
-func GetRepositoryResourceBranchContent(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+func GetRepositoryResourceBranchContent(getClient GetClientFn, getRawClient raw.GetRawClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
 	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/heads/{branch}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_BRANCH_DESCRIPTION", "Repository Content for specific branch"),
 		),
-		RepositoryResourceContentsHandler(getClient)
+		RepositoryResourceContentsHandler(getClient, getRawClient)
 }
 
 // GetRepositoryResourceCommitContent defines the resource template and handler for getting repository content for a commit.
-func GetRepositoryResourceCommitContent(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+func GetRepositoryResourceCommitContent(getClient GetClientFn, getRawClient raw.GetRawClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
 	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/sha/{sha}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_COMMIT_DESCRIPTION", "Repository Content for specific commit"),
 		),
-		RepositoryResourceContentsHandler(getClient)
+		RepositoryResourceContentsHandler(getClient, getRawClient)
 }
 
 // GetRepositoryResourceTagContent defines the resource template and handler for getting repository content for a tag.
-func GetRepositoryResourceTagContent(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+func GetRepositoryResourceTagContent(getClient GetClientFn, getRawClient raw.GetRawClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
 	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/tags/{tag}/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_TAG_DESCRIPTION", "Repository Content for specific tag"),
 		),
-		RepositoryResourceContentsHandler(getClient)
+		RepositoryResourceContentsHandler(getClient, getRawClient)
 }
 
 // GetRepositoryResourcePrContent defines the resource template and handler for getting repository content for a pull request.
-func GetRepositoryResourcePrContent(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
+func GetRepositoryResourcePrContent(getClient GetClientFn, getRawClient raw.GetRawClientFn, t translations.TranslationHelperFunc) (mcp.ResourceTemplate, server.ResourceTemplateHandlerFunc) {
 	return mcp.NewResourceTemplate(
 			"repo://{owner}/{repo}/refs/pull/{prNumber}/head/contents{/path*}", // Resource template
 			t("RESOURCE_REPOSITORY_CONTENT_PR_DESCRIPTION", "Repository Content for specific pull request"),
 		),
-		RepositoryResourceContentsHandler(getClient)
+		RepositoryResourceContentsHandler(getClient, getRawClient)
 }
 
 // RepositoryResourceContentsHandler returns a handler function for repository content requests.
-func RepositoryResourceContentsHandler(getClient GetClientFn) func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+func RepositoryResourceContentsHandler(getClient GetClientFn, getRawClient raw.GetRawClientFn) func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 	return func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 		// the matcher will give []string with one element
 		// https://github.com/mark3labs/mcp-go/pull/54
@@ -87,121 +89,104 @@ func RepositoryResourceContentsHandler(getClient GetClientFn) func(ctx context.C
 		}
 
 		opts := &github.RepositoryContentGetOptions{}
+		rawOpts := &raw.RawContentOpts{}
 
 		sha, ok := request.Params.Arguments["sha"].([]string)
 		if ok && len(sha) > 0 {
 			opts.Ref = sha[0]
+			rawOpts.SHA = sha[0]
 		}
 
 		branch, ok := request.Params.Arguments["branch"].([]string)
 		if ok && len(branch) > 0 {
 			opts.Ref = "refs/heads/" + branch[0]
+			rawOpts.Ref = "refs/heads/" + branch[0]
 		}
 
 		tag, ok := request.Params.Arguments["tag"].([]string)
 		if ok && len(tag) > 0 {
 			opts.Ref = "refs/tags/" + tag[0]
+			rawOpts.Ref = "refs/tags/" + tag[0]
 		}
 		prNumber, ok := request.Params.Arguments["prNumber"].([]string)
 		if ok && len(prNumber) > 0 {
-			opts.Ref = "refs/pull/" + prNumber[0] + "/head"
-		}
-
-		client, err := getClient(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get GitHub client: %w", err)
-		}
-		fileContent, directoryContent, _, err := client.Repositories.GetContents(ctx, owner, repo, path, opts)
-		if err != nil {
-			return nil, err
-		}
-
-		if directoryContent != nil {
-			var resources []mcp.ResourceContents
-			for _, entry := range directoryContent {
-				mimeType := "text/directory"
-				if entry.GetType() == "file" {
-					// this is system dependent, and a best guess
-					ext := filepath.Ext(entry.GetName())
-					mimeType = mime.TypeByExtension(ext)
-					if ext == ".md" {
-						mimeType = "text/markdown"
-					}
-				}
-				resources = append(resources, mcp.TextResourceContents{
-					URI:      entry.GetHTMLURL(),
-					MIMEType: mimeType,
-					Text:     entry.GetName(),
-				})
-
+			// fetch the PR from the API to get the latest commit and use SHA
+			githubClient, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
 			}
-			return resources, nil
-
+			prNum, err := strconv.Atoi(prNumber[0])
+			if err != nil {
+				return nil, fmt.Errorf("invalid pull request number: %w", err)
+			}
+			pr, _, err := githubClient.PullRequests.Get(ctx, owner, repo, prNum)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get pull request: %w", err)
+			}
+			sha := pr.GetHead().GetSHA()
+			rawOpts.SHA = sha
+			opts.Ref = sha
 		}
-		if fileContent != nil {
-			if fileContent.Content != nil {
-				// download the file content from fileContent.GetDownloadURL() and use the content-type header to determine the MIME type
-				// and return the content as a blob unless it is a text file, where you can return the content as text
-				req, err := http.NewRequest("GET", fileContent.GetDownloadURL(), nil)
-				if err != nil {
-					return nil, fmt.Errorf("failed to create request: %w", err)
-				}
+		//  if it's a directory
+		if path == "" || strings.HasSuffix(path, "/") {
+			return nil, fmt.Errorf("directories are not supported: %s", path)
+		}
+		rawClient, err := getRawClient(ctx)
 
-				resp, err := client.Client().Do(req)
-				if err != nil {
-					return nil, fmt.Errorf("failed to send request: %w", err)
-				}
-				defer func() { _ = resp.Body.Close() }()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get GitHub raw content client: %w", err)
+		}
 
-				if resp.StatusCode != http.StatusOK {
-					body, err := io.ReadAll(resp.Body)
-					if err != nil {
-						return nil, fmt.Errorf("failed to read response body: %w", err)
-					}
-					return nil, fmt.Errorf("failed to fetch file content: %s", string(body))
-				}
+		resp, err := rawClient.GetRawContent(ctx, owner, repo, path, rawOpts)
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+		// If the raw content is not found, we will fall back to the GitHub API (in case it is a directory)
+		switch {
+		case err != nil:
+			return nil, fmt.Errorf("failed to get raw content: %w", err)
+		case resp.StatusCode == http.StatusOK:
+			ext := filepath.Ext(path)
+			mimeType := resp.Header.Get("Content-Type")
+			if ext == ".md" {
+				mimeType = "text/markdown"
+			} else if mimeType == "" {
+				mimeType = mime.TypeByExtension(ext)
+			}
 
-				ext := filepath.Ext(fileContent.GetName())
-				mimeType := resp.Header.Get("Content-Type")
-				if ext == ".md" {
-					mimeType = "text/markdown"
-				} else if mimeType == "" {
-					// backstop to the file extension if the content type is not set
-					mimeType = mime.TypeByExtension(filepath.Ext(fileContent.GetName()))
-				}
+			content, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file content: %w", err)
+			}
 
-				// if the content is a string, return it as text
-				if strings.HasPrefix(mimeType, "text") {
-					content, err := io.ReadAll(resp.Body)
-					if err != nil {
-						return nil, fmt.Errorf("failed to parse the response body: %w", err)
-					}
-
-					return []mcp.ResourceContents{
-						mcp.TextResourceContents{
-							URI:      request.Params.URI,
-							MIMEType: mimeType,
-							Text:     string(content),
-						},
-					}, nil
-				}
-				// otherwise, read the content and encode it as base64
-				decodedContent, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse the response body: %w", err)
-				}
-
+			switch {
+			case strings.HasPrefix(mimeType, "text"), strings.HasPrefix(mimeType, "application"):
+				return []mcp.ResourceContents{
+					mcp.TextResourceContents{
+						URI:      request.Params.URI,
+						MIMEType: mimeType,
+						Text:     string(content),
+					},
+				}, nil
+			default:
 				return []mcp.ResourceContents{
 					mcp.BlobResourceContents{
 						URI:      request.Params.URI,
 						MIMEType: mimeType,
-						Blob:     base64.StdEncoding.EncodeToString(decodedContent), // Encode content as Base64
+						Blob:     base64.StdEncoding.EncodeToString(content),
 					},
 				}, nil
 			}
+		case resp.StatusCode != http.StatusNotFound:
+			// If we got a response but it is not 200 OK, we return an error
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read response body: %w", err)
+			}
+			return nil, fmt.Errorf("failed to fetch raw content: %s", string(body))
+		default:
+			// This should be unreachable because GetContents should return an error if neither file nor directory content is found.
+			return nil, errors.New("404 Not Found")
 		}
-
-		// This should be unreachable because GetContents should return an error if neither file nor directory content is found.
-		return nil, errors.New("no repository resource content found")
 	}
 }

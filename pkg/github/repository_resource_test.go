@@ -3,8 +3,10 @@ package github
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"testing"
 
+	"github.com/github/github-mcp-server/pkg/raw"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -12,82 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var GetRawReposContentsByOwnerByRepoByPath mock.EndpointPattern = mock.EndpointPattern{
-	Pattern: "/{owner}/{repo}/main/{path:.+}",
-	Method:  "GET",
-}
-
 func Test_repositoryResourceContentsHandler(t *testing.T) {
-	mockDirContent := []*github.RepositoryContent{
-		{
-			Type:        github.Ptr("file"),
-			Name:        github.Ptr("README.md"),
-			Path:        github.Ptr("README.md"),
-			SHA:         github.Ptr("abc123"),
-			Size:        github.Ptr(42),
-			HTMLURL:     github.Ptr("https://github.com/owner/repo/blob/main/README.md"),
-			DownloadURL: github.Ptr("https://raw.githubusercontent.com/owner/repo/main/README.md"),
-		},
-		{
-			Type:        github.Ptr("dir"),
-			Name:        github.Ptr("src"),
-			Path:        github.Ptr("src"),
-			SHA:         github.Ptr("def456"),
-			HTMLURL:     github.Ptr("https://github.com/owner/repo/tree/main/src"),
-			DownloadURL: github.Ptr("https://raw.githubusercontent.com/owner/repo/main/src"),
-		},
-	}
-	expectedDirContent := []mcp.TextResourceContents{
-		{
-			URI:      "https://github.com/owner/repo/blob/main/README.md",
-			MIMEType: "text/markdown",
-			Text:     "README.md",
-		},
-		{
-			URI:      "https://github.com/owner/repo/tree/main/src",
-			MIMEType: "text/directory",
-			Text:     "src",
-		},
-	}
-
-	mockTextContent := &github.RepositoryContent{
-		Type:        github.Ptr("file"),
-		Name:        github.Ptr("README.md"),
-		Path:        github.Ptr("README.md"),
-		Content:     github.Ptr("# Test Repository\n\nThis is a test repository."),
-		SHA:         github.Ptr("abc123"),
-		Size:        github.Ptr(42),
-		HTMLURL:     github.Ptr("https://github.com/owner/repo/blob/main/README.md"),
-		DownloadURL: github.Ptr("https://raw.githubusercontent.com/owner/repo/main/README.md"),
-	}
-
-	mockFileContent := &github.RepositoryContent{
-		Type:        github.Ptr("file"),
-		Name:        github.Ptr("data.png"),
-		Path:        github.Ptr("data.png"),
-		Content:     github.Ptr("IyBUZXN0IFJlcG9zaXRvcnkKClRoaXMgaXMgYSB0ZXN0IHJlcG9zaXRvcnku"), // Base64 encoded "# Test Repository\n\nThis is a test repository."
-		SHA:         github.Ptr("abc123"),
-		Size:        github.Ptr(42),
-		HTMLURL:     github.Ptr("https://github.com/owner/repo/blob/main/data.png"),
-		DownloadURL: github.Ptr("https://raw.githubusercontent.com/owner/repo/main/data.png"),
-	}
-
-	expectedFileContent := []mcp.BlobResourceContents{
-		{
-			Blob:     "IyBUZXN0IFJlcG9zaXRvcnkKClRoaXMgaXMgYSB0ZXN0IHJlcG9zaXRvcnku",
-			MIMEType: "image/png",
-			URI:      "",
-		},
-	}
-
-	expectedTextContent := []mcp.TextResourceContents{
-		{
-			Text:     "# Test Repository\n\nThis is a test repository.",
-			MIMEType: "text/markdown",
-			URI:      "",
-		},
-	}
-
+	base, _ := url.Parse("https://raw.example.com/")
 	tests := []struct {
 		name           string
 		mockedClient   *http.Client
@@ -98,9 +26,14 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 		{
 			name: "missing owner",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposContentsByOwnerByRepoByPath,
-					mockFileContent,
+				mock.WithRequestMatchHandler(
+					raw.GetRawReposContentsByOwnerByRepoByPath,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "image/png")
+						// as this is given as a png, it will return the content as a blob
+						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
+						require.NoError(t, err)
+					}),
 				),
 			),
 			requestArgs: map[string]any{},
@@ -109,9 +42,14 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 		{
 			name: "missing repo",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposContentsByOwnerByRepoByPath,
-					mockFileContent,
+				mock.WithRequestMatchHandler(
+					raw.GetRawReposContentsByOwnerByRepoByBranchByPath,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "image/png")
+						// as this is given as a png, it will return the content as a blob
+						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
+						require.NoError(t, err)
+					}),
 				),
 			),
 			requestArgs: map[string]any{
@@ -122,15 +60,56 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 		{
 			name: "successful blob content fetch",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposContentsByOwnerByRepoByPath,
-					mockFileContent,
-				),
 				mock.WithRequestMatchHandler(
-					GetRawReposContentsByOwnerByRepoByPath,
+					raw.GetRawReposContentsByOwnerByRepoByPath,
 					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "image/png")
-						// as this is given as a png, it will return the content as a blob
+						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
+						require.NoError(t, err)
+					}),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner": []string{"owner"},
+				"repo":  []string{"repo"},
+				"path":  []string{"data.png"},
+			},
+			expectedResult: []mcp.BlobResourceContents{{
+				Blob:     "IyBUZXN0IFJlcG9zaXRvcnkKClRoaXMgaXMgYSB0ZXN0IHJlcG9zaXRvcnku",
+				MIMEType: "image/png",
+				URI:      "",
+			}},
+		},
+		{
+			name: "successful text content fetch (HEAD)",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					raw.GetRawReposContentsByOwnerByRepoByPath,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/markdown")
+						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
+						require.NoError(t, err)
+					}),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner": []string{"owner"},
+				"repo":  []string{"repo"},
+				"path":  []string{"README.md"},
+			},
+			expectedResult: []mcp.TextResourceContents{{
+				Text:     "# Test Repository\n\nThis is a test repository.",
+				MIMEType: "text/markdown",
+				URI:      "",
+			}},
+		},
+		{
+			name: "successful text content fetch (branch)",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					raw.GetRawReposContentsByOwnerByRepoByBranchByPath,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/markdown")
 						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
 						require.NoError(t, err)
 					}),
@@ -139,60 +118,94 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 			requestArgs: map[string]any{
 				"owner":  []string{"owner"},
 				"repo":   []string{"repo"},
-				"path":   []string{"data.png"},
-				"branch": []string{"main"},
-			},
-			expectedResult: expectedFileContent,
-		},
-		{
-			name: "successful text content fetch",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposContentsByOwnerByRepoByPath,
-					mockTextContent,
-				),
-				mock.WithRequestMatch(
-					GetRawReposContentsByOwnerByRepoByPath,
-					[]byte("# Test Repository\n\nThis is a test repository."),
-				),
-			),
-			requestArgs: map[string]any{
-				"owner":  []string{"owner"},
-				"repo":   []string{"repo"},
 				"path":   []string{"README.md"},
 				"branch": []string{"main"},
 			},
-			expectedResult: expectedTextContent,
+			expectedResult: []mcp.TextResourceContents{{
+				Text:     "# Test Repository\n\nThis is a test repository.",
+				MIMEType: "text/markdown",
+				URI:      "",
+			}},
 		},
 		{
-			name: "successful directory content fetch",
+			name: "successful text content fetch (tag)",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposContentsByOwnerByRepoByPath,
-					mockDirContent,
+				mock.WithRequestMatchHandler(
+					raw.GetRawReposContentsByOwnerByRepoByTagByPath,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/markdown")
+						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
+						require.NoError(t, err)
+					}),
 				),
 			),
 			requestArgs: map[string]any{
 				"owner": []string{"owner"},
 				"repo":  []string{"repo"},
-				"path":  []string{"src"},
+				"path":  []string{"README.md"},
+				"tag":   []string{"v1.0.0"},
 			},
-			expectedResult: expectedDirContent,
+			expectedResult: []mcp.TextResourceContents{{
+				Text:     "# Test Repository\n\nThis is a test repository.",
+				MIMEType: "text/markdown",
+				URI:      "",
+			}},
 		},
 		{
-			name: "empty data",
+			name: "successful text content fetch (sha)",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposContentsByOwnerByRepoByPath,
-					[]*github.RepositoryContent{},
+				mock.WithRequestMatchHandler(
+					raw.GetRawReposContentsByOwnerByRepoBySHAByPath,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/markdown")
+						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
+						require.NoError(t, err)
+					}),
 				),
 			),
 			requestArgs: map[string]any{
 				"owner": []string{"owner"},
 				"repo":  []string{"repo"},
-				"path":  []string{"src"},
+				"path":  []string{"README.md"},
+				"sha":   []string{"abc123"},
 			},
-			expectedResult: nil,
+			expectedResult: []mcp.TextResourceContents{{
+				Text:     "# Test Repository\n\nThis is a test repository.",
+				MIMEType: "text/markdown",
+				URI:      "",
+			}},
+		},
+		{
+			name: "successful text content fetch (pr)",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetReposPullsByOwnerByRepoByPullNumber,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, err := w.Write([]byte(`{"head": {"sha": "abc123"}}`))
+						require.NoError(t, err)
+					}),
+				),
+				mock.WithRequestMatchHandler(
+					raw.GetRawReposContentsByOwnerByRepoBySHAByPath,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "text/markdown")
+						_, err := w.Write([]byte("# Test Repository\n\nThis is a test repository."))
+						require.NoError(t, err)
+					}),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner":    []string{"owner"},
+				"repo":     []string{"repo"},
+				"path":     []string{"README.md"},
+				"prNumber": []string{"42"},
+			},
+			expectedResult: []mcp.TextResourceContents{{
+				Text:     "# Test Repository\n\nThis is a test repository.",
+				MIMEType: "text/markdown",
+				URI:      "",
+			}},
 		},
 		{
 			name: "content fetch fails",
@@ -218,7 +231,8 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			client := github.NewClient(tc.mockedClient)
-			handler := RepositoryResourceContentsHandler((stubGetClientFn(client)))
+			mockRawClient := raw.NewClient(client, base)
+			handler := RepositoryResourceContentsHandler((stubGetClientFn(client)), stubGetRawClientFn(mockRawClient))
 
 			request := mcp.ReadResourceRequest{
 				Params: struct {
@@ -243,25 +257,24 @@ func Test_repositoryResourceContentsHandler(t *testing.T) {
 }
 
 func Test_GetRepositoryResourceContent(t *testing.T) {
-	tmpl, _ := GetRepositoryResourceContent(nil, translations.NullTranslationHelper)
+	mockRawClient := raw.NewClient(github.NewClient(nil), &url.URL{})
+	tmpl, _ := GetRepositoryResourceContent(nil, stubGetRawClientFn(mockRawClient), translations.NullTranslationHelper)
 	require.Equal(t, "repo://{owner}/{repo}/contents{/path*}", tmpl.URITemplate.Raw())
 }
 
 func Test_GetRepositoryResourceBranchContent(t *testing.T) {
-	tmpl, _ := GetRepositoryResourceBranchContent(nil, translations.NullTranslationHelper)
+	mockRawClient := raw.NewClient(github.NewClient(nil), &url.URL{})
+	tmpl, _ := GetRepositoryResourceBranchContent(nil, stubGetRawClientFn(mockRawClient), translations.NullTranslationHelper)
 	require.Equal(t, "repo://{owner}/{repo}/refs/heads/{branch}/contents{/path*}", tmpl.URITemplate.Raw())
 }
 func Test_GetRepositoryResourceCommitContent(t *testing.T) {
-	tmpl, _ := GetRepositoryResourceCommitContent(nil, translations.NullTranslationHelper)
+	mockRawClient := raw.NewClient(github.NewClient(nil), &url.URL{})
+	tmpl, _ := GetRepositoryResourceCommitContent(nil, stubGetRawClientFn(mockRawClient), translations.NullTranslationHelper)
 	require.Equal(t, "repo://{owner}/{repo}/sha/{sha}/contents{/path*}", tmpl.URITemplate.Raw())
 }
 
 func Test_GetRepositoryResourceTagContent(t *testing.T) {
-	tmpl, _ := GetRepositoryResourceTagContent(nil, translations.NullTranslationHelper)
+	mockRawClient := raw.NewClient(github.NewClient(nil), &url.URL{})
+	tmpl, _ := GetRepositoryResourceTagContent(nil, stubGetRawClientFn(mockRawClient), translations.NullTranslationHelper)
 	require.Equal(t, "repo://{owner}/{repo}/refs/tags/{tag}/contents{/path*}", tmpl.URITemplate.Raw())
-}
-
-func Test_GetRepositoryResourcePrContent(t *testing.T) {
-	tmpl, _ := GetRepositoryResourcePrContent(nil, translations.NullTranslationHelper)
-	require.Equal(t, "repo://{owner}/{repo}/refs/pull/{prNumber}/head/contents{/path*}", tmpl.URITemplate.Raw())
 }

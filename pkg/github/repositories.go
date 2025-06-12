@@ -2,11 +2,15 @@ package github
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 
+	"github.com/github/github-mcp-server/pkg/raw"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -409,7 +413,7 @@ func CreateRepository(getClient GetClientFn, t translations.TranslationHelperFun
 }
 
 // GetFileContents creates a tool to get the contents of a file or directory from a GitHub repository.
-func GetFileContents(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_file_contents",
 			mcp.WithDescription(t("TOOL_GET_FILE_CONTENTS_DESCRIPTION", "Get the contents of a file or directory from a GitHub repository")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
@@ -426,7 +430,7 @@ func GetFileContents(getClient GetClientFn, t translations.TranslationHelperFunc
 			),
 			mcp.WithString("path",
 				mcp.Required(),
-				mcp.Description("Path to file/directory"),
+				mcp.Description("Path to file/directory (directories must end with a slash '/')"),
 			),
 			mcp.WithString("branch",
 				mcp.Description("Branch to get contents from"),
@@ -450,38 +454,92 @@ func GetFileContents(getClient GetClientFn, t translations.TranslationHelperFunc
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
+			// If the path is (most likely) not to be a directory, we will first try to get the raw content from the GitHub raw content API.
+			if path != "" && !strings.HasSuffix(path, "/") {
+				rawOpts := &raw.RawContentOpts{}
+				if branch != "" {
+					rawOpts.Ref = "refs/heads/" + branch
+				}
+				rawClient, err := getRawClient(ctx)
+				if err != nil {
+					return mcp.NewToolResultError("failed to get GitHub raw content client"), nil
+				}
+				resp, err := rawClient.GetRawContent(ctx, owner, repo, path, rawOpts)
+				if err != nil {
+					return mcp.NewToolResultError("failed to get raw repository content"), nil
+				}
+				defer func() {
+					_ = resp.Body.Close()
+				}()
+
+				if resp.StatusCode != http.StatusOK {
+					// If the raw content is not found, we will fall back to the GitHub API (in case it is a directory)
+				} else {
+					// If the raw content is found, return it directly
+					body, err := io.ReadAll(resp.Body)
+					if err != nil {
+						return mcp.NewToolResultError("failed to read response body"), nil
+					}
+					contentType := resp.Header.Get("Content-Type")
+
+					var resourceURI string
+					if branch == "" {
+						// do a safe url join
+						resourceURI, err = url.JoinPath("repo://", owner, repo, "contents", path)
+						if err != nil {
+							return nil, fmt.Errorf("failed to create resource URI: %w", err)
+						}
+					} else {
+						resourceURI, err = url.JoinPath("repo://", owner, repo, "refs", "heads", branch, "contents", path)
+						if err != nil {
+							return nil, fmt.Errorf("failed to create resource URI: %w", err)
+						}
+					}
+					if strings.HasPrefix(contentType, "application") || strings.HasPrefix(contentType, "text") {
+						return mcp.NewToolResultResource("successfully downloaded text file", mcp.TextResourceContents{
+							URI:      resourceURI,
+							Text:     string(body),
+							MIMEType: contentType,
+						}), nil
+					}
+
+					return mcp.NewToolResultResource("successfully downloaded binary file", mcp.BlobResourceContents{
+						URI:      resourceURI,
+						Blob:     base64.StdEncoding.EncodeToString(body),
+						MIMEType: contentType,
+					}), nil
+
+				}
+			}
+
 			client, err := getClient(ctx)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+				return mcp.NewToolResultError("failed to get GitHub client"), nil
 			}
-			opts := &github.RepositoryContentGetOptions{Ref: branch}
-			fileContent, dirContent, resp, err := client.Repositories.GetContents(ctx, owner, repo, path, opts)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get file contents: %w", err)
-			}
-			defer func() { _ = resp.Body.Close() }()
 
-			if resp.StatusCode != 200 {
-				body, err := io.ReadAll(resp.Body)
+			if strings.HasSuffix(path, "/") {
+				opts := &github.RepositoryContentGetOptions{Ref: branch}
+				_, dirContent, resp, err := client.Repositories.GetContents(ctx, owner, repo, path, opts)
 				if err != nil {
-					return nil, fmt.Errorf("failed to read response body: %w", err)
+					return mcp.NewToolResultError("failed to get file contents"), nil
 				}
-				return mcp.NewToolResultError(fmt.Sprintf("failed to get file contents: %s", string(body))), nil
-			}
+				defer func() { _ = resp.Body.Close() }()
 
-			var result interface{}
-			if fileContent != nil {
-				result = fileContent
-			} else {
-				result = dirContent
-			}
+				if resp.StatusCode != 200 {
+					body, err := io.ReadAll(resp.Body)
+					if err != nil {
+						return mcp.NewToolResultError("failed to read response body"), nil
+					}
+					return mcp.NewToolResultError(fmt.Sprintf("failed to get file contents: %s", string(body))), nil
+				}
 
-			r, err := json.Marshal(result)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal response: %w", err)
+				r, err := json.Marshal(dirContent)
+				if err != nil {
+					return mcp.NewToolResultError("failed to marshal response"), nil
+				}
+				return mcp.NewToolResultText(string(r)), nil
 			}
-
-			return mcp.NewToolResultText(string(r)), nil
+			return mcp.NewToolResultError("Failed to get file contents. The path does not point to a file or directory, or the file does not exist in the repository."), nil
 		}
 }
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/github/github-mcp-server/pkg/raw"
 	"github.com/google/go-github/v72/github"
 	"github.com/shurcooL/githubv4"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,12 @@ func stubGetClientFnErr(err string) GetClientFn {
 
 func stubGetGQLClientFn(client *githubv4.Client) GetGQLClientFn {
 	return func(_ context.Context) (*githubv4.Client, error) {
+		return client, nil
+	}
+}
+
+func stubGetRawClientFn(client *raw.Client) raw.GetRawClientFn {
+	return func(_ context.Context) (*raw.Client, error) {
 		return client, nil
 	}
 }
