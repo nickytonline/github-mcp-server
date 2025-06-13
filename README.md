@@ -47,6 +47,10 @@ For MCP Hosts that have been [configured to use the remote GitHub MCP Server](do
 
 > **Note:** The exact configuration format may vary by host. Refer to your host's documentation for the correct syntax and location for remote MCP server setup.
 
+### Configuration
+
+See [Remote Server Documentation](docs/remote-server.md) on how to pass configuration settings to the remote GitHub MCP Server.
+
 ---
 
 ## Local GitHub MCP Server
