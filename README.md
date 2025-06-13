@@ -28,28 +28,97 @@ The remote GitHub MCP Server is hosted by GitHub and provides the easiest method
 
 For quick installation, use one of the one-click install buttons above. Once you complete that flow, toggle Agent mode (located by the Copilot Chat text input) and the server will start. Make sure you're using [VS Code 1.101](https://code.visualstudio.com/updates/v1_101) or [later](https://code.visualstudio.com/updates) for remote MCP and OAuth support.
 
-### Usage in other MCP Hosts
 
-For MCP Hosts that have been [configured to use the remote GitHub MCP Server](docs/host-integration.md), add the following JSON block to the host's configuration:
+Alternatively, to manually configure VS Code, choose the appropriate JSON block from the examples below and add it to your host configuration:
 
+<table>
+<tr><th>Using OAuth</th><th>Using a GitHub PAT</th></tr>
+<tr><th align=left colspan=2>VS Code (version 1.101 or greater)</th></tr>
+<tr valign=top>
+<td>
+  
 ```json
 {
-  "mcp": {
-    "servers": {
-      "github": {
-        "type": "http",
-        "url": "https://api.githubcopilot.com/mcp/"
-      }
+  "servers": {
+    "github-remote": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
     }
   }
 }
 ```
 
+</td>
+<td>
+
+```json
+{
+  "servers": {
+    "github-remote": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${input:github_mcp_pat}",
+      }
+    }
+  },
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "github_mcp_pat",
+      "description": "GitHub Personal Access Token",
+      "password": true
+    }
+  ]
+}
+```
+
+</td>
+</tr>
+</table>
+
+### Usage in other MCP Hosts
+
+For MCP Hosts that are [Remote MCP-compatible](docs/host-integration.md), choose the appropriate JSON block from the examples below and add it to your host configuration:
+
+<table>
+<tr><th>Using OAuth</th><th>Using a GitHub PAT</th></tr>
+<tr valign=top>
+<td>
+  
+```json
+{
+  "mcpServers": {
+    "github-remote": {
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  }
+}
+```
+
+</td>
+<td>
+
+```json
+{
+  "mcpServers": {
+    "github-remote": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "authorization_token": "Bearer <your GitHub PAT>"
+    }
+  }
+}
+```
+
+</td>
+</tr>
+</table>
+
 > **Note:** The exact configuration format may vary by host. Refer to your host's documentation for the correct syntax and location for remote MCP server setup.
 
 ### Configuration
 
-See [Remote Server Documentation](docs/remote-server.md) on how to pass configuration settings to the remote GitHub MCP Server.
+See [Remote Server Documentation](docs/remote-server.md) on how to pass additional configuration settings to the remote GitHub MCP Server.
 
 ---
 
