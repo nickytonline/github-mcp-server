@@ -58,7 +58,7 @@ Alternatively, to manually configure VS Code, choose the appropriate JSON block 
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
       "headers": {
-        "Authorization": "Bearer ${input:github_mcp_pat}",
+        "Authorization": "Bearer ${input:github_mcp_pat}"
       }
     }
   },
