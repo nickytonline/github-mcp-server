@@ -31,7 +31,7 @@ The `--stdio-server-cmd` flag is required for all commands and specifies the com
 
 ### Examples
 
-List available tools in Anthropic's MCP server:
+List available tools in Github's MCP server:
 
 ```console
 % ./mcpcurl --stdio-server-cmd "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN mcp/github" tools --help
