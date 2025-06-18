@@ -40,7 +40,7 @@ Alternatively, to manually configure VS Code, choose the appropriate JSON block 
 ```json
 {
   "servers": {
-    "github-remote": {
+    "github": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/"
     }
@@ -54,7 +54,7 @@ Alternatively, to manually configure VS Code, choose the appropriate JSON block 
 ```json
 {
   "servers": {
-    "github-remote": {
+    "github": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
       "headers": {
@@ -89,7 +89,7 @@ For MCP Hosts that are [Remote MCP-compatible](docs/host-integration.md), choose
 ```json
 {
   "mcpServers": {
-    "github-remote": {
+    "github": {
       "url": "https://api.githubcopilot.com/mcp/"
     }
   }
@@ -102,7 +102,7 @@ For MCP Hosts that are [Remote MCP-compatible](docs/host-integration.md), choose
 ```json
 {
   "mcpServers": {
-    "github-remote": {
+    "github": {
       "url": "https://api.githubcopilot.com/mcp/",
       "authorization_token": "Bearer <your GitHub PAT>"
     }
