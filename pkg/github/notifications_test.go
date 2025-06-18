@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/github/github-mcp-server/internal/toolsnaps"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
@@ -17,6 +18,8 @@ func Test_ListNotifications(t *testing.T) {
 	// Verify tool definition and schema
 	mockClient := github.NewClient(nil)
 	tool, _ := ListNotifications(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
 	assert.Equal(t, "list_notifications", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "filter")
@@ -147,6 +150,8 @@ func Test_ManageNotificationSubscription(t *testing.T) {
 	// Verify tool definition and schema
 	mockClient := github.NewClient(nil)
 	tool, _ := ManageNotificationSubscription(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
 	assert.Equal(t, "manage_notification_subscription", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "notificationID")
@@ -283,6 +288,8 @@ func Test_ManageRepositoryNotificationSubscription(t *testing.T) {
 	// Verify tool definition and schema
 	mockClient := github.NewClient(nil)
 	tool, _ := ManageRepositoryNotificationSubscription(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
 	assert.Equal(t, "manage_repository_notification_subscription", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
@@ -444,6 +451,8 @@ func Test_DismissNotification(t *testing.T) {
 	// Verify tool definition and schema
 	mockClient := github.NewClient(nil)
 	tool, _ := DismissNotification(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
 	assert.Equal(t, "dismiss_notification", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "threadID")
@@ -574,6 +583,8 @@ func Test_MarkAllNotificationsRead(t *testing.T) {
 	// Verify tool definition and schema
 	mockClient := github.NewClient(nil)
 	tool, _ := MarkAllNotificationsRead(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
 	assert.Equal(t, "mark_all_notifications_read", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "lastReadAt")
@@ -672,6 +683,8 @@ func Test_GetNotificationDetails(t *testing.T) {
 	// Verify tool definition and schema
 	mockClient := github.NewClient(nil)
 	tool, _ := GetNotificationDetails(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
 	assert.Equal(t, "get_notification_details", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "notificationID")

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/github/github-mcp-server/internal/githubv4mock"
+	"github.com/github/github-mcp-server/internal/toolsnaps"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
@@ -21,6 +22,7 @@ func Test_GetIssue(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetIssue(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_issue", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -117,6 +119,7 @@ func Test_AddIssueComment(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := AddIssueComment(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "add_issue_comment", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -230,6 +233,7 @@ func Test_SearchIssues(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := SearchIssues(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "search_issues", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -386,6 +390,7 @@ func Test_CreateIssue(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := CreateIssue(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "create_issue", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -560,6 +565,7 @@ func Test_ListIssues(t *testing.T) {
 	// Verify tool definition
 	mockClient := github.NewClient(nil)
 	tool, _ := ListIssues(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "list_issues", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -736,6 +742,7 @@ func Test_UpdateIssue(t *testing.T) {
 	// Verify tool definition
 	mockClient := github.NewClient(nil)
 	tool, _ := UpdateIssue(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "update_issue", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -993,6 +1000,7 @@ func Test_GetIssueComments(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetIssueComments(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_issue_comments", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1129,6 +1137,7 @@ func TestAssignCopilotToIssue(t *testing.T) {
 	// Verify tool definition
 	mockClient := githubv4.NewClient(nil)
 	tool, _ := AssignCopilotToIssue(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "assign_copilot_to_issue", tool.Name)
 	assert.NotEmpty(t, tool.Description)

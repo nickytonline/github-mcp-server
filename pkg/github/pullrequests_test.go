@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/github/github-mcp-server/internal/githubv4mock"
+	"github.com/github/github-mcp-server/internal/toolsnaps"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/shurcooL/githubv4"
@@ -21,6 +22,7 @@ func Test_GetPullRequest(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetPullRequest(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_pull_request", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -133,6 +135,7 @@ func Test_UpdatePullRequest(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := UpdatePullRequest(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "update_pull_request", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -315,6 +318,7 @@ func Test_ListPullRequests(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := ListPullRequests(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "list_pull_requests", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -445,6 +449,7 @@ func Test_MergePullRequest(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := MergePullRequest(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "merge_pull_request", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -556,6 +561,7 @@ func Test_GetPullRequestFiles(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetPullRequestFiles(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_pull_request_files", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -672,6 +678,7 @@ func Test_GetPullRequestStatus(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetPullRequestStatus(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_pull_request_status", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -833,6 +840,7 @@ func Test_UpdatePullRequestBranch(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := UpdatePullRequestBranch(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "update_pull_request_branch", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -949,6 +957,7 @@ func Test_GetPullRequestComments(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetPullRequestComments(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_pull_request_comments", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1076,6 +1085,7 @@ func Test_GetPullRequestReviews(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetPullRequestReviews(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_pull_request_reviews", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1199,6 +1209,7 @@ func Test_CreatePullRequest(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := CreatePullRequest(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "create_pull_request", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1358,6 +1369,7 @@ func TestCreateAndSubmitPullRequestReview(t *testing.T) {
 	// Verify tool definition once
 	mockClient := githubv4.NewClient(nil)
 	tool, _ := CreateAndSubmitPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "create_and_submit_pull_request_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1551,6 +1563,7 @@ func Test_RequestCopilotReview(t *testing.T) {
 
 	mockClient := github.NewClient(nil)
 	tool, _ := RequestCopilotReview(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "request_copilot_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1661,6 +1674,7 @@ func TestCreatePendingPullRequestReview(t *testing.T) {
 	// Verify tool definition once
 	mockClient := githubv4.NewClient(nil)
 	tool, _ := CreatePendingPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "create_pending_pull_request_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1843,6 +1857,7 @@ func TestAddPullRequestReviewCommentToPendingReview(t *testing.T) {
 	// Verify tool definition once
 	mockClient := githubv4.NewClient(nil)
 	tool, _ := AddPullRequestReviewCommentToPendingReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "add_pull_request_review_comment_to_pending_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -1955,6 +1970,7 @@ func TestSubmitPendingPullRequestReview(t *testing.T) {
 	// Verify tool definition once
 	mockClient := githubv4.NewClient(nil)
 	tool, _ := SubmitPendingPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "submit_pending_pull_request_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -2052,6 +2068,7 @@ func TestDeletePendingPullRequestReview(t *testing.T) {
 	// Verify tool definition once
 	mockClient := githubv4.NewClient(nil)
 	tool, _ := DeletePendingPullRequestReview(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "delete_pending_pull_request_review", tool.Name)
 	assert.NotEmpty(t, tool.Description)
@@ -2143,6 +2160,7 @@ func TestGetPullRequestDiff(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)
 	tool, _ := GetPullRequestDiff(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "get_pull_request_diff", tool.Name)
 	assert.NotEmpty(t, tool.Description)
