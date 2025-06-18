@@ -43,6 +43,9 @@ func TestSnapshotDoesNotExistNotInCI(t *testing.T) {
 
 func TestSnapshotDoesNotExistInCI(t *testing.T) {
 	withIsolatedWorkingDir(t)
+	// Ensure that UPDATE_TOOLSNAPS is not set for this test, which it might be if someone is running
+	// UPDATE_TOOLSNAPS=true go test ./...
+	t.Setenv("UPDATE_TOOLSNAPS", "false")
 
 	// Given we are running in CI
 	t.Setenv("GITHUB_ACTIONS", "true")
@@ -74,6 +77,9 @@ func TestSnapshotExistsMatch(t *testing.T) {
 
 func TestSnapshotExistsDiff(t *testing.T) {
 	withIsolatedWorkingDir(t)
+	// Ensure that UPDATE_TOOLSNAPS is not set for this test, which it might be if someone is running
+	// UPDATE_TOOLSNAPS=true go test ./...
+	t.Setenv("UPDATE_TOOLSNAPS", "false")
 
 	// Given a non-matching snapshot file exists
 	require.NoError(t, os.MkdirAll("__toolsnaps__", 0700))
@@ -109,6 +115,9 @@ func TestUpdateToolsnaps(t *testing.T) {
 
 func TestMalformedSnapshotJSON(t *testing.T) {
 	withIsolatedWorkingDir(t)
+	// Ensure that UPDATE_TOOLSNAPS is not set for this test, which it might be if someone is running
+	// UPDATE_TOOLSNAPS=true go test ./...
+	t.Setenv("UPDATE_TOOLSNAPS", "false")
 
 	// Given a malformed snapshot file exists
 	require.NoError(t, os.MkdirAll("__toolsnaps__", 0700))
