@@ -4,7 +4,6 @@ package e2e_test
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -508,17 +507,14 @@ func TestFileDeletion(t *testing.T) {
 	require.NoError(t, err, "expected to call 'get_file_contents' tool successfully")
 	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
 
-	textContent, ok = resp.Content[0].(mcp.TextContent)
-	require.True(t, ok, "expected content to be of type TextContent")
+	embeddedResource, ok := resp.Content[1].(mcp.EmbeddedResource)
+	require.True(t, ok, "expected content to be of type EmbeddedResource")
 
-	var trimmedGetFileText struct {
-		Content string `json:"content"`
-	}
-	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetFileText)
-	require.NoError(t, err, "expected to unmarshal text content successfully")
-	b, err := base64.StdEncoding.DecodeString(trimmedGetFileText.Content)
-	require.NoError(t, err, "expected to decode base64 content successfully")
-	require.Equal(t, fmt.Sprintf("Created by e2e test %s", t.Name()), string(b), "expected file content to match")
+	// raw api
+	textResource, ok := embeddedResource.Resource.(mcp.TextResourceContents)
+	require.True(t, ok, "expected embedded resource to be of type TextResourceContents")
+
+	require.Equal(t, fmt.Sprintf("Created by e2e test %s", t.Name()), textResource.Text, "expected file content to match")
 
 	// Delete the file
 	deleteFileRequest := mcp.CallToolRequest{}
@@ -703,17 +699,14 @@ func TestDirectoryDeletion(t *testing.T) {
 	require.NoError(t, err, "expected to call 'get_file_contents' tool successfully")
 	require.False(t, resp.IsError, fmt.Sprintf("expected result not to be an error: %+v", resp))
 
-	textContent, ok = resp.Content[0].(mcp.TextContent)
-	require.True(t, ok, "expected content to be of type TextContent")
+	embeddedResource, ok := resp.Content[1].(mcp.EmbeddedResource)
+	require.True(t, ok, "expected content to be of type EmbeddedResource")
 
-	var trimmedGetFileText struct {
-		Content string `json:"content"`
-	}
-	err = json.Unmarshal([]byte(textContent.Text), &trimmedGetFileText)
-	require.NoError(t, err, "expected to unmarshal text content successfully")
-	b, err := base64.StdEncoding.DecodeString(trimmedGetFileText.Content)
-	require.NoError(t, err, "expected to decode base64 content successfully")
-	require.Equal(t, fmt.Sprintf("Created by e2e test %s", t.Name()), string(b), "expected file content to match")
+	// raw api
+	textResource, ok := embeddedResource.Resource.(mcp.TextResourceContents)
+	require.True(t, ok, "expected embedded resource to be of type TextResourceContents")
+
+	require.Equal(t, fmt.Sprintf("Created by e2e test %s", t.Name()), textResource.Text, "expected file content to match")
 
 	// Delete the directory containing the file
 	deleteFileRequest := mcp.CallToolRequest{}
