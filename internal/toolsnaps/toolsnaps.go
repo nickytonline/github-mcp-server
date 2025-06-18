@@ -60,7 +60,7 @@ func Test(toolName string, tool any) error {
 	diff := toolNode.Diff(snapNode, jd.SET).Render()
 	if diff != "" {
 		// If there is a difference, we return an error with the diff
-		return fmt.Errorf("tool schema for %s has changed unexpectedly:\n%s", toolName, diff)
+		return fmt.Errorf("tool schema for %s has changed unexpectedly:\n%s\nrun with `UPDATE_TOOLSNAPS=true` if this is expected", toolName, diff)
 	}
 
 	return nil
