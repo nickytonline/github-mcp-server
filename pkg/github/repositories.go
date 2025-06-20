@@ -514,23 +514,24 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 					contentType := resp.Header.Get("Content-Type")
 
 					var resourceURI string
-					if sha != "" {
-						// do a safe url join
+					switch {
+					case sha != "":
 						resourceURI, err = url.JoinPath("repo://", owner, repo, "sha", sha, "contents", path)
 						if err != nil {
 							return nil, fmt.Errorf("failed to create resource URI: %w", err)
 						}
-					} else if ref != "" {
+					case ref != "":
 						resourceURI, err = url.JoinPath("repo://", owner, repo, ref, "contents", path)
 						if err != nil {
 							return nil, fmt.Errorf("failed to create resource URI: %w", err)
 						}
-					} else {
+					default:
 						resourceURI, err = url.JoinPath("repo://", owner, repo, "contents", path)
 						if err != nil {
 							return nil, fmt.Errorf("failed to create resource URI: %w", err)
 						}
 					}
+
 					if strings.HasPrefix(contentType, "application") || strings.HasPrefix(contentType, "text") {
 						return mcp.NewToolResultResource("successfully downloaded text file", mcp.TextResourceContents{
 							URI:      resourceURI,
