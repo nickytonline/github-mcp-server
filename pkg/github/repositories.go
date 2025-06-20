@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/github/github-mcp-server/pkg/raw"
@@ -432,8 +433,11 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 				mcp.Required(),
 				mcp.Description("Path to file/directory (directories must end with a slash '/')"),
 			),
-			mcp.WithString("branch",
-				mcp.Description("Branch to get contents from"),
+			mcp.WithString("ref",
+				mcp.Description("Accepts optional git refs such as `refs/tags/<tag>`, `refs/heads/<branch>` or `refs/pull/<pr_number>/head`"),
+			),
+			mcp.WithString("sha",
+				mcp.Description("Accepts optional git sha, if sha is specified it will be used instead of ref"),
 			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -449,17 +453,44 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			branch, err := OptionalParam[string](request, "branch")
+			ref, err := OptionalParam[string](request, "ref")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			sha, err := OptionalParam[string](request, "sha")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
+			rawOpts := &raw.RawContentOpts{}
+
+			if strings.HasPrefix(path, "refs/pull/") {
+				prNumber, ok := strings.CutPrefix(path, "refs/pull/")
+				if ok && len(prNumber) > 0 {
+					// fetch the PR from the API to get the latest commit and use SHA
+					githubClient, err := getClient(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+					}
+					prNum, err := strconv.Atoi(prNumber)
+					if err != nil {
+						return nil, fmt.Errorf("invalid pull request number: %w", err)
+					}
+					pr, _, err := githubClient.PullRequests.Get(ctx, owner, repo, prNum)
+					if err != nil {
+						return nil, fmt.Errorf("failed to get pull request: %w", err)
+					}
+					sha = pr.GetHead().GetSHA()
+					ref = ""
+				}
+			}
+
+			rawOpts.SHA = sha
+			rawOpts.Ref = ref
+
 			// If the path is (most likely) not to be a directory, we will first try to get the raw content from the GitHub raw content API.
 			if path != "" && !strings.HasSuffix(path, "/") {
-				rawOpts := &raw.RawContentOpts{}
-				if branch != "" {
-					rawOpts.Ref = "refs/heads/" + branch
-				}
+
 				rawClient, err := getRawClient(ctx)
 				if err != nil {
 					return mcp.NewToolResultError("failed to get GitHub raw content client"), nil
@@ -483,14 +514,19 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 					contentType := resp.Header.Get("Content-Type")
 
 					var resourceURI string
-					if branch == "" {
+					if sha != "" {
 						// do a safe url join
-						resourceURI, err = url.JoinPath("repo://", owner, repo, "contents", path)
+						resourceURI, err = url.JoinPath("repo://", owner, repo, "sha", sha, "contents", path)
+						if err != nil {
+							return nil, fmt.Errorf("failed to create resource URI: %w", err)
+						}
+					} else if ref != "" {
+						resourceURI, err = url.JoinPath("repo://", owner, repo, ref, "contents", path)
 						if err != nil {
 							return nil, fmt.Errorf("failed to create resource URI: %w", err)
 						}
 					} else {
-						resourceURI, err = url.JoinPath("repo://", owner, repo, "refs", "heads", branch, "contents", path)
+						resourceURI, err = url.JoinPath("repo://", owner, repo, "contents", path)
 						if err != nil {
 							return nil, fmt.Errorf("failed to create resource URI: %w", err)
 						}
@@ -517,8 +553,11 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 				return mcp.NewToolResultError("failed to get GitHub client"), nil
 			}
 
+			if sha != "" {
+				ref = sha
+			}
 			if strings.HasSuffix(path, "/") {
-				opts := &github.RepositoryContentGetOptions{Ref: branch}
+				opts := &github.RepositoryContentGetOptions{Ref: ref}
 				_, dirContent, resp, err := client.Repositories.GetContents(ctx, owner, repo, path, opts)
 				if err != nil {
 					return mcp.NewToolResultError("failed to get file contents"), nil
