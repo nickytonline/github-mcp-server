@@ -434,7 +434,7 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 				mcp.Description("Path to file/directory (directories must end with a slash '/')"),
 			),
 			mcp.WithString("ref",
-				mcp.Description("Accepts optional git refs such as `refs/tags/<tag>`, `refs/heads/<branch>` or `refs/pull/<pr_number>/head`"),
+				mcp.Description("Accepts optional git refs such as `refs/tags/{tag}`, `refs/heads/{branch}` or `refs/pull/{pr_number}/head`"),
 			),
 			mcp.WithString("sha",
 				mcp.Description("Accepts optional git sha, if sha is specified it will be used instead of ref"),

@@ -15,7 +15,7 @@
         "type": "string"
       },
       "ref": {
-        "description": "Accepts optional git refs such as `refs/tags/\u003ctag\u003e`, `refs/heads/\u003cbranch\u003e` or `refs/pull/\u003cpr_number\u003e/head`",
+        "description": "Accepts optional git refs such as `refs/tags/{tag}`, `refs/heads/{branch}` or `refs/pull/{pr_number}/head`",
         "type": "string"
       },
       "repo": {
