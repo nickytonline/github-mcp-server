@@ -31,7 +31,8 @@ func Test_GetFileContents(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
 	assert.Contains(t, tool.InputSchema.Properties, "path")
-	assert.Contains(t, tool.InputSchema.Properties, "branch")
+	assert.Contains(t, tool.InputSchema.Properties, "ref")
+	assert.Contains(t, tool.InputSchema.Properties, "sha")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "path"})
 
 	// Mock response for raw content
@@ -77,10 +78,10 @@ func Test_GetFileContents(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":  "owner",
-				"repo":   "repo",
-				"path":   "README.md",
-				"branch": "main",
+				"owner": "owner",
+				"repo":  "repo",
+				"path":  "README.md",
+				"ref":   "refs/heads/main",
 			},
 			expectError: false,
 			expectedResult: mcp.TextResourceContents{
@@ -101,10 +102,10 @@ func Test_GetFileContents(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":  "owner",
-				"repo":   "repo",
-				"path":   "test.png",
-				"branch": "main",
+				"owner": "owner",
+				"repo":  "repo",
+				"path":  "test.png",
+				"ref":   "refs/heads/main",
 			},
 			expectError: false,
 			expectedResult: mcp.BlobResourceContents{
@@ -158,10 +159,10 @@ func Test_GetFileContents(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner":  "owner",
-				"repo":   "repo",
-				"path":   "nonexistent.md",
-				"branch": "main",
+				"owner": "owner",
+				"repo":  "repo",
+				"path":  "nonexistent.md",
+				"ref":   "refs/heads/main",
 			},
 			expectError:    false,
 			expectedResult: mcp.NewToolResultError("Failed to get file contents. The path does not point to a file or directory, or the file does not exist in the repository."),

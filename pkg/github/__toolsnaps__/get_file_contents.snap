@@ -6,10 +6,6 @@
   "description": "Get the contents of a file or directory from a GitHub repository",
   "inputSchema": {
     "properties": {
-      "branch": {
-        "description": "Branch to get contents from",
-        "type": "string"
-      },
       "owner": {
         "description": "Repository owner (username or organization)",
         "type": "string"
@@ -18,8 +14,16 @@
         "description": "Path to file/directory (directories must end with a slash '/')",
         "type": "string"
       },
+      "ref": {
+        "description": "Accepts optional git refs such as `refs/tags/\u003ctag\u003e`, `refs/heads/\u003cbranch\u003e` or `refs/pull/\u003cpr_number\u003e/head`",
+        "type": "string"
+      },
       "repo": {
         "description": "Repository name",
+        "type": "string"
+      },
+      "sha": {
+        "description": "Accepts optional git sha, if sha is specified it will be used instead of ref",
         "type": "string"
       }
     },
