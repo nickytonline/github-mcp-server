@@ -464,9 +464,9 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 
 			rawOpts := &raw.RawContentOpts{}
 
-			if strings.HasPrefix(path, "refs/pull/") {
-				prNumber, ok := strings.CutPrefix(path, "refs/pull/")
-				if ok && len(prNumber) > 0 {
+			if strings.HasPrefix(ref, "refs/pull/") {
+				prNumber := strings.TrimSuffix(strings.TrimPrefix(ref, "refs/pull/"), "/head")
+				if len(prNumber) > 0 {
 					// fetch the PR from the API to get the latest commit and use SHA
 					githubClient, err := getClient(ctx)
 					if err != nil {
