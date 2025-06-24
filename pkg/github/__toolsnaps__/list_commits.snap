@@ -28,6 +28,10 @@
       "sha": {
         "description": "SHA or Branch name",
         "type": "string"
+      },
+      "author": {
+        "description": "Author username or email address",
+        "type": "string"
       }
     },
     "required": [

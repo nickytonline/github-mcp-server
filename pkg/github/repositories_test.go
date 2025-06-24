@@ -646,6 +646,7 @@ func Test_ListCommits(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "owner")
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
 	assert.Contains(t, tool.InputSchema.Properties, "sha")
+	assert.Contains(t, tool.InputSchema.Properties, "author")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
 	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
@@ -713,6 +714,7 @@ func Test_ListCommits(t *testing.T) {
 				mock.WithRequestMatchHandler(
 					mock.GetReposCommitsByOwnerByRepo,
 					expectQueryParams(t, map[string]string{
+						"author":   "username",
 						"sha":      "main",
 						"page":     "1",
 						"per_page": "30",
@@ -722,9 +724,10 @@ func Test_ListCommits(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"owner": "owner",
-				"repo":  "repo",
-				"sha":   "main",
+				"owner":  "owner",
+				"repo":   "repo",
+				"sha":    "main",
+				"author": "username",
 			},
 			expectError:     false,
 			expectedCommits: mockCommits,
@@ -801,6 +804,7 @@ func Test_ListCommits(t *testing.T) {
 			require.NoError(t, err)
 			assert.Len(t, returnedCommits, len(tc.expectedCommits))
 			for i, commit := range returnedCommits {
+				assert.Equal(t, *tc.expectedCommits[i].Author, *commit.Author)
 				assert.Equal(t, *tc.expectedCommits[i].SHA, *commit.SHA)
 				assert.Equal(t, *tc.expectedCommits[i].Commit.Message, *commit.Commit.Message)
 				assert.Equal(t, *tc.expectedCommits[i].Author.Login, *commit.Author.Login)

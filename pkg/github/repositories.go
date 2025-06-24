@@ -108,6 +108,9 @@ func ListCommits(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			mcp.WithString("sha",
 				mcp.Description("SHA or Branch name"),
 			),
+			mcp.WithString("author",
+				mcp.Description("Author username or email address"),
+			),
 			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -123,13 +126,18 @@ func ListCommits(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+			author, err := OptionalParam[string](request, "author")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
 			opts := &github.CommitsListOptions{
-				SHA: sha,
+				SHA:    sha,
+				Author: author,
 				ListOptions: github.ListOptions{
 					Page:    pagination.page,
 					PerPage: pagination.perPage,
