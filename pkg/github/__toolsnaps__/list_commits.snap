@@ -6,6 +6,10 @@
   "description": "Get list of commits of a branch in a GitHub repository",
   "inputSchema": {
     "properties": {
+      "author": {
+        "description": "Author username or email address",
+        "type": "string"
+      },
       "owner": {
         "description": "Repository owner",
         "type": "string"
@@ -27,10 +31,6 @@
       },
       "sha": {
         "description": "SHA or Branch name",
-        "type": "string"
-      },
-      "author": {
-        "description": "Author username or email address",
         "type": "string"
       }
     },
