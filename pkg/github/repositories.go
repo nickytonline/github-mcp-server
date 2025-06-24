@@ -69,11 +69,11 @@ func GetCommit(getClient GetClientFn, t translations.TranslationHelperFunc) (too
 			}
 			commit, resp, err := client.Repositories.GetCommit(ctx, owner, repo, sha, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					fmt.Sprintf("failed to get commit: %s", sha),
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -155,11 +155,11 @@ func ListCommits(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 			}
 			commits, resp, err := client.Repositories.ListCommits(ctx, owner, repo, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					fmt.Sprintf("failed to list commits: %s", sha),
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -226,11 +226,11 @@ func ListBranches(getClient GetClientFn, t translations.TranslationHelperFunc) (
 
 			branches, resp, err := client.Repositories.ListBranches(ctx, owner, repo, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to list branches",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -339,11 +339,11 @@ func CreateOrUpdateFile(getClient GetClientFn, t translations.TranslationHelperF
 			}
 			fileContent, resp, err := client.Repositories.CreateFile(ctx, owner, repo, path, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to create/update file",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -417,11 +417,11 @@ func CreateRepository(getClient GetClientFn, t translations.TranslationHelperFun
 			}
 			createdRepo, resp, err := client.Repositories.Create(ctx, "", repo)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to create repository",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -662,11 +662,11 @@ func ForkRepository(getClient GetClientFn, t translations.TranslationHelperFunc)
 				if resp != nil && resp.StatusCode == http.StatusAccepted && isAcceptedError(err) {
 					return mcp.NewToolResultText("Fork is in progress"), nil
 				}
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to fork repository",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -759,11 +759,11 @@ func DeleteFile(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			// Get the commit object that the branch points to
 			baseCommit, resp, err := client.Git.GetCommit(ctx, owner, repo, *ref.Object.SHA)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to get base commit",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -788,11 +788,11 @@ func DeleteFile(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			// Create a new tree with the deletion
 			newTree, resp, err := client.Git.CreateTree(ctx, owner, repo, *baseCommit.Tree.SHA, treeEntries)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to create tree",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -812,11 +812,11 @@ func DeleteFile(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			}
 			newCommit, resp, err := client.Git.CreateCommit(ctx, owner, repo, commit, nil)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to create commit",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -832,11 +832,11 @@ func DeleteFile(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			ref.Object.SHA = newCommit.SHA
 			_, resp, err = client.Git.UpdateRef(ctx, owner, repo, ref, false)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to update reference",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -917,11 +917,11 @@ func CreateBranch(getClient GetClientFn, t translations.TranslationHelperFunc) (
 				// Get default branch if from_branch not specified
 				repository, resp, err := client.Repositories.Get(ctx, owner, repo)
 				if err != nil {
-					return nil, ghErrors.NewGitHubAPIError(
+					return ghErrors.NewGitHubAPIErrorResponse(ctx,
 						"failed to get repository",
 						resp,
 						err,
-					)
+					), nil
 				}
 				defer func() { _ = resp.Body.Close() }()
 
@@ -931,11 +931,11 @@ func CreateBranch(getClient GetClientFn, t translations.TranslationHelperFunc) (
 			// Get SHA of source branch
 			ref, resp, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+fromBranch)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to get reference",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -947,11 +947,11 @@ func CreateBranch(getClient GetClientFn, t translations.TranslationHelperFunc) (
 
 			createdRef, resp, err := client.Git.CreateRef(ctx, owner, repo, newRef)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to create branch",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1041,22 +1041,22 @@ func PushFiles(getClient GetClientFn, t translations.TranslationHelperFunc) (too
 			// Get the reference for the branch
 			ref, resp, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+branch)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to get branch reference",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
 			// Get the commit object that the branch points to
 			baseCommit, resp, err := client.Git.GetCommit(ctx, owner, repo, *ref.Object.SHA)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to get base commit",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1091,11 +1091,11 @@ func PushFiles(getClient GetClientFn, t translations.TranslationHelperFunc) (too
 			// Create a new tree with the file entries
 			newTree, resp, err := client.Git.CreateTree(ctx, owner, repo, *baseCommit.Tree.SHA, entries)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to create tree",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1107,11 +1107,11 @@ func PushFiles(getClient GetClientFn, t translations.TranslationHelperFunc) (too
 			}
 			newCommit, resp, err := client.Git.CreateCommit(ctx, owner, repo, commit, nil)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to create commit",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1119,11 +1119,11 @@ func PushFiles(getClient GetClientFn, t translations.TranslationHelperFunc) (too
 			ref.Object.SHA = newCommit.SHA
 			updatedRef, resp, err := client.Git.UpdateRef(ctx, owner, repo, ref, false)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to update reference",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1180,11 +1180,11 @@ func ListTags(getClient GetClientFn, t translations.TranslationHelperFunc) (tool
 
 			tags, resp, err := client.Repositories.ListTags(ctx, owner, repo, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to list tags",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1248,11 +1248,11 @@ func GetTag(getClient GetClientFn, t translations.TranslationHelperFunc) (tool m
 			// First get the tag reference
 			ref, resp, err := client.Git.GetRef(ctx, owner, repo, "refs/tags/"+tag)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to get tag reference",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1267,11 +1267,11 @@ func GetTag(getClient GetClientFn, t translations.TranslationHelperFunc) (tool m
 			// Then get the tag object
 			tagObj, resp, err := client.Git.GetTag(ctx, owner, repo, *ref.Object.SHA)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to get tag object",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 

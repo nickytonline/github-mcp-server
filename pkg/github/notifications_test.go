@@ -127,14 +127,17 @@ func Test_ListNotifications(t *testing.T) {
 			result, err := handler(context.Background(), request)
 
 			if tc.expectError {
-				require.Error(t, err)
+				require.NoError(t, err)
+				require.True(t, result.IsError)
+				errorContent := getErrorResult(t, result)
 				if tc.expectedErrMsg != "" {
-					assert.Contains(t, err.Error(), tc.expectedErrMsg)
+					assert.Contains(t, errorContent.Text, tc.expectedErrMsg)
 				}
 				return
 			}
 
 			require.NoError(t, err)
+			require.False(t, result.IsError)
 			textContent := getTextResult(t, result)
 			t.Logf("textContent: %s", textContent.Text)
 			var returned []*github.Notification
@@ -663,14 +666,17 @@ func Test_MarkAllNotificationsRead(t *testing.T) {
 			result, err := handler(context.Background(), request)
 
 			if tc.expectError {
-				require.Error(t, err)
+				require.NoError(t, err)
+				require.True(t, result.IsError)
+				errorContent := getErrorResult(t, result)
 				if tc.expectedErrMsg != "" {
-					assert.Contains(t, err.Error(), tc.expectedErrMsg)
+					assert.Contains(t, errorContent.Text, tc.expectedErrMsg)
 				}
 				return
 			}
 
 			require.NoError(t, err)
+			require.False(t, result.IsError)
 			textContent := getTextResult(t, result)
 			if tc.expectMarked {
 				assert.Contains(t, textContent.Text, "All notifications marked as read")
@@ -738,14 +744,17 @@ func Test_GetNotificationDetails(t *testing.T) {
 			result, err := handler(context.Background(), request)
 
 			if tc.expectError {
-				require.Error(t, err)
+				require.NoError(t, err)
+				require.True(t, result.IsError)
+				errorContent := getErrorResult(t, result)
 				if tc.expectedErrMsg != "" {
-					assert.Contains(t, err.Error(), tc.expectedErrMsg)
+					assert.Contains(t, errorContent.Text, tc.expectedErrMsg)
 				}
 				return
 			}
 
 			require.NoError(t, err)
+			require.False(t, result.IsError)
 			textContent := getTextResult(t, result)
 			var returned github.Notification
 			err = json.Unmarshal([]byte(textContent.Text), &returned)

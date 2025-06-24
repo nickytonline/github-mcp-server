@@ -50,11 +50,11 @@ func SearchRepositories(getClient GetClientFn, t translations.TranslationHelperF
 			}
 			result, resp, err := client.Search.Repositories(ctx, query, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					fmt.Sprintf("failed to search repositories with query '%s'", query),
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -130,11 +130,11 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 
 			result, resp, err := client.Search.Code(ctx, query, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					fmt.Sprintf("failed to search code with query '%s'", query),
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -224,11 +224,11 @@ func SearchUsers(getClient GetClientFn, t translations.TranslationHelperFunc) (t
 
 			result, resp, err := client.Search.Users(ctx, "type:user "+query, opts)
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					fmt.Sprintf("failed to search users with query '%s'", query),
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 

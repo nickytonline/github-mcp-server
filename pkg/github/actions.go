@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	ghErrors "github.com/github/github-mcp-server/pkg/errors"
 	"github.com/github/github-mcp-server/pkg/translations"
 	"github.com/google/go-github/v72/github"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -644,7 +645,7 @@ func handleFailedJobLogs(ctx context.Context, client *github.Client, owner, repo
 		Filter: "latest",
 	})
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to list workflow jobs: %v", err)), nil
+		return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to list workflow jobs", resp, err), nil
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -670,7 +671,7 @@ func handleFailedJobLogs(ctx context.Context, client *github.Client, owner, repo
 	// Collect logs for all failed jobs
 	var logResults []map[string]any
 	for _, job := range failedJobs {
-		jobResult, err := getJobLogData(ctx, client, owner, repo, job.GetID(), job.GetName(), returnContent)
+		jobResult, resp, err := getJobLogData(ctx, client, owner, repo, job.GetID(), job.GetName(), returnContent)
 		if err != nil {
 			// Continue with other jobs even if one fails
 			jobResult = map[string]any{
@@ -678,7 +679,10 @@ func handleFailedJobLogs(ctx context.Context, client *github.Client, owner, repo
 				"job_name": job.GetName(),
 				"error":    err.Error(),
 			}
+			// Enable reporting of status codes and error causes
+			_, _ = ghErrors.NewGitHubAPIErrorToCtx(ctx, "failed to get job logs", resp, err) // Explicitly ignore error for graceful handling
 		}
+
 		logResults = append(logResults, jobResult)
 	}
 
@@ -701,9 +705,9 @@ func handleFailedJobLogs(ctx context.Context, client *github.Client, owner, repo
 
 // handleSingleJobLogs gets logs for a single job
 func handleSingleJobLogs(ctx context.Context, client *github.Client, owner, repo string, jobID int64, returnContent bool) (*mcp.CallToolResult, error) {
-	jobResult, err := getJobLogData(ctx, client, owner, repo, jobID, "", returnContent)
+	jobResult, resp, err := getJobLogData(ctx, client, owner, repo, jobID, "", returnContent)
 	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+		return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to get job logs", resp, err), nil
 	}
 
 	r, err := json.Marshal(jobResult)
@@ -715,11 +719,11 @@ func handleSingleJobLogs(ctx context.Context, client *github.Client, owner, repo
 }
 
 // getJobLogData retrieves log data for a single job, either as URL or content
-func getJobLogData(ctx context.Context, client *github.Client, owner, repo string, jobID int64, jobName string, returnContent bool) (map[string]any, error) {
+func getJobLogData(ctx context.Context, client *github.Client, owner, repo string, jobID int64, jobName string, returnContent bool) (map[string]any, *github.Response, error) {
 	// Get the download URL for the job logs
 	url, resp, err := client.Actions.GetWorkflowJobLogs(ctx, owner, repo, jobID, 1)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get job logs for job %d: %w", jobID, err)
+		return nil, resp, fmt.Errorf("failed to get job logs for job %d: %w", jobID, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -732,9 +736,13 @@ func getJobLogData(ctx context.Context, client *github.Client, owner, repo strin
 
 	if returnContent {
 		// Download and return the actual log content
-		content, err := downloadLogContent(url.String())
+		content, httpResp, err := downloadLogContent(url.String()) //nolint:bodyclose // Response body is closed in downloadLogContent, but we need to return httpResp
 		if err != nil {
-			return nil, fmt.Errorf("failed to download log content for job %d: %w", jobID, err)
+			// To keep the return value consistent wrap the response as a GitHub Response
+			ghRes := &github.Response{
+				Response: httpResp,
+			}
+			return nil, ghRes, fmt.Errorf("failed to download log content for job %d: %w", jobID, err)
 		}
 		result["logs_content"] = content
 		result["message"] = "Job logs content retrieved successfully"
@@ -745,29 +753,29 @@ func getJobLogData(ctx context.Context, client *github.Client, owner, repo strin
 		result["note"] = "The logs_url provides a download link for the individual job logs in plain text format. Use return_content=true to get the actual log content."
 	}
 
-	return result, nil
+	return result, resp, nil
 }
 
 // downloadLogContent downloads the actual log content from a GitHub logs URL
-func downloadLogContent(logURL string) (string, error) {
+func downloadLogContent(logURL string) (string, *http.Response, error) {
 	httpResp, err := http.Get(logURL) //nolint:gosec // URLs are provided by GitHub API and are safe
 	if err != nil {
-		return "", fmt.Errorf("failed to download logs: %w", err)
+		return "", httpResp, fmt.Errorf("failed to download logs: %w", err)
 	}
 	defer func() { _ = httpResp.Body.Close() }()
 
 	if httpResp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download logs: HTTP %d", httpResp.StatusCode)
+		return "", httpResp, fmt.Errorf("failed to download logs: HTTP %d", httpResp.StatusCode)
 	}
 
 	content, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read log content: %w", err)
+		return "", httpResp, fmt.Errorf("failed to read log content: %w", err)
 	}
 
 	// Clean up and format the log content for better readability
 	logContent := strings.TrimSpace(string(content))
-	return logContent, nil
+	return logContent, httpResp, nil
 }
 
 // RerunWorkflowRun creates a tool to re-run an entire workflow run
@@ -813,7 +821,7 @@ func RerunWorkflowRun(getClient GetClientFn, t translations.TranslationHelperFun
 
 			resp, err := client.Actions.RerunWorkflowByID(ctx, owner, repo, runID)
 			if err != nil {
-				return nil, fmt.Errorf("failed to rerun workflow run: %w", err)
+				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to rerun workflow run", resp, err), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -876,7 +884,7 @@ func RerunFailedJobs(getClient GetClientFn, t translations.TranslationHelperFunc
 
 			resp, err := client.Actions.RerunFailedJobsByID(ctx, owner, repo, runID)
 			if err != nil {
-				return nil, fmt.Errorf("failed to rerun failed jobs: %w", err)
+				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to rerun failed jobs", resp, err), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -939,7 +947,7 @@ func CancelWorkflowRun(getClient GetClientFn, t translations.TranslationHelperFu
 
 			resp, err := client.Actions.CancelWorkflowRunByID(ctx, owner, repo, runID)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cancel workflow run: %w", err)
+				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to cancel workflow run", resp, err), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1024,7 +1032,7 @@ func ListWorkflowRunArtifacts(getClient GetClientFn, t translations.TranslationH
 
 			artifacts, resp, err := client.Actions.ListWorkflowRunArtifacts(ctx, owner, repo, runID, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to list workflow run artifacts: %w", err)
+				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to list workflow run artifacts", resp, err), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1081,7 +1089,7 @@ func DownloadWorkflowRunArtifact(getClient GetClientFn, t translations.Translati
 			// Get the download URL for the artifact
 			url, resp, err := client.Actions.DownloadArtifact(ctx, owner, repo, artifactID, 1)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get artifact download URL: %w", err)
+				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to get artifact download URL", resp, err), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1146,7 +1154,7 @@ func DeleteWorkflowRunLogs(getClient GetClientFn, t translations.TranslationHelp
 
 			resp, err := client.Actions.DeleteWorkflowRunLogs(ctx, owner, repo, runID)
 			if err != nil {
-				return nil, fmt.Errorf("failed to delete workflow run logs: %w", err)
+				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to delete workflow run logs", resp, err), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -1209,7 +1217,7 @@ func GetWorkflowRunUsage(getClient GetClientFn, t translations.TranslationHelper
 
 			usage, resp, err := client.Actions.GetWorkflowRunUsageByID(ctx, owner, repo, runID)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get workflow run usage: %w", err)
+				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to get workflow run usage", resp, err), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 

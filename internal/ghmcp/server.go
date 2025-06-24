@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/github/github-mcp-server/pkg/errors"
 	"github.com/github/github-mcp-server/pkg/github"
 	mcplog "github.com/github/github-mcp-server/pkg/log"
 	"github.com/github/github-mcp-server/pkg/raw"
@@ -90,6 +91,13 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 
 	hooks := &server.Hooks{
 		OnBeforeInitialize: []server.OnBeforeInitializeFunc{beforeInit},
+		OnBeforeAny: []server.BeforeAnyHookFunc{
+			func(ctx context.Context, _ any, _ mcp.MCPMethod, _ any) {
+				// Ensure the context is cleared of any previous errors
+				// as context isn't propagated through middleware
+				errors.ContextWithGitHubErrors(ctx)
+			},
+		},
 	}
 
 	ghServer := github.NewServer(cfg.Version, server.WithHooks(hooks))
@@ -222,7 +230,8 @@ func RunStdioServer(cfg StdioServerConfig) error {
 			loggedIO := mcplog.NewIOLogger(in, out, logrusLogger)
 			in, out = loggedIO, loggedIO
 		}
-
+		// enable GitHub errors in the context
+		ctx := errors.ContextWithGitHubErrors(ctx)
 		errC <- stdioServer.Listen(ctx, in, out)
 	}()
 

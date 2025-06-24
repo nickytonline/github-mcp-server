@@ -55,11 +55,11 @@ func GetCodeScanningAlert(getClient GetClientFn, t translations.TranslationHelpe
 
 			alert, resp, err := client.CodeScanning.GetAlert(ctx, owner, repo, int64(alertNumber))
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to get alert",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 
@@ -143,11 +143,11 @@ func ListCodeScanningAlerts(getClient GetClientFn, t translations.TranslationHel
 			}
 			alerts, resp, err := client.CodeScanning.ListAlertsForRepo(ctx, owner, repo, &github.AlertListOptions{Ref: ref, State: state, Severity: severity, ToolName: toolName})
 			if err != nil {
-				return nil, ghErrors.NewGitHubAPIError(
+				return ghErrors.NewGitHubAPIErrorResponse(ctx,
 					"failed to list alerts",
 					resp,
 					err,
-				)
+				), nil
 			}
 			defer func() { _ = resp.Body.Close() }()
 

@@ -31,11 +31,11 @@ func GetMe(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.Too
 
 		user, res, err := client.Users.Get(ctx, "")
 		if err != nil {
-			return nil, ghErrors.NewGitHubAPIError(
+			return ghErrors.NewGitHubAPIErrorResponse(ctx,
 				"failed to get user",
 				res,
 				err,
-			)
+			), nil
 		}
 
 		return MarshalledTextResult(user), nil
