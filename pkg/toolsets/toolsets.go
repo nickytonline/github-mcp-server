@@ -40,10 +40,23 @@ func NewServerResourceTemplate(resourceTemplate mcp.ResourceTemplate, handler se
 	}
 }
 
+func NewServerPrompt(prompt mcp.Prompt, handler server.PromptHandlerFunc) ServerPrompt {
+	return ServerPrompt{
+		Prompt:  prompt,
+		Handler: handler,
+	}
+}
+
 // ServerResourceTemplate represents a resource template that can be registered with the MCP server.
 type ServerResourceTemplate struct {
 	resourceTemplate mcp.ResourceTemplate
 	handler          server.ResourceTemplateHandlerFunc
+}
+
+// ServerPrompt represents a prompt that can be registered with the MCP server.
+type ServerPrompt struct {
+	Prompt  mcp.Prompt
+	Handler server.PromptHandlerFunc
 }
 
 // Toolset represents a collection of MCP functionality that can be enabled or disabled as a group.
@@ -57,6 +70,8 @@ type Toolset struct {
 	// resources are not tools, but the community seems to be moving towards namespaces as a broader concept
 	// and in order to have multiple servers running concurrently, we want to avoid overlapping resources too.
 	resourceTemplates []ServerResourceTemplate
+	// prompts are also not tools but are namespaced similarly
+	prompts []ServerPrompt
 }
 
 func (t *Toolset) GetActiveTools() []server.ServerTool {
@@ -95,6 +110,11 @@ func (t *Toolset) AddResourceTemplates(templates ...ServerResourceTemplate) *Too
 	return t
 }
 
+func (t *Toolset) AddPrompts(prompts ...ServerPrompt) *Toolset {
+	t.prompts = append(t.prompts, prompts...)
+	return t
+}
+
 func (t *Toolset) GetActiveResourceTemplates() []ServerResourceTemplate {
 	if !t.Enabled {
 		return nil
@@ -112,6 +132,15 @@ func (t *Toolset) RegisterResourcesTemplates(s *server.MCPServer) {
 	}
 	for _, resource := range t.resourceTemplates {
 		s.AddResourceTemplate(resource.resourceTemplate, resource.handler)
+	}
+}
+
+func (t *Toolset) RegisterPrompts(s *server.MCPServer) {
+	if !t.Enabled {
+		return
+	}
+	for _, prompt := range t.prompts {
+		s.AddPrompt(prompt.Prompt, prompt.Handler)
 	}
 }
 
@@ -225,6 +254,7 @@ func (tg *ToolsetGroup) RegisterAll(s *server.MCPServer) {
 	for _, toolset := range tg.Toolsets {
 		toolset.RegisterTools(s)
 		toolset.RegisterResourcesTemplates(s)
+		toolset.RegisterPrompts(s)
 	}
 }
 
