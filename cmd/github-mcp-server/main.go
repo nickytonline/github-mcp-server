@@ -49,7 +49,7 @@ var (
 				Token:                token,
 				EnabledToolsets:      enabledToolsets,
 				DynamicToolsets:      viper.GetBool("dynamic_toolsets"),
-				ReadOnly:             viper.GetBool("read-only"),
+				ReadOnly:             viper.GetBool("read-only") || viper.GetBool("read_only"),
 				ExportTranslations:   viper.GetBool("export-translations"),
 				EnableCommandLogging: viper.GetBool("enable-command-logging"),
 				LogFilePath:          viper.GetString("log-file"),
@@ -65,10 +65,13 @@ func init() {
 
 	rootCmd.SetVersionTemplate("{{.Short}}\n{{.Version}}\n")
 
+	readOnlyFlag := false
+
 	// Add global flags that will be shared by all commands
 	rootCmd.PersistentFlags().StringSlice("toolsets", github.DefaultTools, "An optional comma separated list of groups of tools to allow, defaults to enabling all")
 	rootCmd.PersistentFlags().Bool("dynamic-toolsets", false, "Enable dynamic toolsets")
-	rootCmd.PersistentFlags().Bool("read-only", false, "Restrict the server to read-only operations")
+	rootCmd.PersistentFlags().BoolVar(&readOnlyFlag, "read-only", false, "Restrict the server to read-only operations")
+	rootCmd.PersistentFlags().BoolVar(&readOnlyFlag, "read_only", false, "Restrict the server to read-only operations")
 	rootCmd.PersistentFlags().String("log-file", "", "Path to log file")
 	rootCmd.PersistentFlags().Bool("enable-command-logging", false, "When enabled, the server will log all command requests and responses to the log file")
 	rootCmd.PersistentFlags().Bool("export-translations", false, "Save translations to a JSON file")
