@@ -1,0 +1,191 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v0.0.0)'
+        required: true
+        default: 'v0.0.0'
+        type: string
+      confirm:
+        description: 'Type "CONFIRM" to proceed with the release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        if: ${{ github.event.inputs.confirm != 'CONFIRM' }}
+        run: |
+          echo "::error::You must type 'CONFIRM' to proceed with the release"
+          exit 1
+
+      - name: Validate tag format
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
+            echo "::error::Tag must be in format vX.Y.Z or vX.Y.Z-suffix (e.g., v1.0.0 or v1.0.0-rc1)"
+            exit 1
+          fi
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    outputs:
+      pr-number: ${{ steps.create-pr.outputs.pr-number }}
+      pr-url: ${{ steps.create-pr.outputs.pr-url }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Switch to next branch
+        run: |
+          git checkout next
+          git pull origin next
+
+      - name: Rebase next with main
+        id: rebase
+        run: |
+          echo "Attempting to rebase next with main..."
+          if git rebase origin/main; then
+            echo "✅ Rebase successful"
+            echo "rebase-success=true" >> $GITHUB_OUTPUT
+          else
+            echo "::error::❌ Rebase failed due to conflicts. Please resolve conflicts manually and try again."
+            echo "Conflicts detected in the following files:"
+            git status --porcelain | grep "^UU\|^AA\|^DD" || true
+            echo "rebase-success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Check if tag already exists
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if git tag -l | grep -q "^${TAG}$"; then
+            echo "::error::Tag ${TAG} already exists"
+            exit 1
+          fi
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+            echo "::error::Tag ${TAG} already exists on remote"
+            exit 1
+          fi
+
+      - name: Tag the release
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          echo "✅ Created tag ${TAG}"
+
+      - name: Create Pull Request
+        id: create-pr
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          
+          # Create PR from next to main
+          PR_RESPONSE=$(gh pr create \
+            --base main \
+            --head next \
+            --title "Release ${TAG}" \
+            --body "This PR contains the changes for release ${TAG}.
+
+          **Release checklist:**
+          - [ ] Review the changes
+          - [ ] Ensure all tests pass
+          - [ ] Verify the release notes in the draft release
+          - [ ] Merge this PR after the release is published
+          
+          Created by the automated release workflow." \
+            --json number,url)
+          
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
+          PR_URL=$(echo "$PR_RESPONSE" | jq -r '.url')
+          
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+          echo "✅ Created PR #${PR_NUMBER}: ${PR_URL}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          git push origin "${TAG}"
+          echo "✅ Pushed tag ${TAG}"
+
+      - name: Wait for release to be created
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          echo "Waiting for GitHub to create the draft release..."
+          
+          # Wait up to 2 minutes for the release to appear
+          for i in {1..24}; do
+            if gh release view "${TAG}" >/dev/null 2>&1; then
+              echo "✅ Draft release created"
+              break
+            fi
+            echo "Waiting for release to be created... (${i}/24)"
+            sleep 5
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    if: always() && needs.release.result == 'success'
+    
+    steps:
+      - name: Release Summary
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          PR_URL="${{ needs.release.outputs.pr-url }}"
+          
+          echo "## 🎉 Release $TAG has been initiated!"
+          echo ""
+          echo "### Next steps:"
+          echo "1. 📋 Check https://github.com/${{ github.repository }}/releases for the draft release to show up"
+          echo "2. ✏️  Edit the new release, delete the existing notes and click the auto-generate button GitHub provides"
+          echo "3. ✨ Add a section at the top calling out the main features"
+          echo "4. 🚀 Publish the release"
+          echo "5. 🔀 Merge the pull request into main: ${PR_URL}"
+          echo "6. Post message in #gh-mcp-releases channel in Slack and then share to the other mcp channels"
+          echo ""
+          echo "### Resources:"
+          echo "- 📦 Draft Release: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+          echo "- 🔄 Pull Request: ${PR_URL}"
+          echo ""
+          echo "The release process is now ready for your review and completion!"
+          
+          # Also output as job summary
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## 🎉 Release $TAG has been initiated!
+          
+          ### Next steps:
+          1. 📋 Check [releases page](https://github.com/${{ github.repository }}/releases) for the draft release to show up
+          2. ✏️  Edit the new release, delete the existing notes and click the auto-generate button GitHub provides  
+          3. ✨ Add a section at the top calling out the main features
+          4. 🚀 Publish the release
+          5. 🔀 Merge the pull request into main: [PR #${{ needs.release.outputs.pr-number }}](${PR_URL})
+          
+          ### Resources:
+          - 📦 [Draft Release](https://github.com/${{ github.repository }}/releases/tag/$TAG)
+          - 🔄 [Pull Request](${PR_URL})
+          
+          The release process is now ready for your review and completion!
+          EOF
