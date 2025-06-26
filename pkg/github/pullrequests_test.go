@@ -573,6 +573,8 @@ func Test_SearchPullRequests(t *testing.T) {
 	assert.Equal(t, "search_pull_requests", tool.Name)
 	assert.NotEmpty(t, tool.Description)
 	assert.Contains(t, tool.InputSchema.Properties, "query")
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
 	assert.Contains(t, tool.InputSchema.Properties, "sort")
 	assert.Contains(t, tool.InputSchema.Properties, "order")
 	assert.Contains(t, tool.InputSchema.Properties, "perPage")
@@ -641,6 +643,83 @@ func Test_SearchPullRequests(t *testing.T) {
 				"order":   "desc",
 				"page":    float64(1),
 				"perPage": float64(30),
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
+			name: "pull request search with owner and repo parameters",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "repo:test-owner/test-repo is:pr draft:false",
+							"sort":     "updated",
+							"order":    "asc",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"query": "draft:false",
+				"owner": "test-owner",
+				"repo":  "test-repo",
+				"sort":  "updated",
+				"order": "asc",
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
+			name: "pull request search with only owner parameter (should ignore it)",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "is:pr feature",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"query": "feature",
+				"owner": "test-owner",
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
+			name: "pull request search with only repo parameter (should ignore it)",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "is:pr review-required",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"query": "review-required",
+				"repo":  "test-repo",
 			},
 			expectError:    false,
 			expectedResult: mockSearchResult,

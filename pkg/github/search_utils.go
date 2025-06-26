@@ -24,6 +24,20 @@ func searchHandler(
 	}
 	query = fmt.Sprintf("is:%s %s", searchType, query)
 
+	owner, err := OptionalParam[string](request, "owner")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	repo, err := OptionalParam[string](request, "repo")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	if owner != "" && repo != "" {
+		query = fmt.Sprintf("repo:%s/%s %s", owner, repo, query)
+	}
+
 	sort, err := OptionalParam[string](request, "sort")
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
@@ -38,6 +52,7 @@ func searchHandler(
 	}
 
 	opts := &github.SearchOptions{
+		// Default to "created" if no sort is provided, as it's a common use case.
 		Sort:  sort,
 		Order: order,
 		ListOptions: github.ListOptions{

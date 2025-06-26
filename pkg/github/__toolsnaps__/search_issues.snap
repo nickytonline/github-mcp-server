@@ -14,6 +14,10 @@
         ],
         "type": "string"
       },
+      "owner": {
+        "description": "Optional repository owner. If provided with repo, only notifications for this repository are listed.",
+        "type": "string"
+      },
       "page": {
         "description": "Page number for pagination (min 1)",
         "minimum": 1,
@@ -27,6 +31,10 @@
       },
       "query": {
         "description": "Search query using GitHub issues search syntax",
+        "type": "string"
+      },
+      "repo": {
+        "description": "Optional repository name. If provided with owner, only notifications for this repository are listed.",
         "type": "string"
       },
       "sort": {

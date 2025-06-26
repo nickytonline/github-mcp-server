@@ -165,6 +165,12 @@ func SearchIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (
 				mcp.Required(),
 				mcp.Description("Search query using GitHub issues search syntax"),
 			),
+			mcp.WithString("owner",
+				mcp.Description("Optional repository owner. If provided with repo, only notifications for this repository are listed."),
+			),
+			mcp.WithString("repo",
+				mcp.Description("Optional repository name. If provided with owner, only notifications for this repository are listed."),
+			),
 			mcp.WithString("sort",
 				mcp.Description("Sort field by number of matches of categories, defaults to best match"),
 				mcp.Enum(
