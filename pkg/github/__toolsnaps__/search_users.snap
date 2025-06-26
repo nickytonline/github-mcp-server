@@ -3,7 +3,7 @@
     "title": "Search users",
     "readOnlyHint": true
   },
-  "description": "Search for GitHub users",
+  "description": "Search for GitHub users exclusively",
   "inputSchema": {
     "properties": {
       "order": {
@@ -25,8 +25,8 @@
         "minimum": 1,
         "type": "number"
       },
-      "q": {
-        "description": "Search query using GitHub users search syntax",
+      "query": {
+        "description": "Search query using GitHub users search syntax scoped to type:user",
         "type": "string"
       },
       "sort": {
@@ -40,7 +40,7 @@
       }
     },
     "required": [
-      "q"
+      "query"
     ],
     "type": "object"
   },

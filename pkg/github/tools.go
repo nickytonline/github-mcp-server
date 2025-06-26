@@ -64,6 +64,10 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 		AddReadTools(
 			toolsets.NewServerTool(SearchUsers(getClient, t)),
 		)
+	orgs := toolsets.NewToolset("orgs", "GitHub Organization related tools").
+		AddReadTools(
+			toolsets.NewServerTool(SearchOrgs(getClient, t)),
+		)
 	pullRequests := toolsets.NewToolset("pull_requests", "GitHub Pull Request related tools").
 		AddReadTools(
 			toolsets.NewServerTool(GetPullRequest(getClient, t)),
@@ -143,6 +147,7 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 	tsg.AddToolset(contextTools)
 	tsg.AddToolset(repos)
 	tsg.AddToolset(issues)
+	tsg.AddToolset(orgs)
 	tsg.AddToolset(users)
 	tsg.AddToolset(pullRequests)
 	tsg.AddToolset(actions)
