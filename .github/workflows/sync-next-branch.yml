@@ -1,0 +1,166 @@
+name: Sync Next Branch
+
+on:
+  schedule:
+    # Run daily at 9:00 AM UTC (6:00 AM EST, 3:00 AM PST)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check branch status
+        id: branch-status
+        run: |
+          echo "Checking if next branch is up-to-date with main..."
+          
+          # Fetch latest branches
+          git fetch origin main
+          git fetch origin next
+          
+          # Check if next is behind main
+          BEHIND_COUNT=$(git rev-list --count origin/next..origin/main)
+          AHEAD_COUNT=$(git rev-list --count origin/main..origin/next)
+          
+          echo "Next branch is ${AHEAD_COUNT} commits ahead of main"
+          echo "Next branch is ${BEHIND_COUNT} commits behind main"
+          
+          echo "behind-count=${BEHIND_COUNT}" >> $GITHUB_OUTPUT
+          echo "ahead-count=${AHEAD_COUNT}" >> $GITHUB_OUTPUT
+          
+          if [ "$BEHIND_COUNT" -gt 0 ]; then
+            echo "needs-sync=true" >> $GITHUB_OUTPUT
+            echo "🔄 Next branch needs to be synced (${BEHIND_COUNT} commits behind)"
+          else
+            echo "needs-sync=false" >> $GITHUB_OUTPUT
+            echo "✅ Next branch is up-to-date with main"
+          fi
+
+      - name: Check for existing sync PR
+        id: existing-pr
+        if: steps.branch-status.outputs.needs-sync == 'true'
+        run: |
+          # Check if there's already an open PR from main to next for syncing
+          EXISTING_PR=$(gh pr list \
+            --base next \
+            --head main \
+            --state open \
+            --json number,title \
+            --jq '.[] | select(.title | test("^(Sync|Update) next branch")) | .number')
+          
+          if [ -n "$EXISTING_PR" ]; then
+            echo "existing-pr=${EXISTING_PR}" >> $GITHUB_OUTPUT
+            echo "⚠️  Sync PR already exists: #${EXISTING_PR}"
+            echo "has-existing-pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-existing-pr=false" >> $GITHUB_OUTPUT
+            echo "No existing sync PR found"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create sync PR
+        id: create-sync-pr
+        if: steps.branch-status.outputs.needs-sync == 'true' && steps.existing-pr.outputs.has-existing-pr == 'false'
+        run: |
+          BEHIND_COUNT="${{ steps.branch-status.outputs.behind-count }}"
+          AHEAD_COUNT="${{ steps.branch-status.outputs.ahead-count }}"
+          
+          # Create PR from main to next
+          PR_RESPONSE=$(gh pr create \
+            --base next \
+            --head main \
+            --title "Sync next branch with main" \
+            --body "## 🔄 Automated Branch Sync
+
+          This PR syncs the \`next\` branch with the latest changes from \`main\`.
+
+          ### Status:
+          - **Behind main**: ${BEHIND_COUNT} commits
+          - **Ahead of main**: ${AHEAD_COUNT} commits
+
+          ### What to do:
+          1. 🔍 Review the changes in this PR
+          2. ✅ Ensure all checks pass
+          3. 🔀 Merge this PR to sync the \`next\` branch
+          4. 🗑️  The \`next\` branch will then be ready for new development
+
+          > **Note**: This PR was automatically created by the daily branch sync workflow.
+          > If you have any concerns about these changes, please review them carefully before merging." \
+            --label "automated" \
+            --label "sync" \
+            --json number,url)
+          
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
+          PR_URL=$(echo "$PR_RESPONSE" | jq -r '.url')
+          
+          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
+          
+          echo "✅ Created sync PR #${PR_NUMBER}: ${PR_URL}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Job Summary
+        if: always()
+        run: |
+          BEHIND_COUNT="${{ steps.branch-status.outputs.behind-count }}"
+          AHEAD_COUNT="${{ steps.branch-status.outputs.ahead-count }}"
+          NEEDS_SYNC="${{ steps.branch-status.outputs.needs-sync }}"
+          HAS_EXISTING_PR="${{ steps.existing-pr.outputs.has-existing-pr }}"
+          EXISTING_PR="${{ steps.existing-pr.outputs.existing-pr }}"
+          NEW_PR_URL="${{ steps.create-sync-pr.outputs.pr-url }}"
+          NEW_PR_NUMBER="${{ steps.create-sync-pr.outputs.pr-number }}"
+          
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          # 🔄 Branch Sync Status
+          
+          ## Current Status:
+          - **Next branch**: ${AHEAD_COUNT} commits ahead, ${BEHIND_COUNT} commits behind main
+          - **Needs sync**: ${NEEDS_SYNC}
+          
+          EOF
+          
+          if [ "$NEEDS_SYNC" = "true" ]; then
+            if [ "$HAS_EXISTING_PR" = "true" ]; then
+              cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## ⚠️  Action Required:
+          There is already an existing sync PR: [#${EXISTING_PR}](https://github.com/${{ github.repository }}/pull/${EXISTING_PR})
+          
+          Please review and merge the existing PR to sync the next branch.
+          EOF
+            elif [ -n "$NEW_PR_NUMBER" ]; then
+              cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## ✅ Action Taken:
+          Created a new sync PR: [#${NEW_PR_NUMBER}](${NEW_PR_URL})
+          
+          **Next steps:**
+          1. Review the changes in the PR
+          2. Ensure all checks pass  
+          3. Merge the PR to sync the next branch
+          EOF
+            fi
+          else
+            cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## ✅ All Good!
+          The next branch is up-to-date with main. No action needed.
+          EOF
+          fi
