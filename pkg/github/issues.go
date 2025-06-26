@@ -156,12 +156,12 @@ func AddIssueComment(getClient GetClientFn, t translations.TranslationHelperFunc
 // SearchIssues creates a tool to search for issues.
 func SearchIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_issues",
-			mcp.WithDescription(t("TOOL_SEARCH_ISSUES_DESCRIPTION", "Search for issues in GitHub repositories.")),
+			mcp.WithDescription(t("TOOL_SEARCH_ISSUES_DESCRIPTION", "Search for issues in GitHub repositories using issues search syntax already scoped to is:issue")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_SEARCH_ISSUES_USER_TITLE", "Search issues"),
 				ReadOnlyHint: ToBoolPtr(true),
 			}),
-			mcp.WithString("q",
+			mcp.WithString("query",
 				mcp.Required(),
 				mcp.Description("Search query using GitHub issues search syntax"),
 			),
@@ -188,56 +188,7 @@ func SearchIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (
 			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := RequiredParam[string](request, "q")
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			sort, err := OptionalParam[string](request, "sort")
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			order, err := OptionalParam[string](request, "order")
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			pagination, err := OptionalPaginationParams(request)
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-
-			opts := &github.SearchOptions{
-				Sort:  sort,
-				Order: order,
-				ListOptions: github.ListOptions{
-					PerPage: pagination.perPage,
-					Page:    pagination.page,
-				},
-			}
-
-			client, err := getClient(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
-			}
-			result, resp, err := client.Search.Issues(ctx, query, opts)
-			if err != nil {
-				return nil, fmt.Errorf("failed to search issues: %w", err)
-			}
-			defer func() { _ = resp.Body.Close() }()
-
-			if resp.StatusCode != http.StatusOK {
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return nil, fmt.Errorf("failed to read response body: %w", err)
-				}
-				return mcp.NewToolResultError(fmt.Sprintf("failed to search issues: %s", string(body))), nil
-			}
-
-			r, err := json.Marshal(result)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal response: %w", err)
-			}
-
-			return mcp.NewToolResultText(string(r)), nil
+			return searchHandler(ctx, getClient, request, "issue", "failed to search issues")
 		}
 }
 

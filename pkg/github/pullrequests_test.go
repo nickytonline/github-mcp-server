@@ -572,12 +572,12 @@ func Test_SearchPullRequests(t *testing.T) {
 
 	assert.Equal(t, "search_pull_requests", tool.Name)
 	assert.NotEmpty(t, tool.Description)
-	assert.Contains(t, tool.InputSchema.Properties, "q")
+	assert.Contains(t, tool.InputSchema.Properties, "query")
 	assert.Contains(t, tool.InputSchema.Properties, "sort")
 	assert.Contains(t, tool.InputSchema.Properties, "order")
 	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"q"})
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"query"})
 
 	mockSearchResult := &github.IssuesSearchResult{
 		Total:             github.Ptr(2),
@@ -624,7 +624,7 @@ func Test_SearchPullRequests(t *testing.T) {
 					expectQueryParams(
 						t,
 						map[string]string{
-							"q":        "repo:owner/repo is:pr is:open",
+							"q":        "is:pr repo:owner/repo is:open",
 							"sort":     "created",
 							"order":    "desc",
 							"page":     "1",
@@ -636,7 +636,7 @@ func Test_SearchPullRequests(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"q":       "repo:owner/repo is:pr is:open",
+				"query":   "repo:owner/repo is:open",
 				"sort":    "created",
 				"order":   "desc",
 				"page":    float64(1),
@@ -654,7 +654,7 @@ func Test_SearchPullRequests(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"q": "repo:owner/repo is:pr is:open",
+				"query": "is:pr repo:owner/repo is:open",
 			},
 			expectError:    false,
 			expectedResult: mockSearchResult,
@@ -671,10 +671,10 @@ func Test_SearchPullRequests(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"q": "invalid:query",
+				"query": "invalid:query",
 			},
 			expectError:    true,
-			expectedErrMsg: "failed to search issues",
+			expectedErrMsg: "failed to search pull requests",
 		},
 	}
 
@@ -682,7 +682,7 @@ func Test_SearchPullRequests(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup client with mock
 			client := github.NewClient(tc.mockedClient)
-			_, handler := SearchIssues(stubGetClientFn(client), translations.NullTranslationHelper)
+			_, handler := SearchPullRequests(stubGetClientFn(client), translations.NullTranslationHelper)
 
 			// Create call request
 			request := createMCPRequest(tc.requestArgs)

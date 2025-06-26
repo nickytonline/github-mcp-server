@@ -51,7 +51,6 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 		AddReadTools(
 			toolsets.NewServerTool(GetIssue(getClient, t)),
 			toolsets.NewServerTool(SearchIssues(getClient, t)),
-			toolsets.NewServerTool(SearchPullRequests(getClient, t)),
 			toolsets.NewServerTool(ListIssues(getClient, t)),
 			toolsets.NewServerTool(GetIssueComments(getClient, t)),
 		).
@@ -74,6 +73,7 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 			toolsets.NewServerTool(GetPullRequest(getClient, t)),
 			toolsets.NewServerTool(ListPullRequests(getClient, t)),
 			toolsets.NewServerTool(GetPullRequestFiles(getClient, t)),
+			toolsets.NewServerTool(SearchPullRequests(getClient, t)),
 			toolsets.NewServerTool(GetPullRequestStatus(getClient, t)),
 			toolsets.NewServerTool(GetPullRequestComments(getClient, t)),
 			toolsets.NewServerTool(GetPullRequestReviews(getClient, t)),
