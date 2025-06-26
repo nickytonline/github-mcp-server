@@ -565,6 +565,162 @@ func Test_MergePullRequest(t *testing.T) {
 	}
 }
 
+func Test_SearchPullRequests(t *testing.T) {
+	mockClient := github.NewClient(nil)
+	tool, _ := SearchPullRequests(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
+	assert.Equal(t, "search_pull_requests", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "q")
+	assert.Contains(t, tool.InputSchema.Properties, "sort")
+	assert.Contains(t, tool.InputSchema.Properties, "order")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
+	assert.Contains(t, tool.InputSchema.Properties, "page")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"q"})
+
+	mockSearchResult := &github.IssuesSearchResult{
+		Total:             github.Ptr(2),
+		IncompleteResults: github.Ptr(false),
+		Issues: []*github.Issue{
+			{
+				Number:   github.Ptr(42),
+				Title:    github.Ptr("Test PR 1"),
+				Body:     github.Ptr("Updated tests."),
+				State:    github.Ptr("open"),
+				HTMLURL:  github.Ptr("https://github.com/owner/repo/pull/1"),
+				Comments: github.Ptr(5),
+				User: &github.User{
+					Login: github.Ptr("user1"),
+				},
+			},
+			{
+				Number:   github.Ptr(43),
+				Title:    github.Ptr("Test PR 2"),
+				Body:     github.Ptr("Updated build scripts."),
+				State:    github.Ptr("open"),
+				HTMLURL:  github.Ptr("https://github.com/owner/repo/pull/2"),
+				Comments: github.Ptr(3),
+				User: &github.User{
+					Login: github.Ptr("user2"),
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedResult *github.IssuesSearchResult
+		expectedErrMsg string
+	}{
+		{
+			name: "successful pull request search with all parameters",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "repo:owner/repo is:pr is:open",
+							"sort":     "created",
+							"order":    "desc",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"q":       "repo:owner/repo is:pr is:open",
+				"sort":    "created",
+				"order":   "desc",
+				"page":    float64(1),
+				"perPage": float64(30),
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
+			name: "pull request search with minimal parameters",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.GetSearchIssues,
+					mockSearchResult,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"q": "repo:owner/repo is:pr is:open",
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
+			name: "search pull requests fails",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusBadRequest)
+						_, _ = w.Write([]byte(`{"message": "Validation Failed"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"q": "invalid:query",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to search issues",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := SearchIssues(stubGetClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+
+			// Parse the result and get the text content if no error
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedResult github.IssuesSearchResult
+			err = json.Unmarshal([]byte(textContent.Text), &returnedResult)
+			require.NoError(t, err)
+			assert.Equal(t, *tc.expectedResult.Total, *returnedResult.Total)
+			assert.Equal(t, *tc.expectedResult.IncompleteResults, *returnedResult.IncompleteResults)
+			assert.Len(t, returnedResult.Issues, len(tc.expectedResult.Issues))
+			for i, issue := range returnedResult.Issues {
+				assert.Equal(t, *tc.expectedResult.Issues[i].Number, *issue.Number)
+				assert.Equal(t, *tc.expectedResult.Issues[i].Title, *issue.Title)
+				assert.Equal(t, *tc.expectedResult.Issues[i].State, *issue.State)
+				assert.Equal(t, *tc.expectedResult.Issues[i].HTMLURL, *issue.HTMLURL)
+				assert.Equal(t, *tc.expectedResult.Issues[i].User.Login, *issue.User.Login)
+			}
+		})
+	}
+
+}
+
 func Test_GetPullRequestFiles(t *testing.T) {
 	// Verify tool definition once
 	mockClient := github.NewClient(nil)

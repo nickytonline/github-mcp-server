@@ -153,7 +153,7 @@ func AddIssueComment(getClient GetClientFn, t translations.TranslationHelperFunc
 		}
 }
 
-// SearchIssues creates a tool to search for issues and pull requests.
+// SearchIssues creates a tool to search for issues.
 func SearchIssues(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_issues",
 			mcp.WithDescription(t("TOOL_SEARCH_ISSUES_DESCRIPTION", "Search for issues in GitHub repositories.")),
