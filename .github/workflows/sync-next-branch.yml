@@ -85,7 +85,7 @@ jobs:
           AHEAD_COUNT="${{ steps.branch-status.outputs.ahead-count }}"
           
           # Create PR from main to next
-          PR_RESPONSE=$(gh pr create \
+          PR_URL=$(gh pr create \
             --base next \
             --head main \
             --title "Sync next branch with main" \
@@ -106,11 +106,10 @@ jobs:
           > **Note**: This PR was automatically created by the daily branch sync workflow.
           > If you have any concerns about these changes, please review them carefully before merging." \
             --label "automated" \
-            --label "sync" \
-            --json number,url)
+            --label "sync")
           
-          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
-          PR_URL=$(echo "$PR_RESPONSE" | jq -r '.url')
+          # Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123 -> 123)
+          PR_NUMBER=$(echo "$PR_URL" | sed 's|.*/pull/||')
           
           echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
           echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT

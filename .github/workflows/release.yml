@@ -111,7 +111,7 @@ jobs:
           TAG="${{ github.event.inputs.tag }}"
           
           # Create PR from next to main
-          PR_RESPONSE=$(gh pr create \
+          PR_URL=$(gh pr create \
             --base main \
             --head next \
             --title "Release ${TAG}" \
@@ -123,11 +123,9 @@ jobs:
           - [ ] Verify the release notes in the draft release
           - [ ] Merge this PR after the release is published
           
-          Created by the automated release workflow." \
-            --json number,url)
+          Created by the automated release workflow.")
           
-          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
-          PR_URL=$(echo "$PR_RESPONSE" | jq -r '.url')
+          PR_NUMBER=$(echo "$PR_URL" | sed 's|.*/pull/||')
           
           echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
           echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
