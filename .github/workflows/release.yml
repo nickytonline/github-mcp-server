@@ -59,20 +59,33 @@ jobs:
           git checkout next
           git pull origin next
 
-      - name: Rebase next with main
-        id: rebase
+      - name: Check next branch is up-to-date with main
+        id: branch-check
         run: |
-          echo "Attempting to rebase next with main..."
-          if git rebase origin/main; then
-            echo "✅ Rebase successful"
-            echo "rebase-success=true" >> $GITHUB_OUTPUT
-          else
-            echo "::error::❌ Rebase failed due to conflicts. Please resolve conflicts manually and try again."
-            echo "Conflicts detected in the following files:"
-            git status --porcelain | grep "^UU\|^AA\|^DD" || true
-            echo "rebase-success=false" >> $GITHUB_OUTPUT
+          echo "Checking if next branch is up-to-date with main..."
+          
+          # Fetch latest main branch
+          git fetch origin main
+          
+          # Check if next is behind main
+          BEHIND_COUNT=$(git rev-list --count next..origin/main)
+          AHEAD_COUNT=$(git rev-list --count origin/main..next)
+          
+          echo "Next branch is ${AHEAD_COUNT} commits ahead of main"
+          echo "Next branch is ${BEHIND_COUNT} commits behind main"
+          
+          if [ "$BEHIND_COUNT" -gt 0 ]; then
+            echo "::error::❌ Next branch is ${BEHIND_COUNT} commits behind main. Please update next branch with the latest changes from main before creating a release."
+            echo "To fix this, run: git checkout next && git merge main"
             exit 1
           fi
+          
+          if [ "$AHEAD_COUNT" -eq 0 ]; then
+            echo "::warning::⚠️  Next branch has no new commits compared to main. Are you sure you want to create a release?"
+          fi
+          
+          echo "✅ Next branch is up-to-date with main (${AHEAD_COUNT} commits ahead)"
+          echo "branch-check-success=true" >> $GITHUB_OUTPUT
 
       - name: Check if tag already exists
         run: |
