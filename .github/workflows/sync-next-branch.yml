@@ -77,46 +77,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create sync PR
-        id: create-sync-pr
+      - name: Provide sync instructions
+        id: sync-instructions
         if: steps.branch-status.outputs.needs-sync == 'true' && steps.existing-pr.outputs.has-existing-pr == 'false'
         run: |
           BEHIND_COUNT="${{ steps.branch-status.outputs.behind-count }}"
           AHEAD_COUNT="${{ steps.branch-status.outputs.ahead-count }}"
           
-          # Create PR from main to next
-          PR_URL=$(gh pr create \
-            --base next \
-            --head main \
-            --title "Sync next branch with main" \
-            --body "## 🔄 Automated Branch Sync
-
-          This PR syncs the \`next\` branch with the latest changes from \`main\`.
-
-          ### Status:
-          - **Behind main**: ${BEHIND_COUNT} commits
-          - **Ahead of main**: ${AHEAD_COUNT} commits
-
-          ### What to do:
-          1. 🔍 Review the changes in this PR
-          2. ✅ Ensure all checks pass
-          3. 🔀 Merge this PR to sync the \`next\` branch
-          4. 🗑️  The \`next\` branch will then be ready for new development
-
-          > **Note**: This PR was automatically created by the daily branch sync workflow.
-          > If you have any concerns about these changes, please review them carefully before merging." \
-            --label "automated" \
-            --label "sync")
-          
-          # Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123 -> 123)
-          PR_NUMBER=$(echo "$PR_URL" | sed 's|.*/pull/||')
-          
-          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-          
-          echo "✅ Created sync PR #${PR_NUMBER}: ${PR_URL}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "action-needed=true" >> $GITHUB_OUTPUT
+          echo "🔄 Next branch needs syncing (${BEHIND_COUNT} commits behind main)"
+          echo "� Manual PR creation required due to organization policies"
 
       - name: Job Summary
         if: always()
@@ -126,8 +96,7 @@ jobs:
           NEEDS_SYNC="${{ steps.branch-status.outputs.needs-sync }}"
           HAS_EXISTING_PR="${{ steps.existing-pr.outputs.has-existing-pr }}"
           EXISTING_PR="${{ steps.existing-pr.outputs.existing-pr }}"
-          NEW_PR_URL="${{ steps.create-sync-pr.outputs.pr-url }}"
-          NEW_PR_NUMBER="${{ steps.create-sync-pr.outputs.pr-number }}"
+          ACTION_NEEDED="${{ steps.sync-instructions.outputs.action-needed }}"
           
           cat << EOF >> $GITHUB_STEP_SUMMARY
           # 🔄 Branch Sync Status
@@ -146,15 +115,36 @@ jobs:
           
           Please review and merge the existing PR to sync the next branch.
           EOF
-            elif [ -n "$NEW_PR_NUMBER" ]; then
+            elif [ "$ACTION_NEEDED" = "true" ]; then
               cat << EOF >> $GITHUB_STEP_SUMMARY
-          ## ✅ Action Taken:
-          Created a new sync PR: [#${NEW_PR_NUMBER}](${NEW_PR_URL})
+          ## 📝 Manual Action Required:
           
-          **Next steps:**
-          1. Review the changes in the PR
-          2. Ensure all checks pass  
-          3. Merge the PR to sync the next branch
+          The \`next\` branch is ${BEHIND_COUNT} commits behind \`main\` and needs to be synced.
+          
+          **Please create a pull request manually:**
+          
+          1. 🌐 [Create PR: main → next](https://github.com/${{ github.repository }}/compare/next...main)
+          2. 📝 Use title: **"Sync next branch with main"**
+          3. 📄 Use this description:
+          
+          \`\`\`markdown
+          ## 🔄 Branch Sync
+          
+          This PR syncs the \`next\` branch with the latest changes from \`main\`.
+          
+          ### Status:
+          - **Behind main**: ${BEHIND_COUNT} commits
+          - **Ahead of main**: ${AHEAD_COUNT} commits
+          
+          ### What to do:
+          1. 🔍 Review the changes in this PR
+          2. ✅ Ensure all checks pass
+          3. 🔀 Merge this PR to sync the \`next\` branch
+          4. 🗑️ The \`next\` branch will then be ready for new development
+          \`\`\`
+          
+          4. 🏷️ Add labels: \`automated\`, \`sync\`
+          5. ✅ Review and merge when ready
           EOF
             fi
           else

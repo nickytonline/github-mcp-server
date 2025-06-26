@@ -39,8 +39,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     outputs:
-      pr-number: ${{ steps.create-pr.outputs.pr-number }}
-      pr-url: ${{ steps.create-pr.outputs.pr-url }}
+      tag: ${{ steps.tag-release.outputs.tag }}
     
     steps:
       - name: Checkout repository
@@ -100,38 +99,12 @@ jobs:
           fi
 
       - name: Tag the release
+        id: tag-release
         run: |
           TAG="${{ github.event.inputs.tag }}"
           git tag -a "${TAG}" -m "Release ${TAG}"
           echo "✅ Created tag ${TAG}"
-
-      - name: Create Pull Request
-        id: create-pr
-        run: |
-          TAG="${{ github.event.inputs.tag }}"
-          
-          # Create PR from next to main
-          PR_URL=$(gh pr create \
-            --base main \
-            --head next \
-            --title "Release ${TAG}" \
-            --body "This PR contains the changes for release ${TAG}.
-
-          **Release checklist:**
-          - [ ] Review the changes
-          - [ ] Ensure all tests pass
-          - [ ] Verify the release notes in the draft release
-          - [ ] Merge this PR after the release is published
-          
-          Created by the automated release workflow.")
-          
-          PR_NUMBER=$(echo "$PR_URL" | sed 's|.*/pull/||')
-          
-          echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-          echo "pr-url=${PR_URL}" >> $GITHUB_OUTPUT
-          echo "✅ Created PR #${PR_NUMBER}: ${PR_URL}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Push tag
         run: |
@@ -164,8 +137,7 @@ jobs:
     steps:
       - name: Release Summary
         run: |
-          TAG="${{ github.event.inputs.tag }}"
-          PR_URL="${{ needs.release.outputs.pr-url }}"
+          TAG="${{ needs.release.outputs.tag }}"
           
           echo "## 🎉 Release $TAG has been initiated!"
           echo ""
@@ -174,12 +146,13 @@ jobs:
           echo "2. ✏️  Edit the new release, delete the existing notes and click the auto-generate button GitHub provides"
           echo "3. ✨ Add a section at the top calling out the main features"
           echo "4. 🚀 Publish the release"
-          echo "5. 🔀 Merge the pull request into main: ${PR_URL}"
-          echo "6. Post message in #gh-mcp-releases channel in Slack and then share to the other mcp channels"
+          echo "5. � Create a Pull Request from 'next' to 'main' branch with title 'Release $TAG'"
+          echo "6. �🔀 Merge the pull request into main"
+          echo "7. 📢 Post message in #gh-mcp-releases channel in Slack and then share to the other mcp channels"
           echo ""
           echo "### Resources:"
           echo "- 📦 Draft Release: https://github.com/${{ github.repository }}/releases/tag/$TAG"
-          echo "- 🔄 Pull Request: ${PR_URL}"
+          echo "- 🔄 Create PR: https://github.com/${{ github.repository }}/compare/main...next"
           echo ""
           echo "The release process is now ready for your review and completion!"
           
@@ -192,11 +165,13 @@ jobs:
           2. ✏️  Edit the new release, delete the existing notes and click the auto-generate button GitHub provides  
           3. ✨ Add a section at the top calling out the main features
           4. 🚀 Publish the release
-          5. 🔀 Merge the pull request into main: [PR #${{ needs.release.outputs.pr-number }}](${PR_URL})
+          5. � [Create a Pull Request](https://github.com/${{ github.repository }}/compare/main...next) from 'next' to 'main' branch with title 'Release $TAG'
+          6. �🔀 Merge the pull request into main
+          7. 📢 Post message in #gh-mcp-releases channel in Slack and then share to the other mcp channels
           
           ### Resources:
           - 📦 [Draft Release](https://github.com/${{ github.repository }}/releases/tag/$TAG)
-          - 🔄 [Pull Request](${PR_URL})
+          - 🔄 [Create PR](https://github.com/${{ github.repository }}/compare/main...next)
           
           The release process is now ready for your review and completion!
           EOF
