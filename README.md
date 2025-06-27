@@ -263,19 +263,21 @@ _Toolsets are not limited to Tools. Relevant MCP Resources and Prompts are also 
 
 The following sets of tools are available (all are on by default):
 
+<!-- START AUTOMATED TOOLSETS -->
 | Toolset                 | Description                                                   |
 | ----------------------- | ------------------------------------------------------------- |
-| `actions`               | GitHub Actions workflows and CI/CD operations                |
 | `context`               | **Strongly recommended**: Tools that provide context about the current user and GitHub context you are operating in |
-| `code_security`         | Code scanning alerts and security features                    |
-| `issues`                | Issue-related tools (create, read, update, comment)           |
-| `notifications`         | GitHub Notifications related tools                            |
-| `pull_requests`         | Pull request operations (create, merge, review)               |
-| `repos`                 | Repository-related tools (file operations, branches, commits) |
-| `secret_protection`     | Secret protection related tools, such as GitHub Secret Scanning |
-| `users`                 | Anything relating to GitHub Users                             |
-| `experiments`           | Experimental features (not considered stable)                 |
-
+| `actions` | GitHub Actions workflows and CI/CD operations |
+| `code_security` | Code security related tools, such as GitHub Code Scanning |
+| `experiments` | Experimental features that are not considered stable yet |
+| `issues` | GitHub Issues related tools |
+| `notifications` | GitHub Notifications related tools |
+| `orgs` | GitHub Organization related tools |
+| `pull_requests` | GitHub Pull Request related tools |
+| `repos` | GitHub Repository related tools |
+| `secret_protection` | Secret protection related tools, such as GitHub Secret Scanning |
+| `users` | GitHub User related tools |
+<!-- END AUTOMATED TOOLSETS -->
 
 #### Specifying Toolsets
 
@@ -426,12 +428,126 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 ## Tools
 
+
+<!-- START AUTOMATED TOOLS -->
+<details>
+
+<summary>Actions</summary>
+
+- **cancel_workflow_run** - Cancel workflow run
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **delete_workflow_run_logs** - Delete workflow logs
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **download_workflow_run_artifact** - Download workflow artifact
+  - `artifact_id`: The unique identifier of the artifact (number, required)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+
+- **get_job_logs** - Get job logs
+  - `failed_only`: When true, gets logs for all failed jobs in run_id (boolean, optional)
+  - `job_id`: The unique identifier of the workflow job (required for single job logs) (number, optional)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `return_content`: Returns actual log content instead of URLs (boolean, optional)
+  - `run_id`: Workflow run ID (required when using failed_only) (number, optional)
+
+- **get_workflow_run** - Get workflow run
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **get_workflow_run_logs** - Get workflow run logs
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **get_workflow_run_usage** - Get workflow usage
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **list_workflow_jobs** - List workflow jobs
+  - `filter`: Filters jobs by their completed_at timestamp (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `page`: The page number of the results to fetch (number, optional)
+  - `per_page`: The number of results per page (max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **list_workflow_run_artifacts** - List workflow artifacts
+  - `owner`: Repository owner (string, required)
+  - `page`: The page number of the results to fetch (number, optional)
+  - `per_page`: The number of results per page (max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **list_workflow_runs** - List workflow runs
+  - `actor`: Returns someone's workflow runs. Use the login for the user who created the workflow run. (string, optional)
+  - `branch`: Returns workflow runs associated with a branch. Use the name of the branch. (string, optional)
+  - `event`: Returns workflow runs for a specific event type (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `page`: The page number of the results to fetch (number, optional)
+  - `per_page`: The number of results per page (max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+  - `status`: Returns workflow runs with the check run status (string, optional)
+  - `workflow_id`: The workflow ID or workflow file name (string, required)
+
+- **list_workflows** - List workflows
+  - `owner`: Repository owner (string, required)
+  - `page`: The page number of the results to fetch (number, optional)
+  - `per_page`: The number of results per page (max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+
+- **rerun_failed_jobs** - Rerun failed jobs
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **rerun_workflow_run** - Rerun workflow run
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `run_id`: The unique identifier of the workflow run (number, required)
+
+- **run_workflow** - Run workflow
+  - `inputs`: Inputs the workflow accepts (object, optional)
+  - `owner`: Repository owner (string, required)
+  - `ref`: The git reference for the workflow. The reference can be a branch or tag name. (string, required)
+  - `repo`: Repository name (string, required)
+  - `workflow_id`: The workflow ID (numeric) or workflow file name (e.g., main.yml, ci.yaml) (string, required)
+
+</details>
+
+<details>
+
+<summary>Code Security</summary>
+
+- **get_code_scanning_alert** - Get code scanning alert
+  - `alertNumber`: The number of the alert. (number, required)
+  - `owner`: The owner of the repository. (string, required)
+  - `repo`: The name of the repository. (string, required)
+
+- **list_code_scanning_alerts** - List code scanning alerts
+  - `owner`: The owner of the repository. (string, required)
+  - `ref`: The Git reference for the results you want to list. (string, optional)
+  - `repo`: The name of the repository. (string, required)
+  - `severity`: Filter code scanning alerts by severity (string, optional)
+  - `state`: Filter code scanning alerts by state. Defaults to open (string, optional)
+  - `tool_name`: The name of the tool used for code scanning. (string, optional)
+
+</details>
+
 <details>
 
 <summary>Context</summary>
 
-- **get_me** - Get details of the authenticated user
-  - No parameters required
+- **get_me** - Get my user profile
+  - `reason`: Optional: the reason for requesting the user information (string, optional)
 
 </details>
 
@@ -439,474 +555,68 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 <summary>Issues</summary>
 
-- **get_issue** - Gets the contents of an issue within a repository
-
+- **add_issue_comment** - Add comment to issue
+  - `body`: Comment content (string, required)
+  - `issue_number`: Issue number to comment on (number, required)
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `issue_number`: Issue number (number, required)
 
-- **get_issue_comments** - Get comments for a GitHub issue
-
+- **assign_copilot_to_issue** - Assign Copilot to issue
+  - `issueNumber`: Issue number (number, required)
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `issue_number`: Issue number (number, required)
 
-- **create_issue** - Create a new issue in a GitHub repository
-
+- **create_issue** - Open new issue
+  - `assignees`: Usernames to assign to this issue (string[], optional)
+  - `body`: Issue body content (string, optional)
+  - `labels`: Labels to apply to this issue (string[], optional)
+  - `milestone`: Milestone number (number, optional)
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `title`: Issue title (string, required)
-  - `body`: Issue body content (string, optional)
-  - `assignees`: Usernames to assign to this issue (string[], optional)
-  - `labels`: Labels to apply to this issue (string[], optional)
 
-- **add_issue_comment** - Add a comment to an issue
+- **get_issue** - Get issue details
+  - `issue_number`: The number of the issue (number, required)
+  - `owner`: The owner of the repository (string, required)
+  - `repo`: The name of the repository (string, required)
 
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
+- **get_issue_comments** - Get issue comments
   - `issue_number`: Issue number (number, required)
-  - `body`: Comment text (string, required)
-
-- **list_issues** - List and filter repository issues
-
   - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `state`: Filter by state ('open', 'closed', 'all') (string, optional)
-  - `labels`: Labels to filter by (string[], optional)
-  - `sort`: Sort by ('created', 'updated', 'comments') (string, optional)
-  - `direction`: Sort direction ('asc', 'desc') (string, optional)
-  - `since`: Filter by date (ISO 8601 timestamp) (string, optional)
   - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **update_issue** - Update an existing issue in a GitHub repository
-
-  - `owner`: Repository owner (string, required)
+  - `per_page`: Number of records per page (number, optional)
   - `repo`: Repository name (string, required)
-  - `issue_number`: Issue number to update (number, required)
-  - `title`: New title (string, optional)
-  - `body`: New description (string, optional)
-  - `state`: New state ('open' or 'closed') (string, optional)
-  - `labels`: New labels (string[], optional)
-  - `assignees`: New assignees (string[], optional)
-  - `milestone`: New milestone number (number, optional)
 
-- **search_issues** - Search for issues and pull requests
-  - `query`: Search query (string, required)
-  - `sort`: Sort field (string, optional)
-  - `order`: Sort order (string, optional)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **assign_copilot_to_issue** - Assign Copilot to a specific issue in a GitHub repository
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `issueNumber`: Issue number (number, required)
-  - _Note_: This tool can help with creating a Pull Request with source code changes to resolve the issue. More information can be found at [GitHub Copilot documentation](https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent-to-work-on-tasks/about-assigning-tasks-to-copilot)
-
-</details>
-
-<details>
-
-<summary>Pull Requests</summary>
-
-- **get_pull_request** - Get details of a specific pull request
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-
-- **list_pull_requests** - List and filter repository pull requests
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `state`: PR state (string, optional)
-  - `sort`: Sort field (string, optional)
+- **list_issues** - List issues
   - `direction`: Sort direction (string, optional)
-  - `perPage`: Results per page (number, optional)
-  - `page`: Page number (number, optional)
-
-- **merge_pull_request** - Merge a pull request
-
+  - `labels`: Filter by labels (string[], optional)
   - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
   - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-  - `commit_title`: Title for the merge commit (string, optional)
-  - `commit_message`: Message for the merge commit (string, optional)
-  - `merge_method`: Merge method (string, optional)
+  - `since`: Filter by date (ISO 8601 timestamp) (string, optional)
+  - `sort`: Sort order (string, optional)
+  - `state`: Filter by state (string, optional)
 
-- **get_pull_request_files** - Get the list of files changed in a pull request
+- **search_issues** - Search issues
+  - `order`: Sort order (string, optional)
+  - `owner`: Optional repository owner. If provided with repo, only notifications for this repository are listed. (string, optional)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `query`: Search query using GitHub issues search syntax (string, required)
+  - `repo`: Optional repository name. If provided with owner, only notifications for this repository are listed. (string, optional)
+  - `sort`: Sort field by number of matches of categories, defaults to best match (string, optional)
 
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-
-- **get_pull_request_status** - Get the combined status of all status checks for a pull request
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-
-- **update_pull_request_branch** - Update a pull request branch with the latest changes from the base branch
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-  - `expectedHeadSha`: The expected SHA of the pull request's HEAD ref (string, optional)
-
-- **get_pull_request_comments** - Get the review comments on a pull request
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-
-- **get_pull_request_reviews** - Get the reviews on a pull request
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-
-- **get_pull_request_diff** - Get the diff of a pull request
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-
-- **create_pending_pull_request_review** - Create a pending review for a pull request that can be submitted later
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-  - `commitID`: SHA of commit to review (string, optional)
-
-- **add_pull_request_review_comment_to_pending_review** - Add a comment to the requester's latest pending pull request review
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-  - `path`: The relative path to the file that necessitates a comment (string, required)
-  - `body`: The text of the review comment (string, required)
-  - `subjectType`: The level at which the comment is targeted (string, required)
-    - Enum: "FILE", "LINE"
-  - `line`: The line of the blob in the pull request diff that the comment applies to (number, optional)
-  - `side`: The side of the diff to comment on (string, optional)
-    - Enum: "LEFT", "RIGHT"
-  - `startLine`: For multi-line comments, the first line of the range (number, optional)
-  - `startSide`: For multi-line comments, the starting side of the diff (string, optional)
-    - Enum: "LEFT", "RIGHT"
-
-- **submit_pending_pull_request_review** - Submit the requester's latest pending pull request review
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-  - `event`: The event to perform (string, required)
-    - Enum: "APPROVE", "REQUEST_CHANGES", "COMMENT"
-  - `body`: The text of the review comment (string, optional)
-
-- **delete_pending_pull_request_review** - Delete the requester's latest pending pull request review
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-
-- **create_and_submit_pull_request_review** - Create and submit a review for a pull request without review comments
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-  - `body`: Review comment text (string, required)
-  - `event`: Review action ('APPROVE', 'REQUEST_CHANGES', 'COMMENT') (string, required)
-  - `commitID`: SHA of commit to review (string, optional)
-
-- **create_pull_request** - Create a new pull request
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `title`: PR title (string, required)
-  - `body`: PR description (string, optional)
-  - `head`: Branch containing changes (string, required)
-  - `base`: Branch to merge into (string, required)
-  - `draft`: Create as draft PR (boolean, optional)
-  - `maintainer_can_modify`: Allow maintainer edits (boolean, optional)
-
-- **update_pull_request** - Update an existing pull request in a GitHub repository
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number to update (number, required)
-  - `title`: New title (string, optional)
+- **update_issue** - Edit issue
+  - `assignees`: New assignees (string[], optional)
   - `body`: New description (string, optional)
-  - `state`: New state ('open' or 'closed') (string, optional)
-  - `base`: New base branch name (string, optional)
-  - `maintainer_can_modify`: Allow maintainer edits (boolean, optional)
-
-- **request_copilot_review** - Request a GitHub Copilot review for a pull request (experimental; subject to GitHub API support)
-
+  - `issue_number`: Issue number to update (number, required)
+  - `labels`: New labels (string[], optional)
+  - `milestone`: New milestone number (number, optional)
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
-  - `pullNumber`: Pull request number (number, required)
-  - _Note_: Currently, this tool will only work for github.com
-
-</details>
-
-<details>
-
-<summary>Repositories</summary>
-
-- **create_or_update_file** - Create or update a single file in a repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `path`: File path (string, required)
-  - `message`: Commit message (string, required)
-  - `content`: File content (string, required)
-  - `branch`: Branch name (string, optional)
-  - `sha`: File SHA if updating (string, optional)
-
-- **delete_file** - Delete a file from a GitHub repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `path`: Path to the file to delete (string, required)
-  - `message`: Commit message (string, required)
-  - `branch`: Branch to delete the file from (string, required)
-
-- **list_branches** - List branches in a GitHub repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **push_files** - Push multiple files in a single commit
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `branch`: Branch to push to (string, required)
-  - `files`: Files to push, each with path and content (array, required)
-  - `message`: Commit message (string, required)
-
-- **search_repositories** - Search for GitHub repositories
-  - `query`: Search query (string, required)
-  - `sort`: Sort field (string, optional)
-  - `order`: Sort order (string, optional)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **create_repository** - Create a new GitHub repository
-  - `name`: Repository name (string, required)
-  - `description`: Repository description (string, optional)
-  - `private`: Whether the repository is private (boolean, optional)
-  - `autoInit`: Auto-initialize with README (boolean, optional)
-
-- **get_file_contents** - Get contents of a file or directory
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `path`: File path (string, required)
-  - `ref`: Git reference (string, optional)
-
-- **fork_repository** - Fork a repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `organization`: Target organization name (string, optional)
-
-- **create_branch** - Create a new branch
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `branch`: New branch name (string, required)
-  - `sha`: SHA to create branch from (string, required)
-
-- **list_commits** - Get a list of commits of a branch in a repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `sha`: Branch name, tag, or commit SHA (string, optional)
-  - `author`: Author username or email address (string, optional)
-  - `path`: Only commits containing this file path (string, optional)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **get_commit** - Get details for a commit from a repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `sha`: Commit SHA, branch name, or tag name (string, required)
-  - `page`: Page number, for files in the commit (number, optional)
-  - `perPage`: Results per page, for files in the commit (number, optional)
-
-- **get_tag** - Get details about a specific git tag in a GitHub repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `tag`: Tag name (string, required)
-
-- **list_tags** - List git tags in a GitHub repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **search_code** - Search for code across GitHub repositories
-  - `query`: Search query (string, required)
-  - `sort`: Sort field (string, optional)
-  - `order`: Sort order (string, optional)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-</details>
-
-<details>
-
-<summary>Users</summary>
-
-- **search_users** - Search for GitHub users
-  - `q`: Search query (string, required)
-  - `sort`: Sort field (string, optional)
-  - `order`: Sort order (string, optional)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-</details>
-
-<details>
-
-<summary>Actions</summary>
-
-- **list_workflows** - List workflows in a repository
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **list_workflow_runs** - List workflow runs for a specific workflow
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `workflow_id`: Workflow ID or filename (string, required)
-  - `branch`: Filter by branch name (string, optional)
-  - `event`: Filter by event type (string, optional)
-  - `status`: Filter by run status (string, optional)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **run_workflow** - Trigger a workflow via workflow_dispatch event
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `workflow_id`: Workflow ID or filename (string, required)
-  - `ref`: Git reference (branch, tag, or SHA) (string, required)
-  - `inputs`: Input parameters for the workflow (object, optional)
-
-- **get_workflow_run** - Get details of a specific workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-
-- **get_workflow_run_logs** - Download logs for a workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-
-- **list_workflow_jobs** - List jobs for a workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-  - `filter`: Filter by job status (string, optional)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **get_job_logs** - Download logs for a specific workflow job or efficiently get all failed job logs for a workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `job_id`: Job ID (number, required for single job logs)
-  - `run_id`: Workflow run ID (number, required when using failed_only)
-  - `failed_only`: When true, gets logs for all failed jobs in run_id (boolean, optional)
-  - `return_content`: Returns actual log content instead of URLs (boolean, optional)
-
-- **rerun_workflow_run** - Re-run an entire workflow
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-  - `enable_debug_logging`: Enable debug logging for the re-run (boolean, optional)
-
-- **rerun_failed_jobs** - Re-run only the failed jobs in a workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-  - `enable_debug_logging`: Enable debug logging for the re-run (boolean, optional)
-
-- **cancel_workflow_run** - Cancel a running workflow
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-
-- **list_workflow_run_artifacts** - List artifacts from a workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
-
-- **download_workflow_run_artifact** - Get download URL for a specific artifact
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `artifact_id`: Artifact ID (number, required)
-
-- **delete_workflow_run_logs** - Delete logs for a workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-
-- **get_workflow_run_usage** - Get usage metrics for a workflow run
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `run_id`: Workflow run ID (number, required)
-
-</details>
-
-<details>
-
-<summary>Code Scanning</summary>
-
-- **get_code_scanning_alert** - Get a code scanning alert
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `alertNumber`: Alert number (number, required)
-
-- **list_code_scanning_alerts** - List code scanning alerts for a repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `ref`: Git reference (string, optional)
-  - `state`: Alert state (string, optional)
-  - `severity`: Alert severity (string, optional)
-  - `tool_name`: The name of the tool used for code scanning (string, optional)
-
-</details>
-
-<details>
-
-<summary>Secret Scanning</summary>
-
-- **get_secret_scanning_alert** - Get a secret scanning alert
-
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `alertNumber`: Alert number (number, required)
-
-- **list_secret_scanning_alerts** - List secret scanning alerts for a repository
-  - `owner`: Repository owner (string, required)
-  - `repo`: Repository name (string, required)
-  - `state`: Alert state (string, optional)
-  - `secret_type`: The secret types to be filtered for in a comma-separated list (string, optional)
-  - `resolution`: The resolution status (string, optional)
+  - `state`: New state (string, optional)
+  - `title`: New title (string, optional)
 
 </details>
 
@@ -914,94 +624,314 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 <summary>Notifications</summary>
 
-- **list_notifications** – List notifications for a GitHub user
-  - `filter`: Filter to apply to the response (`default`, `include_read_notifications`, `only_participating`)
-  - `since`: Only show notifications updated after the given time (ISO 8601 format)
-  - `before`: Only show notifications updated before the given time (ISO 8601 format)
-  - `owner`: Optional repository owner (string)
-  - `repo`: Optional repository name (string)
-  - `page`: Page number (number, optional)
-  - `perPage`: Results per page (number, optional)
+- **dismiss_notification** - Dismiss notification
+  - `state`: The new state of the notification (read/done) (string, optional)
+  - `threadID`: The ID of the notification thread (string, required)
 
-- **get_notification_details** – Get detailed information for a specific GitHub notification
+- **get_notification_details** - Get notification details
   - `notificationID`: The ID of the notification (string, required)
 
-- **dismiss_notification** – Dismiss a notification by marking it as read or done
-  - `threadID`: The ID of the notification thread (string, required)
-  - `state`: The new state of the notification (`read` or `done`)
+- **list_notifications** - List notifications
+  - `before`: Only show notifications updated before the given time (ISO 8601 format) (string, optional)
+  - `filter`: Filter notifications to, use default unless specified. Read notifications are ones that have already been acknowledged by the user. Participating notifications are those that the user is directly involved in, such as issues or pull requests they have commented on or created. (string, optional)
+  - `owner`: Optional repository owner. If provided with repo, only notifications for this repository are listed. (string, optional)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `repo`: Optional repository name. If provided with owner, only notifications for this repository are listed. (string, optional)
+  - `since`: Only show notifications updated after the given time (ISO 8601 format) (string, optional)
 
-- **mark_all_notifications_read** – Mark all notifications as read
-  - `lastReadAt`: Describes the last point that notifications were checked (optional, RFC3339/ISO8601 string, default: now)
-  - `owner`: Optional repository owner (string)
-  - `repo`: Optional repository name (string)
+- **manage_notification_subscription** - Manage notification subscription
+  - `action`: Action to perform: ignore, watch, or delete the notification subscription. (string, required)
+  - `notificationID`: The ID of the notification thread. (string, required)
 
-- **manage_notification_subscription** – Manage a notification subscription (ignore, watch, or delete) for a notification thread
-  - `notificationID`: The ID of the notification thread (string, required)
-  - `action`: Action to perform: `ignore`, `watch`, or `delete` (string, required)
+- **manage_repository_notification_subscription** - Manage repository notification subscription
+  - `action`: Action to perform: ignore, watch, or delete the repository notification subscription. (string, required)
+  - `owner`: The account owner of the repository. (string, required)
+  - `repo`: The name of the repository. (string, required)
 
-- **manage_repository_notification_subscription** – Manage a repository notification subscription (ignore, watch, or delete)
-  - `owner`: The account owner of the repository (string, required)
-  - `repo`: The name of the repository (string, required)
-  - `action`: Action to perform: `ignore`, `watch`, or `delete` (string, required)
+- **mark_all_notifications_read** - Mark all notifications as read
+  - `lastReadAt`: Describes the last point that notifications were checked (optional). Default: Now (string, optional)
+  - `owner`: Optional repository owner. If provided with repo, only notifications for this repository are marked as read. (string, optional)
+  - `repo`: Optional repository name. If provided with owner, only notifications for this repository are marked as read. (string, optional)
 
 </details>
-
-## Resources
 
 <details>
 
-<summary>Repository Content</summary>
+<summary>Organizations</summary>
 
-- **Get Repository Content**
-  Retrieves the content of a repository at a specific path.
-
-  - **Template**: `repo://{owner}/{repo}/contents{/path*}`
-  - **Parameters**:
-    - `owner`: Repository owner (string, required)
-    - `repo`: Repository name (string, required)
-    - `path`: File or directory path (string, optional)
-
-- **Get Repository Content for a Specific Branch**
-  Retrieves the content of a repository at a specific path for a given branch.
-
-  - **Template**: `repo://{owner}/{repo}/refs/heads/{branch}/contents{/path*}`
-  - **Parameters**:
-    - `owner`: Repository owner (string, required)
-    - `repo`: Repository name (string, required)
-    - `branch`: Branch name (string, required)
-    - `path`: File or directory path (string, optional)
-
-- **Get Repository Content for a Specific Commit**
-  Retrieves the content of a repository at a specific path for a given commit.
-
-  - **Template**: `repo://{owner}/{repo}/sha/{sha}/contents{/path*}`
-  - **Parameters**:
-    - `owner`: Repository owner (string, required)
-    - `repo`: Repository name (string, required)
-    - `sha`: Commit SHA (string, required)
-    - `path`: File or directory path (string, optional)
-
-- **Get Repository Content for a Specific Tag**
-  Retrieves the content of a repository at a specific path for a given tag.
-
-  - **Template**: `repo://{owner}/{repo}/refs/tags/{tag}/contents{/path*}`
-  - **Parameters**:
-    - `owner`: Repository owner (string, required)
-    - `repo`: Repository name (string, required)
-    - `tag`: Tag name (string, required)
-    - `path`: File or directory path (string, optional)
-
-- **Get Repository Content for a Specific Pull Request**
-  Retrieves the content of a repository at a specific path for a given pull request.
-
-  - **Template**: `repo://{owner}/{repo}/refs/pull/{prNumber}/head/contents{/path*}`
-  - **Parameters**:
-    - `owner`: Repository owner (string, required)
-    - `repo`: Repository name (string, required)
-    - `prNumber`: Pull request number (string, required)
-    - `path`: File or directory path (string, optional)
+- **search_orgs** - Search organizations
+  - `order`: Sort order (string, optional)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `query`: Search query using GitHub organizations search syntax scoped to type:org (string, required)
+  - `sort`: Sort field by category (string, optional)
 
 </details>
+
+<details>
+
+<summary>Pull Requests</summary>
+
+- **add_pull_request_review_comment_to_pending_review** - Add comment to the requester's latest pending pull request review
+  - `body`: The text of the review comment (string, required)
+  - `line`: The line of the blob in the pull request diff that the comment applies to. For multi-line comments, the last line of the range (number, optional)
+  - `owner`: Repository owner (string, required)
+  - `path`: The relative path to the file that necessitates a comment (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+  - `side`: The side of the diff to comment on. LEFT indicates the previous state, RIGHT indicates the new state (string, optional)
+  - `startLine`: For multi-line comments, the first line of the range that the comment applies to (number, optional)
+  - `startSide`: For multi-line comments, the starting side of the diff that the comment applies to. LEFT indicates the previous state, RIGHT indicates the new state (string, optional)
+  - `subjectType`: The level at which the comment is targeted (string, required)
+
+- **create_and_submit_pull_request_review** - Create and submit a pull request review without comments
+  - `body`: Review comment text (string, required)
+  - `commitID`: SHA of commit to review (string, optional)
+  - `event`: Review action to perform (string, required)
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **create_pending_pull_request_review** - Create pending pull request review
+  - `commitID`: SHA of commit to review (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **create_pull_request** - Open new pull request
+  - `base`: Branch to merge into (string, required)
+  - `body`: PR description (string, optional)
+  - `draft`: Create as draft PR (boolean, optional)
+  - `head`: Branch containing changes (string, required)
+  - `maintainer_can_modify`: Allow maintainer edits (boolean, optional)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `title`: PR title (string, required)
+
+- **delete_pending_pull_request_review** - Delete the requester's latest pending pull request review
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **get_pull_request** - Get pull request details
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **get_pull_request_comments** - Get pull request comments
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **get_pull_request_diff** - Get pull request diff
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **get_pull_request_files** - Get pull request files
+  - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **get_pull_request_reviews** - Get pull request reviews
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **get_pull_request_status** - Get pull request status checks
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **list_pull_requests** - List pull requests
+  - `base`: Filter by base branch (string, optional)
+  - `direction`: Sort direction (string, optional)
+  - `head`: Filter by head user/org and branch (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+  - `sort`: Sort by (string, optional)
+  - `state`: Filter by state (string, optional)
+
+- **merge_pull_request** - Merge pull request
+  - `commit_message`: Extra detail for merge commit (string, optional)
+  - `commit_title`: Title for merge commit (string, optional)
+  - `merge_method`: Merge method (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **request_copilot_review** - Request Copilot review
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **search_pull_requests** - Search pull requests
+  - `order`: Sort order (string, optional)
+  - `owner`: Optional repository owner. If provided with repo, only notifications for this repository are listed. (string, optional)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `query`: Search query using GitHub pull request search syntax (string, required)
+  - `repo`: Optional repository name. If provided with owner, only notifications for this repository are listed. (string, optional)
+  - `sort`: Sort field by number of matches of categories, defaults to best match (string, optional)
+
+- **submit_pending_pull_request_review** - Submit the requester's latest pending pull request review
+  - `body`: The text of the review comment (string, optional)
+  - `event`: The event to perform (string, required)
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+- **update_pull_request** - Edit pull request
+  - `base`: New base branch name (string, optional)
+  - `body`: New description (string, optional)
+  - `maintainer_can_modify`: Allow maintainer edits (boolean, optional)
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number to update (number, required)
+  - `repo`: Repository name (string, required)
+  - `state`: New state (string, optional)
+  - `title`: New title (string, optional)
+
+- **update_pull_request_branch** - Update pull request branch
+  - `expectedHeadSha`: The expected SHA of the pull request's HEAD ref (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `pullNumber`: Pull request number (number, required)
+  - `repo`: Repository name (string, required)
+
+</details>
+
+<details>
+
+<summary>Repositories</summary>
+
+- **create_branch** - Create branch
+  - `branch`: Name for new branch (string, required)
+  - `from_branch`: Source branch (defaults to repo default) (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+
+- **create_or_update_file** - Create or update file
+  - `branch`: Branch to create/update the file in (string, required)
+  - `content`: Content of the file (string, required)
+  - `message`: Commit message (string, required)
+  - `owner`: Repository owner (username or organization) (string, required)
+  - `path`: Path where to create/update the file (string, required)
+  - `repo`: Repository name (string, required)
+  - `sha`: SHA of file being replaced (for updates) (string, optional)
+
+- **create_repository** - Create repository
+  - `autoInit`: Initialize with README (boolean, optional)
+  - `description`: Repository description (string, optional)
+  - `name`: Repository name (string, required)
+  - `private`: Whether repo should be private (boolean, optional)
+
+- **delete_file** - Delete file
+  - `branch`: Branch to delete the file from (string, required)
+  - `message`: Commit message (string, required)
+  - `owner`: Repository owner (username or organization) (string, required)
+  - `path`: Path to the file to delete (string, required)
+  - `repo`: Repository name (string, required)
+
+- **fork_repository** - Fork repository
+  - `organization`: Organization to fork to (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+
+- **get_commit** - Get commit details
+  - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+  - `sha`: Commit SHA, branch name, or tag name (string, required)
+
+- **get_file_contents** - Get file or directory contents
+  - `owner`: Repository owner (username or organization) (string, required)
+  - `path`: Path to file/directory (directories must end with a slash '/') (string, required)
+  - `ref`: Accepts optional git refs such as `refs/tags/{tag}`, `refs/heads/{branch}` or `refs/pull/{pr_number}/head` (string, optional)
+  - `repo`: Repository name (string, required)
+  - `sha`: Accepts optional git sha, if sha is specified it will be used instead of ref (string, optional)
+
+- **get_tag** - Get tag details
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `tag`: Tag name (string, required)
+
+- **list_branches** - List branches
+  - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+
+- **list_commits** - List commits
+  - `author`: Author username or email address (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+  - `sha`: SHA or Branch name (string, optional)
+
+- **list_tags** - List tags
+  - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `repo`: Repository name (string, required)
+
+- **push_files** - Push files to repository
+  - `branch`: Branch to push to (string, required)
+  - `files`: Array of file objects to push, each object with path (string) and content (string) (object[], required)
+  - `message`: Commit message (string, required)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+
+- **search_code** - Search code
+  - `order`: Sort order (string, optional)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `q`: Search query using GitHub code search syntax (string, required)
+  - `sort`: Sort field ('indexed' only) (string, optional)
+
+- **search_repositories** - Search repositories
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `query`: Search query (string, required)
+
+</details>
+
+<details>
+
+<summary>Secret Protection</summary>
+
+- **get_secret_scanning_alert** - Get secret scanning alert
+  - `alertNumber`: The number of the alert. (number, required)
+  - `owner`: The owner of the repository. (string, required)
+  - `repo`: The name of the repository. (string, required)
+
+- **list_secret_scanning_alerts** - List secret scanning alerts
+  - `owner`: The owner of the repository. (string, required)
+  - `repo`: The name of the repository. (string, required)
+  - `resolution`: Filter by resolution (string, optional)
+  - `secret_type`: A comma-separated list of secret types to return. All default secret patterns are returned. To return generic patterns, pass the token name(s) in the parameter. (string, optional)
+  - `state`: Filter by state (string, optional)
+
+</details>
+
+<details>
+
+<summary>Users</summary>
+
+- **search_users** - Search users
+  - `order`: Sort order (string, optional)
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `query`: Search query using GitHub users search syntax scoped to type:user (string, required)
+  - `sort`: Sort field by category (string, optional)
+
+</details>
+<!-- END AUTOMATED TOOLS -->
 
 ## Library Usage
 
