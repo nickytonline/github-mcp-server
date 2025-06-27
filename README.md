@@ -426,12 +426,18 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 ## Tools
 
-### Users
+<details>
+
+<summary>Context</summary>
 
 - **get_me** - Get details of the authenticated user
   - No parameters required
 
-### Issues
+</details>
+
+<details>
+
+<summary>Issues</summary>
 
 - **get_issue** - Gets the contents of an issue within a repository
 
@@ -499,8 +505,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `issueNumber`: Issue number (number, required)
   - _Note_: This tool can help with creating a Pull Request with source code changes to resolve the issue. More information can be found at [GitHub Copilot documentation](https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent-to-work-on-tasks/about-assigning-tasks-to-copilot)
 
+</details>
 
-### Pull Requests
+<details>
+
+<summary>Pull Requests</summary>
 
 - **get_pull_request** - Get details of a specific pull request
 
@@ -640,7 +649,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `pullNumber`: Pull request number (number, required)
   - _Note_: Currently, this tool will only work for github.com
 
-### Repositories
+</details>
+
+<details>
+
+<summary>Repositories</summary>
 
 - **create_or_update_file** - Create or update a single file in a repository
   - `owner`: Repository owner (string, required)
@@ -735,7 +748,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `page`: Page number (number, optional)
   - `perPage`: Results per page (number, optional)
 
-### Users
+</details>
+
+<details>
+
+<summary>Users</summary>
 
 - **search_users** - Search for GitHub users
   - `q`: Search query (string, required)
@@ -744,7 +761,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `page`: Page number (number, optional)
   - `perPage`: Results per page (number, optional)
 
-### Actions
+</details>
+
+<details>
+
+<summary>Actions</summary>
 
 - **list_workflows** - List workflows in a repository
 
@@ -848,7 +869,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `repo`: Repository name (string, required)
   - `run_id`: Workflow run ID (number, required)
 
-### Code Scanning
+</details>
+
+<details>
+
+<summary>Code Scanning</summary>
 
 - **get_code_scanning_alert** - Get a code scanning alert
 
@@ -864,7 +889,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `severity`: Alert severity (string, optional)
   - `tool_name`: The name of the tool used for code scanning (string, optional)
 
-### Secret Scanning
+</details>
+
+<details>
+
+<summary>Secret Scanning</summary>
 
 - **get_secret_scanning_alert** - Get a secret scanning alert
 
@@ -879,7 +908,11 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `secret_type`: The secret types to be filtered for in a comma-separated list (string, optional)
   - `resolution`: The resolution status (string, optional)
 
-### Notifications
+</details>
+
+<details>
+
+<summary>Notifications</summary>
 
 - **list_notifications** – List notifications for a GitHub user
   - `filter`: Filter to apply to the response (`default`, `include_read_notifications`, `only_participating`)
@@ -911,9 +944,13 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `repo`: The name of the repository (string, required)
   - `action`: Action to perform: `ignore`, `watch`, or `delete` (string, required)
 
+</details>
+
 ## Resources
 
-### Repository Content
+<details>
+
+<summary>Repository Content</summary>
 
 - **Get Repository Content**
   Retrieves the content of a repository at a specific path.
@@ -963,6 +1000,8 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
     - `repo`: Repository name (string, required)
     - `prNumber`: Pull request number (string, required)
     - `path`: File or directory path (string, optional)
+
+</details>
 
 ## Library Usage
 
