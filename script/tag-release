@@ -52,7 +52,7 @@ fi
 
 # 3. Fetch latest from origin
 echo "Fetching latest changes from origin..."
-git fetch origin
+git fetch origin main
 
 # 4. Check if the working directory is clean
 if ! git diff-index --quiet HEAD --; then
