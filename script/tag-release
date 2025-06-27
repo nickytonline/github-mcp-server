@@ -142,7 +142,7 @@ cat << EOF
 2. ✏️  Edit the new release, delete the existing notes and click the auto-generate button GitHub provides
 3. ✨ Add a section at the top calling out the main features
 4. 🚀 Publish the release
-. 📢 Post message in #gh-mcp-releases channel in Slack and then share to the other mcp channels
+5. 📢 Post message in #gh-mcp-releases channel in Slack and then share to the other mcp channels
 
 ### Resources:
 - 📦 Draft Release: https://github.com/$REPO_SLUG/releases/tag/$TAG
