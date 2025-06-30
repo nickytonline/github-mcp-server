@@ -456,6 +456,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `repo`: Repository name (string, required)
   - `return_content`: Returns actual log content instead of URLs (boolean, optional)
   - `run_id`: Workflow run ID (required when using failed_only) (number, optional)
+  - `tail_lines`: Number of lines to return from the end of the log (number, optional)
 
 - **get_workflow_run** - Get workflow run
   - `owner`: Repository owner (string, required)

@@ -1095,3 +1095,52 @@ func Test_GetJobLogs_WithContentReturn(t *testing.T) {
 	assert.Equal(t, "Job logs content retrieved successfully", response["message"])
 	assert.NotContains(t, response, "logs_url") // Should not have URL when returning content
 }
+
+func Test_GetJobLogs_WithContentReturnAndTailLines(t *testing.T) {
+	// Test the return_content functionality with a mock HTTP server
+	logContent := "2023-01-01T10:00:00.000Z Starting job...\n2023-01-01T10:00:01.000Z Running tests...\n2023-01-01T10:00:02.000Z Job completed successfully"
+	expectedLogContent := "2023-01-01T10:00:02.000Z Job completed successfully"
+
+	// Create a test server to serve log content
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(logContent))
+	}))
+	defer testServer.Close()
+
+	mockedClient := mock.NewMockedHTTPClient(
+		mock.WithRequestMatchHandler(
+			mock.GetReposActionsJobsLogsByOwnerByRepoByJobId,
+			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Location", testServer.URL)
+				w.WriteHeader(http.StatusFound)
+			}),
+		),
+	)
+
+	client := github.NewClient(mockedClient)
+	_, handler := GetJobLogs(stubGetClientFn(client), translations.NullTranslationHelper)
+
+	request := createMCPRequest(map[string]any{
+		"owner":          "owner",
+		"repo":           "repo",
+		"job_id":         float64(123),
+		"return_content": true,
+		"tail_lines":     float64(1), // Requesting last 1 line
+	})
+
+	result, err := handler(context.Background(), request)
+	require.NoError(t, err)
+	require.False(t, result.IsError)
+
+	textContent := getTextResult(t, result)
+	var response map[string]any
+	err = json.Unmarshal([]byte(textContent.Text), &response)
+	require.NoError(t, err)
+
+	assert.Equal(t, float64(123), response["job_id"])
+	assert.Equal(t, float64(1), response["original_length"])
+	assert.Equal(t, expectedLogContent, response["logs_content"])
+	assert.Equal(t, "Job logs content retrieved successfully", response["message"])
+	assert.NotContains(t, response, "logs_url") // Should not have URL when returning content
+}
