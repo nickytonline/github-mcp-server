@@ -17,7 +17,7 @@ func TestGetRawContent(t *testing.T) {
 	tests := []struct {
 		name              string
 		pattern           mock.EndpointPattern
-		opts              *RawContentOpts
+		opts              *ContentOpts
 		owner, repo, path string
 		statusCode        int
 		contentType       string
@@ -36,7 +36,7 @@ func TestGetRawContent(t *testing.T) {
 		{
 			name:    "branch fetch success",
 			pattern: GetRawReposContentsByOwnerByRepoByBranchByPath,
-			opts:    &RawContentOpts{Ref: "refs/heads/main"},
+			opts:    &ContentOpts{Ref: "refs/heads/main"},
 			owner:   "octocat", repo: "hello", path: "README.md",
 			statusCode:  200,
 			contentType: "text/plain",
@@ -45,7 +45,7 @@ func TestGetRawContent(t *testing.T) {
 		{
 			name:    "tag fetch success",
 			pattern: GetRawReposContentsByOwnerByRepoByTagByPath,
-			opts:    &RawContentOpts{Ref: "refs/tags/v1.0.0"},
+			opts:    &ContentOpts{Ref: "refs/tags/v1.0.0"},
 			owner:   "octocat", repo: "hello", path: "README.md",
 			statusCode:  200,
 			contentType: "text/plain",
@@ -54,7 +54,7 @@ func TestGetRawContent(t *testing.T) {
 		{
 			name:    "sha fetch success",
 			pattern: GetRawReposContentsByOwnerByRepoBySHAByPath,
-			opts:    &RawContentOpts{SHA: "abc123"},
+			opts:    &ContentOpts{SHA: "abc123"},
 			owner:   "octocat", repo: "hello", path: "README.md",
 			statusCode:  200,
 			contentType: "text/plain",
@@ -107,7 +107,7 @@ func TestUrlFromOpts(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		opts  *RawContentOpts
+		opts  *ContentOpts
 		owner string
 		repo  string
 		path  string
@@ -121,19 +121,19 @@ func TestUrlFromOpts(t *testing.T) {
 		},
 		{
 			name:  "ref branch",
-			opts:  &RawContentOpts{Ref: "refs/heads/main"},
+			opts:  &ContentOpts{Ref: "refs/heads/main"},
 			owner: "octocat", repo: "hello", path: "README.md",
 			want: "https://raw.example.com/octocat/hello/refs/heads/main/README.md",
 		},
 		{
 			name:  "ref tag",
-			opts:  &RawContentOpts{Ref: "refs/tags/v1.0.0"},
+			opts:  &ContentOpts{Ref: "refs/tags/v1.0.0"},
 			owner: "octocat", repo: "hello", path: "README.md",
 			want: "https://raw.example.com/octocat/hello/refs/tags/v1.0.0/README.md",
 		},
 		{
 			name:  "sha",
-			opts:  &RawContentOpts{SHA: "abc123"},
+			opts:  &ContentOpts{SHA: "abc123"},
 			owner: "octocat", repo: "hello", path: "README.md",
 			want: "https://raw.example.com/octocat/hello/abc123/README.md",
 		},

@@ -23,7 +23,7 @@ var generateDocsCmd = &cobra.Command{
 	Use:   "generate-docs",
 	Short: "Generate documentation for tools and toolsets",
 	Long:  `Generate the automated sections of README.md and docs/remote-server.md with current tool and toolset information.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		return generateAllDocs()
 	},
 }
@@ -33,17 +33,17 @@ func init() {
 }
 
 // mockGetClient returns a mock GitHub client for documentation generation
-func mockGetClient(ctx context.Context) (*gogithub.Client, error) {
+func mockGetClient(_ context.Context) (*gogithub.Client, error) {
 	return gogithub.NewClient(nil), nil
 }
 
 // mockGetGQLClient returns a mock GraphQL client for documentation generation
-func mockGetGQLClient(ctx context.Context) (*githubv4.Client, error) {
+func mockGetGQLClient(_ context.Context) (*githubv4.Client, error) {
 	return githubv4.NewClient(nil), nil
 }
 
 // mockGetRawClient returns a mock raw client for documentation generation
-func mockGetRawClient(ctx context.Context) (*raw.Client, error) {
+func mockGetRawClient(_ context.Context) (*raw.Client, error) {
 	return nil, nil
 }
 

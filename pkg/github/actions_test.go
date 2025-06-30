@@ -538,7 +538,7 @@ func Test_DownloadWorkflowRunArtifact(t *testing.T) {
 						Pattern: "/repos/owner/repo/actions/artifacts/123/zip",
 						Method:  "GET",
 					},
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						// GitHub returns a 302 redirect to the download URL
 						w.Header().Set("Location", "https://api.github.com/repos/owner/repo/actions/artifacts/123/download")
 						w.WriteHeader(http.StatusFound)
@@ -1055,7 +1055,7 @@ func Test_GetJobLogs_WithContentReturn(t *testing.T) {
 	logContent := "2023-01-01T10:00:00.000Z Starting job...\n2023-01-01T10:00:01.000Z Running tests...\n2023-01-01T10:00:02.000Z Job completed successfully"
 
 	// Create a test server to serve log content
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(logContent))
 	}))

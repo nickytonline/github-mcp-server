@@ -103,7 +103,7 @@ func main() {
 	}
 }
 
-func wordSepNormalizeFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {
+func wordSepNormalizeFunc(_ *pflag.FlagSet, name string) pflag.NormalizedName {
 	from := []string{"_"}
 	to := "-"
 	for _, sep := range from {

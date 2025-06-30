@@ -893,7 +893,7 @@ func AssignCodingAgentPrompt(t translations.TranslationHelperFunc) (tool mcp.Pro
 	return mcp.NewPrompt("AssignCodingAgent",
 			mcp.WithPromptDescription(t("PROMPT_ASSIGN_CODING_AGENT_DESCRIPTION", "Assign GitHub Coding Agent to multiple tasks in a GitHub repository.")),
 			mcp.WithArgument("repo", mcp.ArgumentDescription("The repository to assign tasks in (owner/repo)."), mcp.RequiredArgument()),
-		), func(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+		), func(_ context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 			repo := request.Params.Arguments["repo"]
 
 			messages := []mcp.PromptMessage{

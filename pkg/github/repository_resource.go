@@ -89,7 +89,7 @@ func RepositoryResourceContentsHandler(getClient GetClientFn, getRawClient raw.G
 		}
 
 		opts := &github.RepositoryContentGetOptions{}
-		rawOpts := &raw.RawContentOpts{}
+		rawOpts := &raw.ContentOpts{}
 
 		sha, ok := request.Params.Arguments["sha"].([]string)
 		if ok && len(sha) > 0 {

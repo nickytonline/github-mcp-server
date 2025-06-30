@@ -491,7 +491,7 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
-			rawOpts := &raw.RawContentOpts{}
+			rawOpts := &raw.ContentOpts{}
 
 			if strings.HasPrefix(ref, "refs/pull/") {
 				prNumber := strings.TrimSuffix(strings.TrimPrefix(ref, "refs/pull/"), "/head")
@@ -532,9 +532,7 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
 					_ = resp.Body.Close()
 				}()
 
-				if resp.StatusCode != http.StatusOK {
-					// If the raw content is not found, we will fall back to the GitHub API (in case it is a directory)
-				} else {
+				if resp.StatusCode == http.StatusOK {
 					// If the raw content is found, return it directly
 					body, err := io.ReadAll(resp.Body)
 					if err != nil {

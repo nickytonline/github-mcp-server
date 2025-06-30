@@ -260,7 +260,7 @@ func TestGitHubErrorContext(t *testing.T) {
 
 	t.Run("NewGitHubAPIErrorToCtx with nil context does not error", func(t *testing.T) {
 		// Given a nil context
-		var ctx context.Context = nil
+		var ctx context.Context
 
 		// Create a mock GitHub response
 		resp := &github.Response{

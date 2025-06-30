@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Build and Test Go Project
 on: [push, pull_request]
 
 permissions:

@@ -41,9 +41,9 @@ func (c *Client) refURL(owner, repo, ref, path string) string {
 	return c.url.JoinPath(owner, repo, ref, path).String()
 }
 
-func (c *Client) URLFromOpts(opts *RawContentOpts, owner, repo, path string) string {
+func (c *Client) URLFromOpts(opts *ContentOpts, owner, repo, path string) string {
 	if opts == nil {
-		opts = &RawContentOpts{}
+		opts = &ContentOpts{}
 	}
 	if opts.SHA != "" {
 		return c.commitURL(owner, repo, opts.SHA, path)
@@ -56,13 +56,13 @@ func (c *Client) commitURL(owner, repo, sha, path string) string {
 	return c.url.JoinPath(owner, repo, sha, path).String()
 }
 
-type RawContentOpts struct {
+type ContentOpts struct {
 	Ref string
 	SHA string
 }
 
 // GetRawContent fetches the raw content of a file from a GitHub repository.
-func (c *Client) GetRawContent(ctx context.Context, owner, repo, path string, opts *RawContentOpts) (*http.Response, error) {
+func (c *Client) GetRawContent(ctx context.Context, owner, repo, path string, opts *ContentOpts) (*http.Response, error) {
 	url := c.URLFromOpts(opts, owner, repo, path)
 	req, err := c.newRequest(ctx, "GET", url, nil)
 	if err != nil {
