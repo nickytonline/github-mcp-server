@@ -799,10 +799,11 @@ func trimContent(content string, tailLines int) (string, int) {
 	lineCount := 0
 	if tailLines > 0 {
 
-		// Count backwards to find the nth newline from the end
+		// Count backwards to find the nth newline from the end and a total number of lines
 		for i := len(content) - 1; i >= 0 && lineCount < tailLines; i-- {
 			if content[i] == '\n' {
 				lineCount++
+				// If we have reached the tailLines, trim the content
 				if lineCount == tailLines {
 					content = content[i+1:]
 				}
