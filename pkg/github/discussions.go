@@ -13,56 +13,6 @@ import (
 	"github.com/shurcooL/githubv4"
 )
 
-// GetAllDiscussionCategories retrieves all discussion categories for a repository
-// by paginating through all pages and returns them as a map where the key is the
-// category name and the value is the category ID.
-func GetAllDiscussionCategories(ctx context.Context, client *githubv4.Client, owner, repo string) (map[string]string, error) {
-	categories := make(map[string]string)
-	var after string
-	hasNextPage := true
-
-	for hasNextPage {
-		// Prepare GraphQL query with pagination
-		var q struct {
-			Repository struct {
-				DiscussionCategories struct {
-					Nodes []struct {
-						ID   githubv4.ID
-						Name githubv4.String
-					}
-					PageInfo struct {
-						HasNextPage githubv4.Boolean
-						EndCursor   githubv4.String
-					}
-				} `graphql:"discussionCategories(first: 100, after: $after)"`
-			} `graphql:"repository(owner: $owner, name: $repo)"`
-		}
-
-		vars := map[string]interface{}{
-			"owner": githubv4.String(owner),
-			"repo":  githubv4.String(repo),
-			"after": githubv4.String(after),
-		}
-
-		if err := client.Query(ctx, &q, vars); err != nil {
-			return nil, fmt.Errorf("failed to query discussion categories: %w", err)
-		}
-
-		// Add categories to the map
-		for _, category := range q.Repository.DiscussionCategories.Nodes {
-			categories[string(category.Name)] = fmt.Sprint(category.ID)
-		}
-
-		// Check if there are more pages
-		hasNextPage = bool(q.Repository.DiscussionCategories.PageInfo.HasNextPage)
-		if hasNextPage {
-			after = string(q.Repository.DiscussionCategories.PageInfo.EndCursor)
-		}
-	}
-
-	return categories, nil
-}
-
 func ListDiscussions(getGQLClient GetGQLClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_discussions",
 			mcp.WithDescription(t("TOOL_LIST_DISCUSSIONS_DESCRIPTION", "List discussions for a repository")),
