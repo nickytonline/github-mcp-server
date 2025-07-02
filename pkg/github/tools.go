@@ -116,6 +116,14 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 			toolsets.NewServerTool(ManageRepositoryNotificationSubscription(getClient, t)),
 		)
 
+	discussions := toolsets.NewToolset("discussions", "GitHub Discussions related tools").
+		AddReadTools(
+			toolsets.NewServerTool(ListDiscussions(getGQLClient, t)),
+			toolsets.NewServerTool(GetDiscussion(getGQLClient, t)),
+			toolsets.NewServerTool(GetDiscussionComments(getGQLClient, t)),
+			toolsets.NewServerTool(ListDiscussionCategories(getGQLClient, t)),
+		)
+
 	actions := toolsets.NewToolset("actions", "GitHub Actions workflows and CI/CD operations").
 		AddReadTools(
 			toolsets.NewServerTool(ListWorkflows(getClient, t)),
@@ -156,6 +164,7 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 	tsg.AddToolset(secretProtection)
 	tsg.AddToolset(notifications)
 	tsg.AddToolset(experiments)
+	tsg.AddToolset(discussions)
 
 	return tsg
 }

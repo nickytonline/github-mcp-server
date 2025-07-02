@@ -269,6 +269,7 @@ The following sets of tools are available (all are on by default):
 | `context`               | **Strongly recommended**: Tools that provide context about the current user and GitHub context you are operating in |
 | `actions` | GitHub Actions workflows and CI/CD operations |
 | `code_security` | Code security related tools, such as GitHub Code Scanning |
+| `discussions` | GitHub Discussions related tools |
 | `experiments` | Experimental features that are not considered stable yet |
 | `issues` | GitHub Issues related tools |
 | `notifications` | GitHub Notifications related tools |
@@ -549,6 +550,35 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 - **get_me** - Get my user profile
   - `reason`: Optional: the reason for requesting the user information (string, optional)
+
+</details>
+
+<details>
+
+<summary>Discussions</summary>
+
+- **get_discussion** - Get discussion
+  - `discussionNumber`: Discussion Number (number, required)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+
+- **get_discussion_comments** - Get discussion comments
+  - `discussionNumber`: Discussion Number (number, required)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+
+- **list_discussion_categories** - List discussion categories
+  - `after`: Cursor for pagination, use the 'after' field from the previous response (string, optional)
+  - `before`: Cursor for pagination, use the 'before' field from the previous response (string, optional)
+  - `first`: Number of categories to return per page (min 1, max 100) (number, optional)
+  - `last`: Number of categories to return from the end (min 1, max 100) (number, optional)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+
+- **list_discussions** - List discussions
+  - `category`: Optional filter by discussion category ID. If provided, only discussions with this category are listed. (string, optional)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
 
 </details>
 
