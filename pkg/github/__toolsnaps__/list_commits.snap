@@ -3,7 +3,7 @@
     "title": "List commits",
     "readOnlyHint": true
   },
-  "description": "Get list of commits of a branch in a GitHub repository",
+  "description": "Get list of commits of a branch in a GitHub repository. Returns at least 30 results per page by default, but can return more if specified using the perPage parameter (up to 100).",
   "inputSchema": {
     "properties": {
       "author": {
@@ -30,7 +30,7 @@
         "type": "string"
       },
       "sha": {
-        "description": "SHA or Branch name",
+        "description": "The commit SHA, branch name, or tag name to list commits from. If not specified, defaults to the repository's default branch.",
         "type": "string"
       }
     },
