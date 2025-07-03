@@ -269,6 +269,7 @@ The following sets of tools are available (all are on by default):
 | `context`               | **Strongly recommended**: Tools that provide context about the current user and GitHub context you are operating in |
 | `actions` | GitHub Actions workflows and CI/CD operations |
 | `code_security` | Code security related tools, such as GitHub Code Scanning |
+| `dependabot` | Dependabot tools |
 | `discussions` | GitHub Discussions related tools |
 | `experiments` | Experimental features that are not considered stable yet |
 | `issues` | GitHub Issues related tools |
@@ -550,6 +551,23 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 - **get_me** - Get my user profile
   - `reason`: Optional: the reason for requesting the user information (string, optional)
+
+</details>
+
+<details>
+
+<summary>Dependabot</summary>
+
+- **get_dependabot_alert** - Get dependabot alert
+  - `alertNumber`: The number of the alert. (number, required)
+  - `owner`: The owner of the repository. (string, required)
+  - `repo`: The name of the repository. (string, required)
+
+- **list_dependabot_alerts** - List dependabot alerts
+  - `owner`: The owner of the repository. (string, required)
+  - `repo`: The name of the repository. (string, required)
+  - `severity`: Filter dependabot alerts by severity (string, optional)
+  - `state`: Filter dependabot alerts by state. Defaults to open (string, optional)
 
 </details>
 
