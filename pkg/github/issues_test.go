@@ -1087,7 +1087,7 @@ func Test_GetIssueComments(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
 	assert.Contains(t, tool.InputSchema.Properties, "issue_number")
 	assert.Contains(t, tool.InputSchema.Properties, "page")
-	assert.Contains(t, tool.InputSchema.Properties, "per_page")
+	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "issue_number"})
 
 	// Setup mock comments for success case
@@ -1152,7 +1152,7 @@ func Test_GetIssueComments(t *testing.T) {
 				"repo":         "repo",
 				"issue_number": float64(42),
 				"page":         float64(2),
-				"per_page":     float64(10),
+				"perPage":      float64(10),
 			},
 			expectError:      false,
 			expectedComments: mockComments,

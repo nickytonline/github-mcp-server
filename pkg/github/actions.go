@@ -37,12 +37,7 @@ func ListWorkflows(getClient GetClientFn, t translations.TranslationHelperFunc) 
 				mcp.Required(),
 				mcp.Description(DescriptionRepositoryName),
 			),
-			mcp.WithNumber("per_page",
-				mcp.Description("The number of results per page (max 100)"),
-			),
-			mcp.WithNumber("page",
-				mcp.Description("The page number of the results to fetch"),
-			),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := RequiredParam[string](request, "owner")
@@ -55,11 +50,7 @@ func ListWorkflows(getClient GetClientFn, t translations.TranslationHelperFunc) 
 			}
 
 			// Get optional pagination parameters
-			perPage, err := OptionalIntParam(request, "per_page")
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			page, err := OptionalIntParam(request, "page")
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -71,8 +62,8 @@ func ListWorkflows(getClient GetClientFn, t translations.TranslationHelperFunc) 
 
 			// Set up list options
 			opts := &github.ListOptions{
-				PerPage: perPage,
-				Page:    page,
+				PerPage: pagination.perPage,
+				Page:    pagination.page,
 			}
 
 			workflows, resp, err := client.Actions.ListWorkflows(ctx, owner, repo, opts)
@@ -157,12 +148,7 @@ func ListWorkflowRuns(getClient GetClientFn, t translations.TranslationHelperFun
 				mcp.Description("Returns workflow runs with the check run status"),
 				mcp.Enum("queued", "in_progress", "completed", "requested", "waiting"),
 			),
-			mcp.WithNumber("per_page",
-				mcp.Description("The number of results per page (max 100)"),
-			),
-			mcp.WithNumber("page",
-				mcp.Description("The page number of the results to fetch"),
-			),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := RequiredParam[string](request, "owner")
@@ -197,11 +183,7 @@ func ListWorkflowRuns(getClient GetClientFn, t translations.TranslationHelperFun
 			}
 
 			// Get optional pagination parameters
-			perPage, err := OptionalIntParam(request, "per_page")
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			page, err := OptionalIntParam(request, "page")
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -218,8 +200,8 @@ func ListWorkflowRuns(getClient GetClientFn, t translations.TranslationHelperFun
 				Event:  event,
 				Status: status,
 				ListOptions: github.ListOptions{
-					PerPage: perPage,
-					Page:    page,
+					PerPage: pagination.perPage,
+					Page:    pagination.page,
 				},
 			}
 
@@ -483,12 +465,7 @@ func ListWorkflowJobs(getClient GetClientFn, t translations.TranslationHelperFun
 				mcp.Description("Filters jobs by their completed_at timestamp"),
 				mcp.Enum("latest", "all"),
 			),
-			mcp.WithNumber("per_page",
-				mcp.Description("The number of results per page (max 100)"),
-			),
-			mcp.WithNumber("page",
-				mcp.Description("The page number of the results to fetch"),
-			),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := RequiredParam[string](request, "owner")
@@ -512,11 +489,7 @@ func ListWorkflowJobs(getClient GetClientFn, t translations.TranslationHelperFun
 			}
 
 			// Get optional pagination parameters
-			perPage, err := OptionalIntParam(request, "per_page")
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			page, err := OptionalIntParam(request, "page")
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -530,8 +503,8 @@ func ListWorkflowJobs(getClient GetClientFn, t translations.TranslationHelperFun
 			opts := &github.ListWorkflowJobsOptions{
 				Filter: filter,
 				ListOptions: github.ListOptions{
-					PerPage: perPage,
-					Page:    page,
+					PerPage: pagination.perPage,
+					Page:    pagination.page,
 				},
 			}
 
@@ -1022,12 +995,7 @@ func ListWorkflowRunArtifacts(getClient GetClientFn, t translations.TranslationH
 				mcp.Required(),
 				mcp.Description("The unique identifier of the workflow run"),
 			),
-			mcp.WithNumber("per_page",
-				mcp.Description("The number of results per page (max 100)"),
-			),
-			mcp.WithNumber("page",
-				mcp.Description("The page number of the results to fetch"),
-			),
+			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := RequiredParam[string](request, "owner")
@@ -1045,11 +1013,7 @@ func ListWorkflowRunArtifacts(getClient GetClientFn, t translations.TranslationH
 			runID := int64(runIDInt)
 
 			// Get optional pagination parameters
-			perPage, err := OptionalIntParam(request, "per_page")
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-			page, err := OptionalIntParam(request, "page")
+			pagination, err := OptionalPaginationParams(request)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -1061,8 +1025,8 @@ func ListWorkflowRunArtifacts(getClient GetClientFn, t translations.TranslationH
 
 			// Set up list options
 			opts := &github.ListOptions{
-				PerPage: perPage,
-				Page:    page,
+				PerPage: pagination.perPage,
+				Page:    pagination.page,
 			}
 
 			artifacts, resp, err := client.Actions.ListWorkflowRunArtifacts(ctx, owner, repo, runID, opts)
