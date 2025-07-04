@@ -224,15 +224,11 @@ func userOrOrgHandler(accountType string, getClient GetClientFn) server.ToolHand
 
 		for _, user := range result.Users {
 			if user.Login != nil {
-				mu := MinimalUser{Login: *user.Login}
-				if user.ID != nil {
-					mu.ID = *user.ID
-				}
-				if user.HTMLURL != nil {
-					mu.ProfileURL = *user.HTMLURL
-				}
-				if user.AvatarURL != nil {
-					mu.AvatarURL = *user.AvatarURL
+				mu := MinimalUser{
+					Login:      user.GetLogin(),
+					ID:         user.GetID(),
+					ProfileURL: user.GetHTMLURL(),
+					AvatarURL:  user.GetAvatarURL(),
 				}
 				minimalUsers = append(minimalUsers, mu)
 			}

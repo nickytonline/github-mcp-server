@@ -40,14 +40,10 @@ func GetMe(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.Too
 
 		// Create minimal user representation instead of returning full user object
 		minimalUser := MinimalUser{
-			Login: user.GetLogin(),
-			ID:    user.GetID(),
-		}
-		if user.HTMLURL != nil {
-			minimalUser.ProfileURL = *user.HTMLURL
-		}
-		if user.AvatarURL != nil {
-			minimalUser.AvatarURL = *user.AvatarURL
+			Login:      user.GetLogin(),
+			ID:         user.GetID(),
+			ProfileURL: user.GetHTMLURL(),
+			AvatarURL:  user.GetAvatarURL(),
 		}
 
 		return MarshalledTextResult(minimalUser), nil
