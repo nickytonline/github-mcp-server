@@ -38,6 +38,9 @@ func GetMe(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.Too
 			), nil
 		}
 
+		// Set nil to omit from output
+		user.SiteAdmin = nil
+
 		return MarshalledTextResult(user), nil
 	})
 
