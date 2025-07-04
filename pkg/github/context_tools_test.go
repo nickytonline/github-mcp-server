@@ -26,15 +26,17 @@ func Test_GetMe(t *testing.T) {
 
 	// Setup mock user response
 	mockUser := &github.User{
-		Login:     github.Ptr("testuser"),
-		Name:      github.Ptr("Test User"),
-		Email:     github.Ptr("test@example.com"),
-		Bio:       github.Ptr("GitHub user for testing"),
-		Company:   github.Ptr("Test Company"),
-		Location:  github.Ptr("Test Location"),
-		HTMLURL:   github.Ptr("https://github.com/testuser"),
-		CreatedAt: &github.Timestamp{Time: time.Now().Add(-365 * 24 * time.Hour)},
-		Type:      github.Ptr("User"),
+		Login:           github.Ptr("testuser"),
+		Name:            github.Ptr("Test User"),
+		Email:           github.Ptr("test@example.com"),
+		Bio:             github.Ptr("GitHub user for testing"),
+		Company:         github.Ptr("Test Company"),
+		Location:        github.Ptr("Test Location"),
+		HTMLURL:         github.Ptr("https://github.com/testuser"),
+		CreatedAt:       &github.Timestamp{Time: time.Now().Add(-365 * 24 * time.Hour)},
+		Type:            github.Ptr("User"),
+		Hireable:        github.Ptr(true),
+		TwitterUsername: github.Ptr("testuser_twitter"),
 		Plan: &github.Plan{
 			Name: github.Ptr("pro"),
 		},
@@ -124,6 +126,16 @@ func Test_GetMe(t *testing.T) {
 			// Verify minimal user details
 			assert.Equal(t, *tc.expectedUser.Login, returnedUser.Login)
 			assert.Equal(t, *tc.expectedUser.HTMLURL, returnedUser.ProfileURL)
+
+			// Verify user details
+			require.NotNil(t, returnedUser.Details)
+			assert.Equal(t, *tc.expectedUser.Name, returnedUser.Details.Name)
+			assert.Equal(t, *tc.expectedUser.Email, returnedUser.Details.Email)
+			assert.Equal(t, *tc.expectedUser.Bio, returnedUser.Details.Bio)
+			assert.Equal(t, *tc.expectedUser.Company, returnedUser.Details.Company)
+			assert.Equal(t, *tc.expectedUser.Location, returnedUser.Details.Location)
+			assert.Equal(t, *tc.expectedUser.Hireable, returnedUser.Details.Hireable)
+			assert.Equal(t, *tc.expectedUser.TwitterUsername, returnedUser.Details.TwitterUsername)
 		})
 	}
 }

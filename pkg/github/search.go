@@ -155,11 +155,13 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 		}
 }
 
+// MinimalUser is the output type for user and organization search results.
 type MinimalUser struct {
-	Login      string `json:"login"`
-	ID         int64  `json:"id,omitempty"`
-	ProfileURL string `json:"profile_url,omitempty"`
-	AvatarURL  string `json:"avatar_url,omitempty"`
+	Login      string       `json:"login"`
+	ID         int64        `json:"id,omitempty"`
+	ProfileURL string       `json:"profile_url,omitempty"`
+	AvatarURL  string       `json:"avatar_url,omitempty"`
+	Details    *UserDetails `json:"details,omitempty"` // Optional field for additional user details
 }
 
 type MinimalSearchUsersResult struct {
