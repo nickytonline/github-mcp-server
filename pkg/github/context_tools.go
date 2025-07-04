@@ -38,10 +38,19 @@ func GetMe(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.Too
 			), nil
 		}
 
-		// Set nil to omit from output
-		user.SiteAdmin = nil
+		// Create minimal user representation instead of returning full user object
+		minimalUser := MinimalUser{
+			Login: user.GetLogin(),
+			ID:    user.GetID(),
+		}
+		if user.HTMLURL != nil {
+			minimalUser.ProfileURL = *user.HTMLURL
+		}
+		if user.AvatarURL != nil {
+			minimalUser.AvatarURL = *user.AvatarURL
+		}
 
-		return MarshalledTextResult(user), nil
+		return MarshalledTextResult(minimalUser), nil
 	})
 
 	return tool, handler

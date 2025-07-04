@@ -117,17 +117,13 @@ func Test_GetMe(t *testing.T) {
 			}
 
 			// Unmarshal and verify the result
-			var returnedUser github.User
+			var returnedUser MinimalUser
 			err = json.Unmarshal([]byte(textContent.Text), &returnedUser)
 			require.NoError(t, err)
 
-			// Verify user details
-			assert.Equal(t, *tc.expectedUser.Login, *returnedUser.Login)
-			assert.Equal(t, *tc.expectedUser.Name, *returnedUser.Name)
-			assert.Equal(t, *tc.expectedUser.Email, *returnedUser.Email)
-			assert.Equal(t, *tc.expectedUser.Bio, *returnedUser.Bio)
-			assert.Equal(t, *tc.expectedUser.HTMLURL, *returnedUser.HTMLURL)
-			assert.Equal(t, *tc.expectedUser.Type, *returnedUser.Type)
+			// Verify minimal user details
+			assert.Equal(t, *tc.expectedUser.Login, returnedUser.Login)
+			assert.Equal(t, *tc.expectedUser.HTMLURL, returnedUser.ProfileURL)
 		})
 	}
 }
