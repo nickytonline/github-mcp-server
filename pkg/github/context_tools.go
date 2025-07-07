@@ -35,14 +35,11 @@ type UserDetails struct {
 // GetMe creates a tool to get details of the authenticated user.
 func GetMe(getClient GetClientFn, t translations.TranslationHelperFunc) (mcp.Tool, server.ToolHandlerFunc) {
 	tool := mcp.NewTool("get_me",
-		mcp.WithDescription(t("TOOL_GET_ME_DESCRIPTION", "Get details of the authenticated GitHub user. Use this when a request includes \"me\", \"my\". The output will not change unless the user changes their profile, so only call this once.")),
+		mcp.WithDescription(t("TOOL_GET_ME_DESCRIPTION", "Get details of the authenticated GitHub user. Use this when a request is about the user's own profile for GitHub. Or when information is missing to build other tool calls.")),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
 			Title:        t("TOOL_GET_ME_USER_TITLE", "Get my user profile"),
 			ReadOnlyHint: ToBoolPtr(true),
 		}),
-		mcp.WithString("reason",
-			mcp.Description("Optional: the reason for requesting the user information"),
-		),
 	)
 
 	type args struct{}

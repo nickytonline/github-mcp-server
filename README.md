@@ -550,7 +550,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 <summary>Context</summary>
 
 - **get_me** - Get my user profile
-  - `reason`: Optional: the reason for requesting the user information (string, optional)
+  - No parameters required
 
 </details>
 

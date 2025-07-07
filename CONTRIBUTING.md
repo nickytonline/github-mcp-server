@@ -14,18 +14,21 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 These are one time installations required to be able to test your changes locally as part of the pull request (PR) submission process.
 
-1. install Go [through download](https://go.dev/doc/install) | [through Homebrew](https://formulae.brew.sh/formula/go)
-1. [install golangci-lint v2](https://golangci-lint.run/welcome/install/#local-installation)
+1. Install Go [through download](https://go.dev/doc/install) | [through Homebrew](https://formulae.brew.sh/formula/go)
+2. [Install golangci-lint v2](https://golangci-lint.run/welcome/install/#local-installation)
 
 ## Submitting a pull request
 
 1. [Fork][fork] and clone the repository
-1. Make sure the tests pass on your machine: `go test -v ./...`
-1. Make sure linter passes on your machine: `golangci-lint run`
-1. Create a new branch: `git checkout -b my-branch-name`
-1. Make your change, add tests, and make sure the tests and linter still pass
-1. Push to your fork and [submit a pull request][pr] targeting the `main` branch
-1. Pat yourself on the back and wait for your pull request to be reviewed and merged.
+2. Make sure the tests pass on your machine: `go test -v ./...`
+3. Make sure linter passes on your machine: `golangci-lint run`
+4. Create a new branch: `git checkout -b my-branch-name`
+5. Add your changes and tests, and make sure the Action workflows still pass
+    - Run linter: `script/lint`
+    - Update snapshots and run tests: `UPDATE_TOOLSNAPS=true go test ./...`
+    - Update readme documentation: `script/generate-docs`
+6. Push to your fork and [submit a pull request][pr] targeting the `main` branch
+7. Pat yourself on the back and wait for your pull request to be reviewed and merged.
 
 Here are a few things you can do that will increase the likelihood of your pull request being accepted:
 
