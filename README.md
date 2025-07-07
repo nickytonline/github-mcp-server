@@ -902,7 +902,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `path`: Path to file/directory (directories must end with a slash '/') (string, required)
   - `ref`: Accepts optional git refs such as `refs/tags/{tag}`, `refs/heads/{branch}` or `refs/pull/{pr_number}/head` (string, optional)
   - `repo`: Repository name (string, required)
-  - `sha`: Accepts optional git sha, if sha is specified it will be used instead of ref (string, optional)
+  - `sha`: Accepts optional commit SHA. If specified, it will be used instead of ref (string, optional)
 
 - **get_tag** - Get tag details
   - `owner`: Repository owner (string, required)
@@ -916,12 +916,12 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `repo`: Repository name (string, required)
 
 - **list_commits** - List commits
-  - `author`: Author username or email address (string, optional)
+  - `author`: Author username or email address to filter commits by (string, optional)
   - `owner`: Repository owner (string, required)
   - `page`: Page number for pagination (min 1) (number, optional)
   - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
   - `repo`: Repository name (string, required)
-  - `sha`: The commit SHA, branch name, or tag name to list commits from. If not specified, defaults to the repository's default branch. (string, optional)
+  - `sha`: Commit SHA, branch or tag name to list commits of. If not provided, uses the default branch of the repository. If a commit SHA is provided, will list commits up to that SHA. (string, optional)
 
 - **list_tags** - List tags
   - `owner`: Repository owner (string, required)
