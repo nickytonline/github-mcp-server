@@ -870,7 +870,7 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
   - `owner`: Repository owner (username or organization) (string, required)
   - `path`: Path where to create/update the file (string, required)
   - `repo`: Repository name (string, required)
-  - `sha`: SHA of file being replaced (for updates) (string, optional)
+  - `sha`: Required if updating an existing file. The blob SHA of the file being replaced. (string, optional)
 
 - **create_repository** - Create repository
   - `autoInit`: Initialize with README (boolean, optional)

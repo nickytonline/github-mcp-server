@@ -31,7 +31,7 @@
         "type": "string"
       },
       "sha": {
-        "description": "SHA of file being replaced (for updates)",
+        "description": "Required if updating an existing file. The blob SHA of the file being replaced.",
         "type": "string"
       }
     },
