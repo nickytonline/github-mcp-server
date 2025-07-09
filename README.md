@@ -982,6 +982,21 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 </details>
 <!-- END AUTOMATED TOOLS -->
 
+### Additional Tools in Remote Github MCP Server
+
+<details>
+
+<summary>Copilot coding agent</summary>
+
+-   **create_pull_request_with_copilot** - Perform task with GitHub Copilot coding agent
+    -   `owner`: Repository owner. You can guess the owner, but confirm it with the user before proceeding. (string, required)
+    -   `repo`: Repository name. You can guess the repository name, but confirm it with the user before proceeding. (string, required)
+    -   `problem_statement`: Detailed description of the task to be performed (e.g., 'Implement a feature that does X', 'Fix bug Y', etc.) (string, required)
+    -   `title`: Title for the pull request that will be created (string, required)
+    -   `base_ref`: Git reference (e.g., branch) that the agent will start its work from. If not specified, defaults to the repository's default branch (string, optional)
+
+</details>
+
 ## Library Usage
 
 The exported Go API of this module should currently be considered unstable, and subject to breaking changes. In the future, we may offer stability; please file an issue if there is a use case where this would be valuable.
