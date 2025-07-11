@@ -11,6 +11,7 @@
         "type": "string"
       },
       "path": {
+        "default": "/",
         "description": "Path to file/directory (directories must end with a slash '/')",
         "type": "string"
       },
@@ -29,8 +30,7 @@
     },
     "required": [
       "owner",
-      "repo",
-      "path"
+      "repo"
     ],
     "type": "object"
   },

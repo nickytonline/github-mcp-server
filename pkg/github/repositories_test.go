@@ -33,7 +33,7 @@ func Test_GetFileContents(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "path")
 	assert.Contains(t, tool.InputSchema.Properties, "ref")
 	assert.Contains(t, tool.InputSchema.Properties, "sha")
-	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "path"})
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
 
 	// Mock response for raw content
 	mockRawContent := []byte("# Test Repository\n\nThis is a test repository.")
