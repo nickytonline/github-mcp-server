@@ -70,6 +70,13 @@ func Test_GetFileContents(t *testing.T) {
 			name: "successful text content fetch",
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
+					mock.GetReposGitRefByOwnerByRepoByRef,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write([]byte(`{"ref": "refs/heads/main", "object": {"sha": ""}}`))
+					}),
+				),
+				mock.WithRequestMatchHandler(
 					raw.GetRawReposContentsByOwnerByRepoByBranchByPath,
 					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "text/markdown")
@@ -94,6 +101,13 @@ func Test_GetFileContents(t *testing.T) {
 			name: "successful file blob content fetch",
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
+					mock.GetReposGitRefByOwnerByRepoByRef,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write([]byte(`{"ref": "refs/heads/main", "object": {"sha": ""}}`))
+					}),
+				),
+				mock.WithRequestMatchHandler(
 					raw.GetRawReposContentsByOwnerByRepoByBranchByPath,
 					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 						w.Header().Set("Content-Type", "image/png")
@@ -117,6 +131,20 @@ func Test_GetFileContents(t *testing.T) {
 		{
 			name: "successful directory content fetch",
 			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetReposByOwnerByRepo,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write([]byte(`{"name": "repo", "default_branch": "main"}`))
+					}),
+				),
+				mock.WithRequestMatchHandler(
+					mock.GetReposGitRefByOwnerByRepoByRef,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write([]byte(`{"ref": "refs/heads/main", "object": {"sha": ""}}`))
+					}),
+				),
 				mock.WithRequestMatchHandler(
 					mock.GetReposContentsByOwnerByRepoByPath,
 					expectQueryParams(t, map[string]string{}).andThen(
@@ -143,6 +171,13 @@ func Test_GetFileContents(t *testing.T) {
 		{
 			name: "content fetch fails",
 			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetReposGitRefByOwnerByRepoByRef,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write([]byte(`{"ref": "refs/heads/main", "object": {"sha": ""}}`))
+					}),
+				),
 				mock.WithRequestMatchHandler(
 					mock.GetReposContentsByOwnerByRepoByPath,
 					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -203,7 +238,7 @@ func Test_GetFileContents(t *testing.T) {
 				textContent := getTextResult(t, result)
 				var returnedContents []*github.RepositoryContent
 				err = json.Unmarshal([]byte(textContent.Text), &returnedContents)
-				require.NoError(t, err)
+				require.NoError(t, err, "Failed to unmarshal directory content result: %v", textContent.Text)
 				assert.Len(t, returnedContents, len(expected))
 				for i, content := range returnedContents {
 					assert.Equal(t, *expected[i].Name, *content.Name)
@@ -2046,6 +2081,173 @@ func Test_GetTag(t *testing.T) {
 			assert.Equal(t, *tc.expectedTag.Message, *returnedTag.Message)
 			assert.Equal(t, *tc.expectedTag.Object.Type, *returnedTag.Object.Type)
 			assert.Equal(t, *tc.expectedTag.Object.SHA, *returnedTag.Object.SHA)
+		})
+	}
+}
+
+func Test_filterPaths(t *testing.T) {
+	tests := []struct {
+		name       string
+		tree       []*github.TreeEntry
+		path       string
+		maxResults int
+		expected   []string
+	}{
+		{
+			name: "file name",
+			tree: []*github.TreeEntry{
+				{Path: github.Ptr("folder/foo.txt"), Type: github.Ptr("blob")},
+				{Path: github.Ptr("bar.txt"), Type: github.Ptr("blob")},
+				{Path: github.Ptr("nested/folder/foo.txt"), Type: github.Ptr("blob")},
+				{Path: github.Ptr("nested/folder/baz.txt"), Type: github.Ptr("blob")},
+			},
+			path:       "foo.txt",
+			maxResults: -1,
+			expected:   []string{"folder/foo.txt", "nested/folder/foo.txt"},
+		},
+		{
+			name: "dir name",
+			tree: []*github.TreeEntry{
+				{Path: github.Ptr("folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("bar.txt"), Type: github.Ptr("blob")},
+				{Path: github.Ptr("nested/folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("nested/folder/baz.txt"), Type: github.Ptr("blob")},
+			},
+			path:       "folder/",
+			maxResults: -1,
+			expected:   []string{"folder/", "nested/folder/"},
+		},
+		{
+			name: "dir and file match",
+			tree: []*github.TreeEntry{
+				{Path: github.Ptr("name"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("name"), Type: github.Ptr("blob")},
+			},
+			path:       "name", // No trailing slash can match both files and directories
+			maxResults: -1,
+			expected:   []string{"name/", "name"},
+		},
+		{
+			name: "dir only match",
+			tree: []*github.TreeEntry{
+				{Path: github.Ptr("name"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("name"), Type: github.Ptr("blob")},
+			},
+			path:       "name/", // Trialing slash ensures only directories are matched
+			maxResults: -1,
+			expected:   []string{"name/"},
+		},
+		{
+			name: "max results limit 2",
+			tree: []*github.TreeEntry{
+				{Path: github.Ptr("folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("nested/folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("nested/nested/folder"), Type: github.Ptr("tree")},
+			},
+			path:       "folder/",
+			maxResults: 2,
+			expected:   []string{"folder/", "nested/folder/"},
+		},
+		{
+			name: "max results limit 1",
+			tree: []*github.TreeEntry{
+				{Path: github.Ptr("folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("nested/folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("nested/nested/folder"), Type: github.Ptr("tree")},
+			},
+			path:       "folder/",
+			maxResults: 1,
+			expected:   []string{"folder/"},
+		},
+		{
+			name: "max results limit 0",
+			tree: []*github.TreeEntry{
+				{Path: github.Ptr("folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("nested/folder"), Type: github.Ptr("tree")},
+				{Path: github.Ptr("nested/nested/folder"), Type: github.Ptr("tree")},
+			},
+			path:       "folder/",
+			maxResults: 0,
+			expected:   []string{},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := filterPaths(tc.tree, tc.path, tc.maxResults)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func Test_resolveGitReference(t *testing.T) {
+	ctx := context.Background()
+	owner := "owner"
+	repo := "repo"
+	mockedClient := mock.NewMockedHTTPClient(
+		mock.WithRequestMatchHandler(
+			mock.GetReposByOwnerByRepo,
+			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"name": "repo", "default_branch": "main"}`))
+			}),
+		),
+		mock.WithRequestMatchHandler(
+			mock.GetReposGitRefByOwnerByRepoByRef,
+			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"ref": "refs/heads/main", "object": {"sha": "123sha456"}}`))
+			}),
+		),
+	)
+
+	tests := []struct {
+		name           string
+		ref            string
+		sha            string
+		expectedOutput *raw.ContentOpts
+	}{
+		{
+			name: "sha takes precedence over ref",
+			ref:  "refs/heads/main",
+			sha:  "123sha456",
+			expectedOutput: &raw.ContentOpts{
+				SHA: "123sha456",
+			},
+		},
+		{
+			name: "use default branch if ref and sha both empty",
+			ref:  "",
+			sha:  "",
+			expectedOutput: &raw.ContentOpts{
+				Ref: "refs/heads/main",
+				SHA: "123sha456",
+			},
+		},
+		{
+			name: "get SHA from ref",
+			ref:  "refs/heads/main",
+			sha:  "",
+			expectedOutput: &raw.ContentOpts{
+				Ref: "refs/heads/main",
+				SHA: "123sha456",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(mockedClient)
+			opts, err := resolveGitReference(ctx, client, owner, repo, tc.ref, tc.sha)
+			require.NoError(t, err)
+
+			if tc.expectedOutput.SHA != "" {
+				assert.Equal(t, tc.expectedOutput.SHA, opts.SHA)
+			}
+			if tc.expectedOutput.Ref != "" {
+				assert.Equal(t, tc.expectedOutput.Ref, opts.Ref)
+			}
 		})
 	}
 }
