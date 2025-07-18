@@ -589,7 +589,7 @@ The following sets of tools are available (all are on by default):
 
 <summary>Pull Requests</summary>
 
-- **add_pull_request_review_comment_to_pending_review** - Add comment to the requester's latest pending pull request review
+- **add_comment_to_pending_review** - Add review comment to the requester's latest pending pull request review
   - `body`: The text of the review comment (string, required)
   - `line`: The line of the blob in the pull request diff that the comment applies to. For multi-line comments, the last line of the range (number, optional)
   - `owner`: Repository owner (string, required)
