@@ -234,10 +234,11 @@ Optionally, you can add a similar example (i.e. without the mcp key) to a file c
 
 </details>
 
-### Install in Other Host Applications
+### Install in Other MCP Hosts
 
 For other MCP host applications, please refer to our installation guides:
 
+- **[GitHub Copilot in other IDEs](/docs/installation-guides/install-other-copilot-ides.md)** - Installation for JetBrains, Visual Studio, Eclipse, and Xcode with GitHub Copilot
 - **[Claude Code & Claude Desktop](docs/installation-guides/install-claude.md)** - Installation guide for Claude Code and Claude Desktop
 - **[Cursor](docs/installation-guides/install-cursor.md)** - Installation guide for Cursor IDE  
 - **[Windsurf](docs/installation-guides/install-windsurf.md)** - Installation guide for Windsurf IDE

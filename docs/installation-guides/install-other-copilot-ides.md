@@ -1,4 +1,4 @@
-# Install GitHub MCP Server in Copilot IDEs & GitHub.com
+# Install GitHub MCP Server in Copilot IDEs
 
 Quick setup guide for the GitHub MCP server in GitHub Copilot across different IDEs. For VS Code instructions, refer to the [VS Code install guide in the README](/README.md#installation-in-vs-code)
 

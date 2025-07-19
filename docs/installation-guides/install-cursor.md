@@ -7,10 +7,18 @@
 
 ## Remote Server Setup (Recommended)
 
-The remote GitHub MCP server is hosted by GitHub at `https://api.githubcopilot.com/mcp/` and supports Streamable HTTP protocol. Cursor currently supports remote servers with PAT authentication.
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=github&config=eyJ1cmwiOiJodHRwczovL2FwaS5naXRodWJjb3BpbG90LmNvbS9tY3AvIiwiaGVhZGVycyI6eyJBdXRob3JpemF0aW9uIjoiQmVhcmVyIFlPVVJfR0lUSFVCX1BBVCJ9LCJ0eXBlIjoiaHR0cCJ9)
+
+Uses GitHub's hosted server at https://api.githubcopilot.com/mcp/. Requires Cursor v0.48.0+ for Streamable HTTP support. While Cursor supports OAuth for some MCP servers, the GitHub server currently requires a Personal Access Token.
+
+### Install steps
+1. Click the install button above and follow the flow, or go directly to your global MCP configuration file at `~/.cursor/mcp.json` and enter the code block below
+2. In Tools & Integrations > MCP tools, click the pencil icon next to "github"
+3. Replace `YOUR_GITHUB_PAT` with your actual [GitHub Personal Access Token](https://github.com/settings/tokens)
+4. Save the file
+5. Restart Cursor
 
 ### Streamable HTTP Configuration
-As of Cursor v0.48.0, Cursor supports Streamable HTTP servers directly:
 
 ```json
 {
@@ -25,12 +33,20 @@ As of Cursor v0.48.0, Cursor supports Streamable HTTP servers directly:
 }
 ```
 
-**Note**: You may need to update to the latest version, if the current version doesn't support direct Streamable HTTP
-
 ## Local Server Setup
 
-### Docker Installation (Required)
-> **Important**: The npm package `@modelcontextprotocol/server-github` is no longer supported as of April 2025. Use the official Docker image `ghcr.io/github/github-mcp-server` instead.
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=github&config=eyJjb21tYW5kIjoiZG9ja2VyIiwiYXJncyI6WyJydW4iLCItaSIsIi0tcm0iLCItZSIsIkdJVEhVQl9QRVJTT05BTF9BQ0NFU1NfVE9LRU4iLCJnaGNyLmlvL2dpdGh1Yi9naXRodWItbWNwLXNlcnZlciJdLCJlbnYiOnsiR0lUSFVCX1BFUlNPTkFMX0FDQ0VTU19UT0tFTiI6IllPVVJfR0lUSFVCX1BHVCJ9fQ==)
+
+The local GitHub MCP server runs via Docker and requires Docker Desktop to be installed and running.
+
+### Install steps
+1. Click the install button above and follow the flow, or go directly to your global MCP configuration file at `~/.cursor/mcp.json` and enter the code block below
+2. In Tools & Integrations > MCP tools, click the pencil icon next to "github"
+3. Replace `YOUR_GITHUB_PAT` with your actual [GitHub Personal Access Token](https://github.com/settings/tokens)
+4. Save the file
+5. Restart Cursor
+
+### Docker Configuration
 
 ```json
 {
@@ -53,50 +69,18 @@ As of Cursor v0.48.0, Cursor supports Streamable HTTP servers directly:
 }
 ```
 
-## Installation Steps
+> **Important**: The npm package `@modelcontextprotocol/server-github` is no longer supported as of April 2025. Use the official Docker image `ghcr.io/github/github-mcp-server` instead.
 
-### Via Cursor Settings UI
-1. Open Cursor
-2. Navigate to **Settings** → **Tools & Integrations** → **MCP**
-3. Click **"+ Add new global MCP server"**
-4. This opens `~/.cursor/mcp.json` in the editor
-5. Add your chosen configuration from above
-6. Save the file
-7. Restart Cursor
+## Configuration Files
 
-### Manual Configuration
-1. Create or edit the configuration file:
-   - **Global (all projects)**: `~/.cursor/mcp.json`
-   - **Project-specific**: `.cursor/mcp.json` in project root
-2. Add your chosen configuration
-3. Save the file
-4. Restart Cursor completely
+- **Global (all projects)**: `~/.cursor/mcp.json`
+- **Project-specific**: `.cursor/mcp.json` in project root
 
-### Token Security
-- Create PATs with minimum required scopes:
-  - `repo` - For repository operations
-  - `read:packages` - For Docker image pull (local setup)
-  - Additional scopes based on tools you need
-- Use separate PATs for different projects
-- Regularly rotate tokens
-- Never commit configuration files to version control
-
-## Configuration Details
-
-- **File paths**: 
-  - Global: `~/.cursor/mcp.json`
-  - Project: `.cursor/mcp.json`
-- **Scope**: Both global and project-specific configurations supported
-- **Format**: Must be valid JSON (use a linter to verify)
-
-## Verification
-
-After installation:
+## Verify Installation
 1. Restart Cursor completely
-2. Open Settings → Tools & Integrations → MCP
-3. Look for green dot next to your server name
-4. In chat/composer, check "Available Tools"
-5. Test with: "List my GitHub repositories"
+2. Check for green dot in Settings → Tools & Integrations → MCP Tools
+3. In chat/composer, check "Available Tools"
+4. Test with: "List my GitHub repositories"
 
 ## Troubleshooting
 
