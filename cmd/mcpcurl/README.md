@@ -15,6 +15,26 @@ be executed against the configured MCP server.
 
 ## Installation
 
+### Prerequisites
+- Go 1.21 or later
+- Access to the GitHub MCP Server from either Docker or local build
+
+### Build from Source
+```bash
+cd cmd/mcpcurl
+go build -o mcpcurl
+```
+
+### Using Go Install
+```bash
+go install github.com/github/github-mcp-server/cmd/mcpcurl@latest
+```
+
+### Verify Installation
+```bash
+./mcpcurl --help
+```
+
 ## Usage
 
 ```console
