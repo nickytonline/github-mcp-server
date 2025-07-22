@@ -478,6 +478,13 @@ The following sets of tools are available (all are on by default):
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
 
+- **add_sub_issue** - Add sub-issue
+  - `issue_number`: The number of the parent issue (number, required)
+  - `owner`: Repository owner (string, required)
+  - `replace_parent`: When true, replaces the sub-issue's current parent issue (boolean, optional)
+  - `repo`: Repository name (string, required)
+  - `sub_issue_id`: The ID of the sub-issue to add. ID is not the same as issue number (number, required)
+
 - **assign_copilot_to_issue** - Assign Copilot to issue
   - `issueNumber`: Issue number (number, required)
   - `owner`: Repository owner (string, required)
@@ -514,6 +521,27 @@ The following sets of tools are available (all are on by default):
   - `since`: Filter by date (ISO 8601 timestamp) (string, optional)
   - `sort`: Sort order (string, optional)
   - `state`: Filter by state (string, optional)
+
+- **list_sub_issues** - List sub-issues
+  - `issue_number`: Issue number (number, required)
+  - `owner`: Repository owner (string, required)
+  - `page`: Page number for pagination (default: 1) (number, optional)
+  - `per_page`: Number of results per page (max 100, default: 30) (number, optional)
+  - `repo`: Repository name (string, required)
+
+- **remove_sub_issue** - Remove sub-issue
+  - `issue_number`: The number of the parent issue (number, required)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `sub_issue_id`: The ID of the sub-issue to remove. ID is not the same as issue number (number, required)
+
+- **reprioritize_sub_issue** - Reprioritize sub-issue
+  - `after_id`: The ID of the sub-issue to be prioritized after (either after_id OR before_id should be specified) (number, optional)
+  - `before_id`: The ID of the sub-issue to be prioritized before (either after_id OR before_id should be specified) (number, optional)
+  - `issue_number`: The number of the parent issue (number, required)
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `sub_issue_id`: The ID of the sub-issue to reprioritize. ID is not the same as issue number (number, required)
 
 - **search_issues** - Search issues
   - `order`: Sort order (string, optional)
