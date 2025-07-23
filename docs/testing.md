@@ -22,7 +22,7 @@ This project uses a combination of unit tests and end-to-end (e2e) tests to ensu
 ## toolsnaps: Tool Schema Snapshots
 
 - The `toolsnaps` utility ensures that the JSON schema for each tool does not change unexpectedly.
-- Snapshots are stored in `__toolsnaps__/*.snap` files , where `*` represents the name of the tool
+- Snapshots are stored in `__toolsnaps__/*.snap` files, where `*` represents the name of the tool
 - When running tests, the current tool schema is compared to the snapshot. If there is a difference, the test will fail and show a diff.
 - If you intentionally change a tool's schema, update the snapshots by running tests with the environment variable: `UPDATE_TOOLSNAPS=true go test ./...`
 - In CI (when `GITHUB_ACTIONS=true`), missing snapshots will cause a test failure to ensure snapshots are always
