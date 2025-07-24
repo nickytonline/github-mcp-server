@@ -25,7 +25,7 @@
         "minimum": 1,
         "type": "number"
       },
-      "q": {
+      "query": {
         "description": "Search query using GitHub code search syntax",
         "type": "string"
       },
@@ -35,7 +35,7 @@
       }
     },
     "required": [
-      "q"
+      "query"
     ],
     "type": "object"
   },

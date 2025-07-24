@@ -83,7 +83,7 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 				Title:        t("TOOL_SEARCH_CODE_USER_TITLE", "Search code"),
 				ReadOnlyHint: ToBoolPtr(true),
 			}),
-			mcp.WithString("q",
+			mcp.WithString("query",
 				mcp.Required(),
 				mcp.Description("Search query using GitHub code search syntax"),
 			),
@@ -97,7 +97,7 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			WithPagination(),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			query, err := RequiredParam[string](request, "q")
+			query, err := RequiredParam[string](request, "query")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

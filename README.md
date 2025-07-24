@@ -838,7 +838,7 @@ The following sets of tools are available (all are on by default):
   - `order`: Sort order (string, optional)
   - `page`: Page number for pagination (min 1) (number, optional)
   - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
-  - `q`: Search query using GitHub code search syntax (string, required)
+  - `query`: Search query using GitHub code search syntax (string, required)
   - `sort`: Sort field ('indexed' only) (string, optional)
 
 - **search_repositories** - Search repositories
