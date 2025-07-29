@@ -119,7 +119,7 @@ func getQueryType(useOrdering bool, categoryID *githubv4.ID) any {
 
 func ListDiscussions(getGQLClient GetGQLClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_discussions",
-			mcp.WithDescription(t("TOOL_LIST_DISCUSSIONS_DESCRIPTION", "List discussions for a repository")),
+			mcp.WithDescription(t("TOOL_LIST_DISCUSSIONS_DESCRIPTION", "List discussions for a repository or organisation.")),
 			mcp.WithToolAnnotation(mcp.ToolAnnotation{
 				Title:        t("TOOL_LIST_DISCUSSIONS_USER_TITLE", "List discussions"),
 				ReadOnlyHint: ToBoolPtr(true),
@@ -129,8 +129,7 @@ func ListDiscussions(getGQLClient GetGQLClientFn, t translations.TranslationHelp
 				mcp.Description("Repository owner"),
 			),
 			mcp.WithString("repo",
-				mcp.Required(),
-				mcp.Description("Repository name"),
+				mcp.Description("Repository name. If not provided, discussions will be queried at the organisation level."),
 			),
 			mcp.WithString("category",
 				mcp.Description("Optional filter by discussion category ID. If provided, only discussions with this category are listed."),
@@ -150,9 +149,14 @@ func ListDiscussions(getGQLClient GetGQLClientFn, t translations.TranslationHelp
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			repo, err := RequiredParam[string](request, "repo")
+			repo, err := OptionalParam[string](request, "repo")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
+			}
+			// when not provided, default to the .github repository
+			// this will query discussions at the organisation level
+			if repo == "" {
+				repo = ".github"
 			}
 
 			category, err := OptionalParam[string](request, "category")

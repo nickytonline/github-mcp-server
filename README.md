@@ -466,7 +466,7 @@ The following sets of tools are available (all are on by default):
   - `orderBy`: Order discussions by field. If provided, the 'direction' also needs to be provided. (string, optional)
   - `owner`: Repository owner (string, required)
   - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
-  - `repo`: Repository name (string, required)
+  - `repo`: Repository name. If not provided, discussions will be queried at the organisation level. (string, optional)
 
 </details>
 
