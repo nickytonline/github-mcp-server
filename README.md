@@ -736,6 +736,7 @@ The following sets of tools are available (all are on by default):
 - **update_pull_request** - Edit pull request
   - `base`: New base branch name (string, optional)
   - `body`: New description (string, optional)
+  - `draft`: Mark pull request as draft (true) or ready for review (false) (boolean, optional)
   - `maintainer_can_modify`: Allow maintainer edits (boolean, optional)
   - `owner`: Repository owner (string, required)
   - `pullNumber`: Pull request number to update (number, required)
