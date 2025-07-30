@@ -287,6 +287,7 @@ The following sets of tools are available (all are on by default):
 | `dependabot` | Dependabot tools |
 | `discussions` | GitHub Discussions related tools |
 | `experiments` | Experimental features that are not considered stable yet |
+| `gists` | GitHub Gist related tools |
 | `issues` | GitHub Issues related tools |
 | `notifications` | GitHub Notifications related tools |
 | `orgs` | GitHub Organization related tools |
@@ -467,6 +468,30 @@ The following sets of tools are available (all are on by default):
   - `owner`: Repository owner (string, required)
   - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
   - `repo`: Repository name. If not provided, discussions will be queried at the organisation level. (string, optional)
+
+</details>
+
+<details>
+
+<summary>Gists</summary>
+
+- **create_gist** - Create Gist
+  - `content`: Content for simple single-file gist creation (string, required)
+  - `description`: Description of the gist (string, optional)
+  - `filename`: Filename for simple single-file gist creation (string, required)
+  - `public`: Whether the gist is public (boolean, optional)
+
+- **list_gists** - List Gists
+  - `page`: Page number for pagination (min 1) (number, optional)
+  - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
+  - `since`: Only gists updated after this time (ISO 8601 timestamp) (string, optional)
+  - `username`: GitHub username (omit for authenticated user's gists) (string, optional)
+
+- **update_gist** - Update Gist
+  - `content`: Content for the file (string, required)
+  - `description`: Updated description of the gist (string, optional)
+  - `filename`: Filename to update or create (string, required)
+  - `gist_id`: ID of the gist to update (string, required)
 
 </details>
 
