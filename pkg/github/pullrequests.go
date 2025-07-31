@@ -241,6 +241,12 @@ func UpdatePullRequest(getClient GetClientFn, getGQLClient GetGQLClientFn, t tra
 			mcp.WithBoolean("maintainer_can_modify",
 				mcp.Description("Allow maintainer edits"),
 			),
+			mcp.WithArray("reviewers",
+				mcp.Description("GitHub usernames to request reviews from"),
+				mcp.Items(map[string]interface{}{
+					"type": "string",
+				}),
+			),
 		),
 		func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			owner, err := RequiredParam[string](request, "owner")
@@ -256,15 +262,17 @@ func UpdatePullRequest(getClient GetClientFn, getGQLClient GetGQLClientFn, t tra
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 
+			// Check if draft parameter is provided
 			draftProvided := request.GetArguments()["draft"] != nil
 			var draftValue bool
 			if draftProvided {
 				draftValue, err = OptionalParam[bool](request, "draft")
 				if err != nil {
-					return nil, err
+					return mcp.NewToolResultError(err.Error()), nil
 				}
 			}
 
+			// Build the update struct only with provided fields
 			update := &github.PullRequest{}
 			restUpdateNeeded := false
 
@@ -303,10 +311,18 @@ func UpdatePullRequest(getClient GetClientFn, getGQLClient GetGQLClientFn, t tra
 				restUpdateNeeded = true
 			}
 
-			if !restUpdateNeeded && !draftProvided {
+			// Handle reviewers separately
+			reviewers, err := OptionalStringArrayParam(request, "reviewers")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			// If no updates, no draft change, and no reviewers, return error early
+			if !restUpdateNeeded && !draftProvided && len(reviewers) == 0 {
 				return mcp.NewToolResultError("No update parameters provided."), nil
 			}
 
+			// Handle REST API updates (title, body, state, base, maintainer_can_modify)
 			if restUpdateNeeded {
 				client, err := getClient(ctx)
 				if err != nil {
@@ -332,6 +348,7 @@ func UpdatePullRequest(getClient GetClientFn, getGQLClient GetGQLClientFn, t tra
 				}
 			}
 
+			// Handle draft status changes using GraphQL
 			if draftProvided {
 				gqlClient, err := getGQLClient(ctx)
 				if err != nil {
@@ -397,6 +414,41 @@ func UpdatePullRequest(getClient GetClientFn, getGQLClient GetGQLClientFn, t tra
 				}
 			}
 
+			// Handle reviewer requests
+			if len(reviewers) > 0 {
+				client, err := getClient(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+				}
+
+				reviewersRequest := github.ReviewersRequest{
+					Reviewers: reviewers,
+				}
+
+				_, resp, err := client.PullRequests.RequestReviewers(ctx, owner, repo, pullNumber, reviewersRequest)
+				if err != nil {
+					return ghErrors.NewGitHubAPIErrorResponse(ctx,
+						"failed to request reviewers",
+						resp,
+						err,
+					), nil
+				}
+				defer func() {
+					if resp != nil && resp.Body != nil {
+						_ = resp.Body.Close()
+					}
+				}()
+
+				if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+					body, err := io.ReadAll(resp.Body)
+					if err != nil {
+						return nil, fmt.Errorf("failed to read response body: %w", err)
+					}
+					return mcp.NewToolResultError(fmt.Sprintf("failed to request reviewers: %s", string(body))), nil
+				}
+			}
+
+			// Get the final state of the PR to return
 			client, err := getClient(ctx)
 			if err != nil {
 				return nil, err
