@@ -484,7 +484,7 @@ func Test_GetDiscussion(t *testing.T) {
 	assert.ElementsMatch(t, toolDef.InputSchema.Required, []string{"owner", "repo", "discussionNumber"})
 
 	// Use exact string query that matches implementation output
-	qGetDiscussion := "query($discussionNumber:Int!$owner:String!$repo:String!){repository(owner: $owner, name: $repo){discussion(number: $discussionNumber){number,body,createdAt,url,category{name}}}}"
+    qGetDiscussion := "query($discussionNumber:Int!$owner:String!$repo:String!){repository(owner: $owner, name: $repo){discussion(number: $discussionNumber){number,title,body,createdAt,url,category{name}}}}"
 
 	vars := map[string]interface{}{
 		"owner":            "owner",
@@ -503,6 +503,7 @@ func Test_GetDiscussion(t *testing.T) {
 			response: githubv4mock.DataResponse(map[string]any{
 				"repository": map[string]any{"discussion": map[string]any{
 					"number":    1,
+					"title":     "Test Discussion Title",
 					"body":      "This is a test discussion",
 					"url":       "https://github.com/owner/repo/discussions/1",
 					"createdAt": "2025-04-25T12:00:00Z",
@@ -513,6 +514,7 @@ func Test_GetDiscussion(t *testing.T) {
 			expected: &github.Discussion{
 				HTMLURL:   github.Ptr("https://github.com/owner/repo/discussions/1"),
 				Number:    github.Ptr(1),
+				Title:     github.Ptr("Test Discussion Title"),
 				Body:      github.Ptr("This is a test discussion"),
 				CreatedAt: &github.Timestamp{Time: time.Date(2025, 4, 25, 12, 0, 0, 0, time.UTC)},
 				DiscussionCategory: &github.DiscussionCategory{
@@ -549,6 +551,7 @@ func Test_GetDiscussion(t *testing.T) {
 			require.NoError(t, json.Unmarshal([]byte(text), &out))
 			assert.Equal(t, *tc.expected.HTMLURL, *out.HTMLURL)
 			assert.Equal(t, *tc.expected.Number, *out.Number)
+			assert.Equal(t, *tc.expected.Title, *out.Title)
 			assert.Equal(t, *tc.expected.Body, *out.Body)
 			// Check category label
 			assert.Equal(t, *tc.expected.DiscussionCategory.Name, *out.DiscussionCategory.Name)

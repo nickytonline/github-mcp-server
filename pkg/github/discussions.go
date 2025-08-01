@@ -295,6 +295,7 @@ func GetDiscussion(getGQLClient GetGQLClientFn, t translations.TranslationHelper
 				Repository struct {
 					Discussion struct {
 						Number    githubv4.Int
+						Title     githubv4.String
 						Body      githubv4.String
 						CreatedAt githubv4.DateTime
 						URL       githubv4.String `graphql:"url"`
@@ -315,6 +316,7 @@ func GetDiscussion(getGQLClient GetGQLClientFn, t translations.TranslationHelper
 			d := q.Repository.Discussion
 			discussion := &github.Discussion{
 				Number:    github.Ptr(int(d.Number)),
+				Title:     github.Ptr(string(d.Title)),
 				Body:      github.Ptr(string(d.Body)),
 				HTMLURL:   github.Ptr(string(d.URL)),
 				CreatedAt: &github.Timestamp{Time: d.CreatedAt.Time},
