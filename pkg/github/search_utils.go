@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/google/go-github/v73/github"
+	"github.com/google/go-github/v74/github"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
