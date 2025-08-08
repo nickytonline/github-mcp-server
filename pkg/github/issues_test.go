@@ -648,8 +648,8 @@ func Test_CreateIssue(t *testing.T) {
 
 func Test_ListIssues(t *testing.T) {
 	// Verify tool definition
-	mockClient := github.NewClient(nil)
-	tool, _ := ListIssues(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	mockClient := githubv4.NewClient(nil)
+	tool, _ := ListIssues(stubGetGQLClientFn(mockClient), translations.NullTranslationHelper)
 	require.NoError(t, toolsnaps.Test(tool.Name, tool))
 
 	assert.Equal(t, "list_issues", tool.Name)
@@ -658,166 +658,288 @@ func Test_ListIssues(t *testing.T) {
 	assert.Contains(t, tool.InputSchema.Properties, "repo")
 	assert.Contains(t, tool.InputSchema.Properties, "state")
 	assert.Contains(t, tool.InputSchema.Properties, "labels")
-	assert.Contains(t, tool.InputSchema.Properties, "sort")
+	assert.Contains(t, tool.InputSchema.Properties, "orderBy")
 	assert.Contains(t, tool.InputSchema.Properties, "direction")
 	assert.Contains(t, tool.InputSchema.Properties, "since")
-	assert.Contains(t, tool.InputSchema.Properties, "page")
+	assert.Contains(t, tool.InputSchema.Properties, "after")
 	assert.Contains(t, tool.InputSchema.Properties, "perPage")
 	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo"})
 
-	// Setup mock issues for success case
-	mockIssues := []*github.Issue{
+	// Mock issues data
+	mockIssuesAll := []map[string]any{
 		{
-			Number:    github.Ptr(123),
-			Title:     github.Ptr("First Issue"),
-			Body:      github.Ptr("This is the first test issue"),
-			State:     github.Ptr("open"),
-			HTMLURL:   github.Ptr("https://github.com/owner/repo/issues/123"),
-			CreatedAt: &github.Timestamp{Time: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)},
+			"number":     123,
+			"title":      "First Issue",
+			"body":       "This is the first test issue",
+			"state":      "OPEN",
+			"databaseId": 1001,
+			"createdAt":  "2023-01-01T00:00:00Z",
+			"updatedAt":  "2023-01-01T00:00:00Z",
+			"author":     map[string]any{"login": "user1"},
+			"labels": map[string]any{
+				"nodes": []map[string]any{
+					{"name": "bug", "id": "label1", "description": "Bug label"},
+				},
+			},
 		},
 		{
-			Number:    github.Ptr(456),
-			Title:     github.Ptr("Second Issue"),
-			Body:      github.Ptr("This is the second test issue"),
-			State:     github.Ptr("open"),
-			HTMLURL:   github.Ptr("https://github.com/owner/repo/issues/456"),
-			Labels:    []*github.Label{{Name: github.Ptr("bug")}},
-			CreatedAt: &github.Timestamp{Time: time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC)},
+			"number":     456,
+			"title":      "Second Issue",
+			"body":       "This is the second test issue",
+			"state":      "OPEN",
+			"databaseId": 1002,
+			"createdAt":  "2023-02-01T00:00:00Z",
+			"updatedAt":  "2023-02-01T00:00:00Z",
+			"author":     map[string]any{"login": "user2"},
+			"labels": map[string]any{
+				"nodes": []map[string]any{
+					{"name": "enhancement", "id": "label2", "description": "Enhancement label"},
+				},
+			},
 		},
+	}
+
+	mockIssuesOpen := []map[string]any{mockIssuesAll[0], mockIssuesAll[1]}
+	mockIssuesClosed := []map[string]any{
+		{
+			"number":     789,
+			"title":      "Closed Issue",
+			"body":       "This is a closed issue",
+			"state":      "CLOSED",
+			"databaseId": 1003,
+			"createdAt":  "2023-03-01T00:00:00Z",
+			"updatedAt":  "2023-03-01T00:00:00Z",
+			"author":     map[string]any{"login": "user3"},
+			"labels": map[string]any{
+				"nodes": []map[string]any{},
+			},
+		},
+	}
+
+	// Mock responses
+	mockResponseListAll := githubv4mock.DataResponse(map[string]any{
+		"repository": map[string]any{
+			"issues": map[string]any{
+				"nodes": mockIssuesAll,
+				"pageInfo": map[string]any{
+					"hasNextPage":     false,
+					"hasPreviousPage": false,
+					"startCursor":     "",
+					"endCursor":       "",
+				},
+				"totalCount": 2,
+			},
+		},
+	})
+
+	mockResponseOpenOnly := githubv4mock.DataResponse(map[string]any{
+		"repository": map[string]any{
+			"issues": map[string]any{
+				"nodes": mockIssuesOpen,
+				"pageInfo": map[string]any{
+					"hasNextPage":     false,
+					"hasPreviousPage": false,
+					"startCursor":     "",
+					"endCursor":       "",
+				},
+				"totalCount": 2,
+			},
+		},
+	})
+
+	mockResponseClosedOnly := githubv4mock.DataResponse(map[string]any{
+		"repository": map[string]any{
+			"issues": map[string]any{
+				"nodes": mockIssuesClosed,
+				"pageInfo": map[string]any{
+					"hasNextPage":     false,
+					"hasPreviousPage": false,
+					"startCursor":     "",
+					"endCursor":       "",
+				},
+				"totalCount": 1,
+			},
+		},
+	})
+
+	mockErrorRepoNotFound := githubv4mock.ErrorResponse("repository not found")
+
+	// Variables matching what GraphQL receives after JSON marshaling/unmarshaling
+	varsListAll := map[string]interface{}{
+		"owner":     "owner",
+		"repo":      "repo",
+		"states":    []interface{}{"OPEN", "CLOSED"},
+		"orderBy":   "CREATED_AT",
+		"direction": "DESC",
+		"first":     float64(30),
+		"after":     (*string)(nil),
+	}
+
+	varsOpenOnly := map[string]interface{}{
+		"owner":     "owner",
+		"repo":      "repo",
+		"states":    []interface{}{"OPEN"},
+		"orderBy":   "CREATED_AT",
+		"direction": "DESC",
+		"first":     float64(30),
+		"after":     (*string)(nil),
+	}
+
+	varsClosedOnly := map[string]interface{}{
+		"owner":     "owner",
+		"repo":      "repo",
+		"states":    []interface{}{"CLOSED"},
+		"orderBy":   "CREATED_AT",
+		"direction": "DESC",
+		"first":     float64(30),
+		"after":     (*string)(nil),
+	}
+
+	varsWithLabels := map[string]interface{}{
+		"owner":     "owner",
+		"repo":      "repo",
+		"states":    []interface{}{"OPEN", "CLOSED"},
+		"labels":    []interface{}{"bug", "enhancement"},
+		"orderBy":   "CREATED_AT",
+		"direction": "DESC",
+		"first":     float64(30),
+		"after":     (*string)(nil),
+	}
+
+	varsRepoNotFound := map[string]interface{}{
+		"owner":     "owner",
+		"repo":      "nonexistent-repo",
+		"states":    []interface{}{"OPEN", "CLOSED"},
+		"orderBy":   "CREATED_AT",
+		"direction": "DESC",
+		"first":     float64(30),
+		"after":     (*string)(nil),
 	}
 
 	tests := []struct {
-		name           string
-		mockedClient   *http.Client
-		requestArgs    map[string]interface{}
-		expectError    bool
-		expectedIssues []*github.Issue
-		expectedErrMsg string
+		name          string
+		reqParams     map[string]interface{}
+		expectError   bool
+		errContains   string
+		expectedCount int
+		verifyOrder   func(t *testing.T, issues []*github.Issue)
 	}{
 		{
-			name: "list issues with minimal parameters",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposIssuesByOwnerByRepo,
-					mockIssues,
-				),
-			),
-			requestArgs: map[string]interface{}{
+			name: "list all issues",
+			reqParams: map[string]interface{}{
 				"owner": "owner",
 				"repo":  "repo",
 			},
-			expectError:    false,
-			expectedIssues: mockIssues,
+			expectError:   false,
+			expectedCount: 2,
 		},
 		{
-			name: "list issues with all parameters",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.GetReposIssuesByOwnerByRepo,
-					expectQueryParams(t, map[string]string{
-						"state":     "open",
-						"labels":    "bug,enhancement",
-						"sort":      "created",
-						"direction": "desc",
-						"since":     "2023-01-01T00:00:00Z",
-						"page":      "1",
-						"per_page":  "30",
-					}).andThen(
-						mockResponse(t, http.StatusOK, mockIssues),
-					),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner":     "owner",
-				"repo":      "repo",
-				"state":     "open",
-				"labels":    []any{"bug", "enhancement"},
-				"sort":      "created",
-				"direction": "desc",
-				"since":     "2023-01-01T00:00:00Z",
-				"page":      float64(1),
-				"perPage":   float64(30),
-			},
-			expectError:    false,
-			expectedIssues: mockIssues,
-		},
-		{
-			name: "invalid since parameter",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
-					mock.GetReposIssuesByOwnerByRepo,
-					mockIssues,
-				),
-			),
-			requestArgs: map[string]interface{}{
+			name: "filter by open state",
+			reqParams: map[string]interface{}{
 				"owner": "owner",
 				"repo":  "repo",
-				"since": "invalid-date",
+				"state": "OPEN",
 			},
-			expectError:    true,
-			expectedErrMsg: "invalid ISO 8601 timestamp",
+			expectError:   false,
+			expectedCount: 2,
 		},
 		{
-			name: "list issues fails with error",
-			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatchHandler(
-					mock.GetReposIssuesByOwnerByRepo,
-					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-						w.WriteHeader(http.StatusNotFound)
-						_, _ = w.Write([]byte(`{"message": "Repository not found"}`))
-					}),
-				),
-			),
-			requestArgs: map[string]interface{}{
-				"owner": "nonexistent",
+			name: "filter by closed state",
+			reqParams: map[string]interface{}{
+				"owner": "owner",
 				"repo":  "repo",
+				"state": "CLOSED",
 			},
-			expectError:    true,
-			expectedErrMsg: "failed to list issues",
+			expectError:   false,
+			expectedCount: 1,
+		},
+		{
+			name: "filter by labels",
+			reqParams: map[string]interface{}{
+				"owner":  "owner",
+				"repo":   "repo",
+				"labels": []any{"bug", "enhancement"},
+			},
+			expectError:   false,
+			expectedCount: 2,
+		},
+		{
+			name: "repository not found error",
+			reqParams: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "nonexistent-repo",
+			},
+			expectError: true,
+			errContains: "repository not found",
 		},
 	}
 
+	// Define the actual query strings that match the implementation
+	qBasicNoLabels := "query($after:String$direction:OrderDirection!$first:Int!$orderBy:IssueOrderField!$owner:String!$repo:String!$states:[IssueState!]!){repository(owner: $owner, name: $repo){issues(first: $first, after: $after, states: $states, orderBy: {field: $orderBy, direction: $direction}){nodes{number,title,body,state,databaseId,author{login},createdAt,updatedAt,labels(first: 100){nodes{name,id,description}}},pageInfo{hasNextPage,hasPreviousPage,startCursor,endCursor},totalCount}}}"
+	qWithLabels := "query($after:String$direction:OrderDirection!$first:Int!$labels:[String!]!$orderBy:IssueOrderField!$owner:String!$repo:String!$states:[IssueState!]!){repository(owner: $owner, name: $repo){issues(first: $first, after: $after, labels: $labels, states: $states, orderBy: {field: $orderBy, direction: $direction}){nodes{number,title,body,state,databaseId,author{login},createdAt,updatedAt,labels(first: 100){nodes{name,id,description}}},pageInfo{hasNextPage,hasPreviousPage,startCursor,endCursor},totalCount}}}"
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup client with mock
-			client := github.NewClient(tc.mockedClient)
-			_, handler := ListIssues(stubGetClientFn(client), translations.NullTranslationHelper)
+			var httpClient *http.Client
 
-			// Create call request
-			request := createMCPRequest(tc.requestArgs)
-
-			// Call handler
-			result, err := handler(context.Background(), request)
-
-			// Verify results
-			if tc.expectError {
-				if err != nil {
-					assert.Contains(t, err.Error(), tc.expectedErrMsg)
-				} else {
-					// For errors returned as part of the result, not as an error
-					assert.NotNil(t, result)
-					textContent := getTextResult(t, result)
-					assert.Contains(t, textContent.Text, tc.expectedErrMsg)
-				}
-				return
+			switch tc.name {
+			case "list all issues":
+				matcher := githubv4mock.NewQueryMatcher(qBasicNoLabels, varsListAll, mockResponseListAll)
+				httpClient = githubv4mock.NewMockedHTTPClient(matcher)
+			case "filter by open state":
+				matcher := githubv4mock.NewQueryMatcher(qBasicNoLabels, varsOpenOnly, mockResponseOpenOnly)
+				httpClient = githubv4mock.NewMockedHTTPClient(matcher)
+			case "filter by closed state":
+				matcher := githubv4mock.NewQueryMatcher(qBasicNoLabels, varsClosedOnly, mockResponseClosedOnly)
+				httpClient = githubv4mock.NewMockedHTTPClient(matcher)
+			case "filter by labels":
+				matcher := githubv4mock.NewQueryMatcher(qWithLabels, varsWithLabels, mockResponseListAll)
+				httpClient = githubv4mock.NewMockedHTTPClient(matcher)
+			case "repository not found error":
+				matcher := githubv4mock.NewQueryMatcher(qBasicNoLabels, varsRepoNotFound, mockErrorRepoNotFound)
+				httpClient = githubv4mock.NewMockedHTTPClient(matcher)
 			}
 
+			gqlClient := githubv4.NewClient(httpClient)
+			_, handler := ListIssues(stubGetGQLClientFn(gqlClient), translations.NullTranslationHelper)
+
+			req := createMCPRequest(tc.reqParams)
+			res, err := handler(context.Background(), req)
+			text := getTextResult(t, res).Text
+
+			if tc.expectError {
+				require.True(t, res.IsError)
+				assert.Contains(t, text, tc.errContains)
+				return
+			}
 			require.NoError(t, err)
 
-			// Parse the result and get the text content if no error
-			textContent := getTextResult(t, result)
-
-			// Unmarshal and verify the result
-			var returnedIssues []*github.Issue
-			err = json.Unmarshal([]byte(textContent.Text), &returnedIssues)
+			// Parse the structured response with pagination info
+			var response struct {
+				Issues   []*github.Issue `json:"issues"`
+				PageInfo struct {
+					HasNextPage     bool   `json:"hasNextPage"`
+					HasPreviousPage bool   `json:"hasPreviousPage"`
+					StartCursor     string `json:"startCursor"`
+					EndCursor       string `json:"endCursor"`
+				} `json:"pageInfo"`
+				TotalCount int `json:"totalCount"`
+			}
+			err = json.Unmarshal([]byte(text), &response)
 			require.NoError(t, err)
 
-			assert.Len(t, returnedIssues, len(tc.expectedIssues))
-			for i, issue := range returnedIssues {
-				assert.Equal(t, *tc.expectedIssues[i].Number, *issue.Number)
-				assert.Equal(t, *tc.expectedIssues[i].Title, *issue.Title)
-				assert.Equal(t, *tc.expectedIssues[i].State, *issue.State)
-				assert.Equal(t, *tc.expectedIssues[i].HTMLURL, *issue.HTMLURL)
+			assert.Len(t, response.Issues, tc.expectedCount, "Expected %d issues, got %d", tc.expectedCount, len(response.Issues))
+
+			// Verify order if verifyOrder function is provided
+			if tc.verifyOrder != nil {
+				tc.verifyOrder(t, response.Issues)
+			}
+
+			// Verify that returned issues have expected structure
+			for _, issue := range response.Issues {
+				assert.NotNil(t, issue.Number, "Issue should have number")
+				assert.NotNil(t, issue.Title, "Issue should have title")
+				assert.NotNil(t, issue.State, "Issue should have state")
 			}
 		})
 	}
