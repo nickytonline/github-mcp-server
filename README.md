@@ -572,11 +572,11 @@ The following sets of tools are available (all are on by default):
 
 - **search_issues** - Search issues
   - `order`: Sort order (string, optional)
-  - `owner`: Optional repository owner. If provided with repo, only notifications for this repository are listed. (string, optional)
+  - `owner`: Optional repository owner. If provided with repo, only issues for this repository are listed. (string, optional)
   - `page`: Page number for pagination (min 1) (number, optional)
   - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
   - `query`: Search query using GitHub issues search syntax (string, required)
-  - `repo`: Optional repository name. If provided with owner, only notifications for this repository are listed. (string, optional)
+  - `repo`: Optional repository name. If provided with owner, only issues for this repository are listed. (string, optional)
   - `sort`: Sort field by number of matches of categories, defaults to best match (string, optional)
 
 - **update_issue** - Edit issue
@@ -744,11 +744,11 @@ The following sets of tools are available (all are on by default):
 
 - **search_pull_requests** - Search pull requests
   - `order`: Sort order (string, optional)
-  - `owner`: Optional repository owner. If provided with repo, only notifications for this repository are listed. (string, optional)
+  - `owner`: Optional repository owner. If provided with repo, only pull requests for this repository are listed. (string, optional)
   - `page`: Page number for pagination (min 1) (number, optional)
   - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
   - `query`: Search query using GitHub pull request search syntax (string, required)
-  - `repo`: Optional repository name. If provided with owner, only notifications for this repository are listed. (string, optional)
+  - `repo`: Optional repository name. If provided with owner, only pull requests for this repository are listed. (string, optional)
   - `sort`: Sort field by number of matches of categories, defaults to best match (string, optional)
 
 - **submit_pending_pull_request_review** - Submit the requester's latest pending pull request review
