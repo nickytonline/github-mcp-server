@@ -38,6 +38,9 @@ type IssueFragment struct {
 			Description githubv4.String
 		}
 	} `graphql:"labels(first: 100)"`
+	Comments struct {
+		TotalCount githubv4.Int
+	} `graphql:"comments"`
 }
 
 // Common interface for all issue query types
@@ -133,10 +136,11 @@ func fragmentToIssue(fragment IssueFragment) *github.Issue {
 		User: &github.User{
 			Login: github.Ptr(string(fragment.Author.Login)),
 		},
-		State:  github.Ptr(string(fragment.State)),
-		ID:     github.Ptr(fragment.DatabaseID),
-		Body:   github.Ptr(string(fragment.Body)),
-		Labels: foundLabels,
+		State:    github.Ptr(string(fragment.State)),
+		ID:       github.Ptr(fragment.DatabaseID),
+		Body:     github.Ptr(string(fragment.Body)),
+		Labels:   foundLabels,
+		Comments: github.Ptr(int(fragment.Comments.TotalCount)),
 	}
 }
 
@@ -875,7 +879,7 @@ func ListIssues(getGQLClient GetGQLClientFn, t translations.TranslationHelperFun
 			),
 			mcp.WithString("orderBy",
 				mcp.Description("Order issues by field. If provided, the 'direction' also needs to be provided."),
-				mcp.Enum("CREATED_AT", "UPDATED_AT"),
+				mcp.Enum("CREATED_AT", "UPDATED_AT", "COMMENTS"),
 			),
 			mcp.WithString("direction",
 				mcp.Description("Order direction. If provided, the 'orderBy' also needs to be provided."),
