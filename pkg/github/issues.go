@@ -506,67 +506,39 @@ func RemoveSubIssue(getClient GetClientFn, t translations.TranslationHelperFunc)
 			}
 
 			client, err := getClient(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
-			}
+            if err != nil {
+                return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+            }
 
-			// Create the request body
-			requestBody := map[string]interface{}{
-				"sub_issue_id": subIssueID,
-			}
-			reqBodyBytes, err := json.Marshal(requestBody)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal request body: %w", err)
-			}
+            subIssueRequest := github.SubIssueRequest{
+                SubIssueID: int64(subIssueID),
+            }
 
-			// Create the HTTP request
-			url := fmt.Sprintf("%srepos/%s/%s/issues/%d/sub_issue",
-				client.BaseURL.String(), owner, repo, issueNumber)
-			req, err := http.NewRequestWithContext(ctx, "DELETE", url, strings.NewReader(string(reqBodyBytes)))
-			if err != nil {
-				return nil, fmt.Errorf("failed to create request: %w", err)
-			}
-			req.Header.Set("Accept", "application/vnd.github+json")
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+            subIssue, resp, err := client.SubIssue.Remove(ctx, owner, repo, int64(issueNumber), subIssueRequest)
+            if err != nil {
+                return ghErrors.NewGitHubAPIErrorResponse(ctx,
+                    "failed to remove sub-issue",
+                    resp,
+                    err,
+                ), nil
+            }
+            defer func() { _ = resp.Body.Close() }()
 
-			httpClient := client.Client() // Use authenticated GitHub client
-			resp, err := httpClient.Do(req)
-			if err != nil {
-				var ghResp *github.Response
-				if resp != nil {
-					ghResp = &github.Response{Response: resp}
-				}
-				return ghErrors.NewGitHubAPIErrorResponse(ctx,
-					"failed to remove sub-issue",
-					ghResp,
-					err,
-				), nil
-			}
-			defer func() { _ = resp.Body.Close() }()
+            if resp.StatusCode != http.StatusOK {
+                body, err := io.ReadAll(resp.Body)
+                if err != nil {
+                    return nil, fmt.Errorf("failed to read response body: %w", err)
+                }
+                return mcp.NewToolResultError(fmt.Sprintf("failed to remove sub-issue: %s", string(body))), nil
+            }
 
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read response body: %w", err)
-			}
+            r, err := json.Marshal(subIssue)
+            if err != nil {
+                return nil, fmt.Errorf("failed to marshal response: %w", err)
+            }
 
-			if resp.StatusCode != http.StatusOK {
-				return mcp.NewToolResultError(fmt.Sprintf("failed to remove sub-issue: %s", string(body))), nil
-			}
-
-			// Parse and re-marshal to ensure consistent formatting
-			var result interface{}
-			if err := json.Unmarshal(body, &result); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-			}
-
-			r, err := json.Marshal(result)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal response: %w", err)
-			}
-
-			return mcp.NewToolResultText(string(r)), nil
-		}
+            return mcp.NewToolResultText(string(r)), nil
+        }
 }
 
 // ReprioritizeSubIssue creates a tool to reprioritize a sub-issue to a different position in the parent list.
