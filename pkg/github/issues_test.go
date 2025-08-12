@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -2729,6 +2730,149 @@ func Test_ReprioritizeSubIssue(t *testing.T) {
 			assert.Equal(t, *tc.expectedIssue.State, *returnedIssue.State)
 			assert.Equal(t, *tc.expectedIssue.HTMLURL, *returnedIssue.HTMLURL)
 			assert.Equal(t, *tc.expectedIssue.User.Login, *returnedIssue.User.Login)
+		})
+	}
+}
+
+func Test_ListIssueTypes(t *testing.T) {
+	// Verify tool definition once
+	mockClient := github.NewClient(nil)
+	tool, _ := ListIssueTypes(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
+	assert.Equal(t, "list_issue_types", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner"})
+
+	// Setup mock issue types for success case
+	mockIssueTypes := []*github.IssueType{
+		{
+			ID:          github.Ptr(int64(1)),
+			Name:        github.Ptr("bug"),
+			Description: github.Ptr("Something isn't working"),
+			Color:       github.Ptr("d73a4a"),
+		},
+		{
+			ID:          github.Ptr(int64(2)),
+			Name:        github.Ptr("feature"),
+			Description: github.Ptr("New feature or enhancement"),
+			Color:       github.Ptr("a2eeef"),
+		},
+	}
+
+	tests := []struct {
+		name               string
+		mockedClient       *http.Client
+		requestArgs        map[string]interface{}
+		expectError        bool
+		expectedIssueTypes []*github.IssueType
+		expectedErrMsg     string
+	}{
+		{
+			name: "successful issue types retrieval",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.EndpointPattern{
+						Pattern: "/orgs/testorg/issue-types",
+						Method:  "GET",
+					},
+					mockResponse(t, http.StatusOK, mockIssueTypes),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "testorg",
+			},
+			expectError:        false,
+			expectedIssueTypes: mockIssueTypes,
+		},
+		{
+			name: "organization not found",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.EndpointPattern{
+						Pattern: "/orgs/nonexistent/issue-types",
+						Method:  "GET",
+					},
+					mockResponse(t, http.StatusNotFound, `{"message": "Organization not found"}`),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "nonexistent",
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to list issue types",
+		},
+		{
+			name: "missing owner parameter",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.EndpointPattern{
+						Pattern: "/orgs/testorg/issue-types",
+						Method:  "GET",
+					},
+					mockResponse(t, http.StatusOK, mockIssueTypes),
+				),
+			),
+			requestArgs:    map[string]interface{}{},
+			expectError:    false, // This should be handled by parameter validation, error returned in result
+			expectedErrMsg: "missing required parameter: owner",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup client with mock
+			client := github.NewClient(tc.mockedClient)
+			_, handler := ListIssueTypes(stubGetClientFn(client), translations.NullTranslationHelper)
+
+			// Create call request
+			request := createMCPRequest(tc.requestArgs)
+
+			// Call handler
+			result, err := handler(context.Background(), request)
+
+			// Verify results
+			if tc.expectError {
+				if err != nil {
+					assert.Contains(t, err.Error(), tc.expectedErrMsg)
+					return
+				}
+				// Check if error is returned as tool result error
+				require.NotNil(t, result)
+				require.True(t, result.IsError)
+				errorContent := getErrorResult(t, result)
+				assert.Contains(t, errorContent.Text, tc.expectedErrMsg)
+				return
+			}
+
+			// Check if it's a parameter validation error (returned as tool result error)
+			if result != nil && result.IsError {
+				errorContent := getErrorResult(t, result)
+				if tc.expectedErrMsg != "" && strings.Contains(errorContent.Text, tc.expectedErrMsg) {
+					return // This is expected for parameter validation errors
+				}
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			require.False(t, result.IsError)
+			textContent := getTextResult(t, result)
+
+			// Unmarshal and verify the result
+			var returnedIssueTypes []*github.IssueType
+			err = json.Unmarshal([]byte(textContent.Text), &returnedIssueTypes)
+			require.NoError(t, err)
+
+			if tc.expectedIssueTypes != nil {
+				require.Equal(t, len(tc.expectedIssueTypes), len(returnedIssueTypes))
+				for i, expected := range tc.expectedIssueTypes {
+					assert.Equal(t, *expected.Name, *returnedIssueTypes[i].Name)
+					assert.Equal(t, *expected.Description, *returnedIssueTypes[i].Description)
+					assert.Equal(t, *expected.Color, *returnedIssueTypes[i].Color)
+					assert.Equal(t, *expected.ID, *returnedIssueTypes[i].ID)
+				}
+			}
 		})
 	}
 }
