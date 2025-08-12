@@ -955,7 +955,9 @@ func CancelWorkflowRun(getClient GetClientFn, t translations.TranslationHelperFu
 
 			resp, err := client.Actions.CancelWorkflowRunByID(ctx, owner, repo, runID)
 			if err != nil {
-				return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to cancel workflow run", resp, err), nil
+				if _, ok := err.(*github.AcceptedError); !ok {
+					return ghErrors.NewGitHubAPIErrorResponse(ctx, "failed to cancel workflow run", resp, err), nil
+				}
 			}
 			defer func() { _ = resp.Body.Close() }()
 

@@ -323,12 +323,14 @@ func Test_CancelWorkflowRun(t *testing.T) {
 		{
 			name: "successful workflow run cancellation",
 			mockedClient: mock.NewMockedHTTPClient(
-				mock.WithRequestMatch(
+				mock.WithRequestMatchHandler(
 					mock.EndpointPattern{
 						Pattern: "/repos/owner/repo/actions/runs/12345/cancel",
 						Method:  "POST",
 					},
-					"", // Empty response body for 202 Accepted
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusAccepted)
+					}),
 				),
 			),
 			requestArgs: map[string]any{
@@ -337,6 +339,27 @@ func Test_CancelWorkflowRun(t *testing.T) {
 				"run_id": float64(12345),
 			},
 			expectError: false,
+		},
+		{
+			name: "conflict when cancelling a workflow run",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.EndpointPattern{
+						Pattern: "/repos/owner/repo/actions/runs/12345/cancel",
+						Method:  "POST",
+					},
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusConflict)
+					}),
+				),
+			),
+			requestArgs: map[string]any{
+				"owner":  "owner",
+				"repo":   "repo",
+				"run_id": float64(12345),
+			},
+			expectError:    true,
+			expectedErrMsg: "failed to cancel workflow run",
 		},
 		{
 			name:         "missing required parameter run_id",
@@ -369,7 +392,7 @@ func Test_CancelWorkflowRun(t *testing.T) {
 			textContent := getTextResult(t, result)
 
 			if tc.expectedErrMsg != "" {
-				assert.Equal(t, tc.expectedErrMsg, textContent.Text)
+				assert.Contains(t, textContent.Text, tc.expectedErrMsg)
 				return
 			}
 
