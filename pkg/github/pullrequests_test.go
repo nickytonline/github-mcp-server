@@ -1031,6 +1031,77 @@ func Test_SearchPullRequests(t *testing.T) {
 			expectedResult: mockSearchResult,
 		},
 		{
+			name: "query with existing is:pr filter - no duplication",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "is:pr repo:github/github-mcp-server is:open draft:false",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"query": "is:pr repo:github/github-mcp-server is:open draft:false",
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
+			name: "query with existing repo: filter and conflicting owner/repo params - uses query filter",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "is:pr repo:github/github-mcp-server author:octocat",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"query": "repo:github/github-mcp-server author:octocat",
+				"owner": "different-owner",
+				"repo":  "different-repo",
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
+			name: "complex query with existing is:pr filter and OR operators",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetSearchIssues,
+					expectQueryParams(
+						t,
+						map[string]string{
+							"q":        "is:pr repo:github/github-mcp-server (label:bug OR label:enhancement OR label:feature)",
+							"page":     "1",
+							"per_page": "30",
+						},
+					).andThen(
+						mockResponse(t, http.StatusOK, mockSearchResult),
+					),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"query": "is:pr repo:github/github-mcp-server (label:bug OR label:enhancement OR label:feature)",
+			},
+			expectError:    false,
+			expectedResult: mockSearchResult,
+		},
+		{
 			name: "search pull requests fails",
 			mockedClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
