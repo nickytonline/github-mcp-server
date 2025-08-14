@@ -51,6 +51,10 @@
       "title": {
         "description": "New title",
         "type": "string"
+      },
+      "type": {
+        "description": "New issue type",
+        "type": "string"
       }
     },
     "required": [

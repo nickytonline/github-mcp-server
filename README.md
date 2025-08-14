@@ -533,6 +533,7 @@ The following sets of tools are available (all are on by default):
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
   - `title`: Issue title (string, required)
+  - `type`: Type of this issue (string, optional)
 
 - **get_issue** - Get issue details
   - `issue_number`: The number of the issue (number, required)
@@ -600,6 +601,7 @@ The following sets of tools are available (all are on by default):
   - `repo`: Repository name (string, required)
   - `state`: New state (string, optional)
   - `title`: New title (string, optional)
+  - `type`: New issue type (string, optional)
 
 </details>
 
