@@ -36,7 +36,7 @@ Alternatively, to manually configure VS Code, choose the appropriate JSON block 
 <tr><th align=left colspan=2>VS Code (version 1.101 or greater)</th></tr>
 <tr valign=top>
 <td>
-  
+
 ```json
 {
   "servers": {
@@ -130,7 +130,7 @@ To keep your GitHub PAT secure and reusable across different MCP hosts:
    ```bash
    # CLI usage
    claude mcp update github -e GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PAT
-   
+
    # In config files (where supported)
    "env": {
      "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_PAT"
@@ -241,7 +241,7 @@ For other MCP host applications, please refer to our installation guides:
 
 - **[GitHub Copilot in other IDEs](/docs/installation-guides/install-other-copilot-ides.md)** - Installation for JetBrains, Visual Studio, Eclipse, and Xcode with GitHub Copilot
 - **[Claude Code & Claude Desktop](docs/installation-guides/install-claude.md)** - Installation guide for Claude Code and Claude Desktop
-- **[Cursor](docs/installation-guides/install-cursor.md)** - Installation guide for Cursor IDE  
+- **[Cursor](docs/installation-guides/install-cursor.md)** - Installation guide for Cursor IDE
 - **[Windsurf](docs/installation-guides/install-windsurf.md)** - Installation guide for Windsurf IDE
 
 For a complete overview of all installation options, see our **[Installation Guides Index](docs/installation-guides)**.
@@ -295,6 +295,7 @@ The following sets of tools are available (all are on by default):
 | `pull_requests` | GitHub Pull Request related tools |
 | `repos` | GitHub Repository related tools |
 | `secret_protection` | Secret protection related tools, such as GitHub Secret Scanning |
+| `security_advisories` | Security advisories related tools |
 | `users` | GitHub User related tools |
 <!-- END AUTOMATED TOOLSETS -->
 
@@ -918,6 +919,28 @@ The following sets of tools are available (all are on by default):
   - `resolution`: Filter by resolution (string, optional)
   - `secret_type`: A comma-separated list of secret types to return. All default secret patterns are returned. To return generic patterns, pass the token name(s) in the parameter. (string, optional)
   - `state`: Filter by state (string, optional)
+
+</details>
+
+<details>
+
+<summary>Security Advisories</summary>
+
+- **get_global_security_advisory** - Get a global security advisory
+  - `ghsaId`: GitHub Security Advisory ID (format: GHSA-xxxx-xxxx-xxxx). (string, required)
+
+- **list_global_security_advisories** - List global security advisories
+  - `affects`: Filter advisories by affected package or version (e.g. "package1,package2@1.0.0"). (string, optional)
+  - `cveId`: Filter by CVE ID. (string, optional)
+  - `cwes`: Filter by Common Weakness Enumeration IDs (e.g. ["79", "284", "22"]). (string[], optional)
+  - `ecosystem`: Filter by package ecosystem. (string, optional)
+  - `ghsaId`: Filter by GitHub Security Advisory ID (format: GHSA-xxxx-xxxx-xxxx). (string, optional)
+  - `isWithdrawn`: Whether to only return withdrawn advisories. (boolean, optional)
+  - `modified`: Filter by publish or update date or date range (ISO 8601 date or range). (string, optional)
+  - `published`: Filter by publish date or date range (ISO 8601 date or range). (string, optional)
+  - `severity`: Filter by severity. (string, optional)
+  - `type`: Advisory type. (string, optional)
+  - `updated`: Filter by update date or date range (ISO 8601 date or range). (string, optional)
 
 </details>
 

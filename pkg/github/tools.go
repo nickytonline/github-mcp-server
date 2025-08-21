@@ -160,6 +160,12 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 			toolsets.NewServerTool(DeleteWorkflowRunLogs(getClient, t)),
 		)
 
+	securityAdvisories := toolsets.NewToolset("security_advisories", "Security advisories related tools").
+		AddReadTools(
+			toolsets.NewServerTool(ListGlobalSecurityAdvisories(getClient, t)),
+			toolsets.NewServerTool(GetGlobalSecurityAdvisory(getClient, t)),
+		)
+
 	// Keep experiments alive so the system doesn't error out when it's always enabled
 	experiments := toolsets.NewToolset("experiments", "Experimental features that are not considered stable yet")
 
@@ -194,6 +200,7 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 	tsg.AddToolset(experiments)
 	tsg.AddToolset(discussions)
 	tsg.AddToolset(gists)
+	tsg.AddToolset(securityAdvisories)
 
 	return tsg
 }
