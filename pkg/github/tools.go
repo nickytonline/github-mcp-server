@@ -33,6 +33,7 @@ func DefaultToolsetGroup(readOnly bool, getClient GetClientFn, getGQLClient GetG
 			toolsets.NewServerTool(GetTag(getClient, t)),
 			toolsets.NewServerTool(ListReleases(getClient, t)),
 			toolsets.NewServerTool(GetLatestRelease(getClient, t)),
+			toolsets.NewServerTool(GetReleaseByTag(getClient, t)),
 		).
 		AddWriteTools(
 			toolsets.NewServerTool(CreateOrUpdateFile(getClient, t)),

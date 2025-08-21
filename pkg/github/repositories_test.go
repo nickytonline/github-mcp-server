@@ -2287,6 +2287,171 @@ func Test_GetLatestRelease(t *testing.T) {
 	}
 }
 
+func Test_GetReleaseByTag(t *testing.T) {
+	mockClient := github.NewClient(nil)
+	tool, _ := GetReleaseByTag(stubGetClientFn(mockClient), translations.NullTranslationHelper)
+	require.NoError(t, toolsnaps.Test(tool.Name, tool))
+
+	assert.Equal(t, "get_release_by_tag", tool.Name)
+	assert.NotEmpty(t, tool.Description)
+	assert.Contains(t, tool.InputSchema.Properties, "owner")
+	assert.Contains(t, tool.InputSchema.Properties, "repo")
+	assert.Contains(t, tool.InputSchema.Properties, "tag")
+	assert.ElementsMatch(t, tool.InputSchema.Required, []string{"owner", "repo", "tag"})
+
+	mockRelease := &github.RepositoryRelease{
+		ID:      github.Ptr(int64(1)),
+		TagName: github.Ptr("v1.0.0"),
+		Name:    github.Ptr("Release v1.0.0"),
+		Body:    github.Ptr("This is the first stable release."),
+		Assets: []*github.ReleaseAsset{
+			{
+				ID:   github.Ptr(int64(1)),
+				Name: github.Ptr("release-v1.0.0.tar.gz"),
+			},
+		},
+	}
+
+	tests := []struct {
+		name           string
+		mockedClient   *http.Client
+		requestArgs    map[string]interface{}
+		expectError    bool
+		expectedResult *github.RepositoryRelease
+		expectedErrMsg string
+	}{
+		{
+			name: "successful release by tag fetch",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.GetReposReleasesTagsByOwnerByRepoByTag,
+					mockRelease,
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"tag":   "v1.0.0",
+			},
+			expectError:    false,
+			expectedResult: mockRelease,
+		},
+		{
+			name:         "missing owner parameter",
+			mockedClient: mock.NewMockedHTTPClient(),
+			requestArgs: map[string]interface{}{
+				"repo": "repo",
+				"tag":  "v1.0.0",
+			},
+			expectError:    false, // Returns tool error, not Go error
+			expectedErrMsg: "missing required parameter: owner",
+		},
+		{
+			name:         "missing repo parameter",
+			mockedClient: mock.NewMockedHTTPClient(),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"tag":   "v1.0.0",
+			},
+			expectError:    false, // Returns tool error, not Go error
+			expectedErrMsg: "missing required parameter: repo",
+		},
+		{
+			name:         "missing tag parameter",
+			mockedClient: mock.NewMockedHTTPClient(),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+			},
+			expectError:    false, // Returns tool error, not Go error
+			expectedErrMsg: "missing required parameter: tag",
+		},
+		{
+			name: "release by tag not found",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetReposReleasesTagsByOwnerByRepoByTag,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusNotFound)
+						_, _ = w.Write([]byte(`{"message": "Not Found"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"tag":   "v999.0.0",
+			},
+			expectError:    false, // API errors return tool errors, not Go errors
+			expectedErrMsg: "failed to get release by tag: v999.0.0",
+		},
+		{
+			name: "server error",
+			mockedClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.GetReposReleasesTagsByOwnerByRepoByTag,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusInternalServerError)
+						_, _ = w.Write([]byte(`{"message": "Internal Server Error"}`))
+					}),
+				),
+			),
+			requestArgs: map[string]interface{}{
+				"owner": "owner",
+				"repo":  "repo",
+				"tag":   "v1.0.0",
+			},
+			expectError:    false, // API errors return tool errors, not Go errors
+			expectedErrMsg: "failed to get release by tag: v1.0.0",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client := github.NewClient(tc.mockedClient)
+			_, handler := GetReleaseByTag(stubGetClientFn(client), translations.NullTranslationHelper)
+
+			request := createMCPRequest(tc.requestArgs)
+
+			result, err := handler(context.Background(), request)
+
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedErrMsg)
+				return
+			}
+
+			require.NoError(t, err)
+
+			if tc.expectedErrMsg != "" {
+				require.True(t, result.IsError)
+				errorContent := getErrorResult(t, result)
+				assert.Contains(t, errorContent.Text, tc.expectedErrMsg)
+				return
+			}
+
+			require.False(t, result.IsError)
+
+			textContent := getTextResult(t, result)
+
+			var returnedRelease github.RepositoryRelease
+			err = json.Unmarshal([]byte(textContent.Text), &returnedRelease)
+			require.NoError(t, err)
+
+			assert.Equal(t, *tc.expectedResult.ID, *returnedRelease.ID)
+			assert.Equal(t, *tc.expectedResult.TagName, *returnedRelease.TagName)
+			assert.Equal(t, *tc.expectedResult.Name, *returnedRelease.Name)
+			if tc.expectedResult.Body != nil {
+				assert.Equal(t, *tc.expectedResult.Body, *returnedRelease.Body)
+			}
+			if len(tc.expectedResult.Assets) > 0 {
+				require.Len(t, returnedRelease.Assets, len(tc.expectedResult.Assets))
+				assert.Equal(t, *tc.expectedResult.Assets[0].Name, *returnedRelease.Assets[0].Name)
+			}
+		})
+	}
+}
+
 func Test_filterPaths(t *testing.T) {
 	tests := []struct {
 		name       string

@@ -846,6 +846,11 @@ The following sets of tools are available (all are on by default):
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
 
+- **get_release_by_tag** - Get a release by tag name
+  - `owner`: Repository owner (string, required)
+  - `repo`: Repository name (string, required)
+  - `tag`: Tag name (e.g., 'v1.0.0') (string, required)
+
 - **get_tag** - Get tag details
   - `owner`: Repository owner (string, required)
   - `repo`: Repository name (string, required)
