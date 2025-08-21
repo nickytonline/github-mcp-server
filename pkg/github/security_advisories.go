@@ -182,6 +182,95 @@ func ListGlobalSecurityAdvisories(getClient GetClientFn, t translations.Translat
 		}
 }
 
+func ListRepositorySecurityAdvisories(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("list_repository_security_advisories",
+			mcp.WithDescription(t("TOOL_LIST_REPOSITORY_SECURITY_ADVISORIES_DESCRIPTION", "List repository security advisories for a GitHub repository.")),
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{
+				Title:        t("TOOL_LIST_REPOSITORY_SECURITY_ADVISORIES_USER_TITLE", "List repository security advisories"),
+				ReadOnlyHint: ToBoolPtr(true),
+			}),
+			mcp.WithString("owner",
+				mcp.Required(),
+				mcp.Description("The owner of the repository."),
+			),
+			mcp.WithString("repo",
+				mcp.Required(),
+				mcp.Description("The name of the repository."),
+			),
+			mcp.WithString("direction",
+				mcp.Description("Sort direction."),
+				mcp.Enum("asc", "desc"),
+			),
+			mcp.WithString("sort",
+				mcp.Description("Sort field."),
+				mcp.Enum("created", "updated", "published"),
+			),
+			mcp.WithString("state",
+				mcp.Description("Filter by advisory state."),
+				mcp.Enum("triage", "draft", "published", "closed"),
+			),
+		), func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			owner, err := RequiredParam[string](request, "owner")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			repo, err := RequiredParam[string](request, "repo")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			direction, err := OptionalParam[string](request, "direction")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			sortField, err := OptionalParam[string](request, "sort")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			state, err := OptionalParam[string](request, "state")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
+
+			opts := &github.ListRepositorySecurityAdvisoriesOptions{}
+			if direction != "" {
+				opts.Direction = direction
+			}
+			if sortField != "" {
+				opts.Sort = sortField
+			}
+			if state != "" {
+				opts.State = state
+			}
+
+			advisories, resp, err := client.SecurityAdvisories.ListRepositorySecurityAdvisories(ctx, owner, repo, opts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to list repository security advisories: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to list repository advisories: %s", string(body))), nil
+			}
+
+			r, err := json.Marshal(advisories)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal advisories: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}
+
 func GetGlobalSecurityAdvisory(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_global_security_advisory",
 			mcp.WithDescription(t("TOOL_GET_GLOBAL_SECURITY_ADVISORY_DESCRIPTION", "Get a global security advisory")),
@@ -221,6 +310,86 @@ func GetGlobalSecurityAdvisory(getClient GetClientFn, t translations.Translation
 			r, err := json.Marshal(advisory)
 			if err != nil {
 				return nil, fmt.Errorf("failed to marshal advisory: %w", err)
+			}
+
+			return mcp.NewToolResultText(string(r)), nil
+		}
+}
+
+func ListOrgRepositorySecurityAdvisories(getClient GetClientFn, t translations.TranslationHelperFunc) (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("list_org_repository_security_advisories",
+			mcp.WithDescription(t("TOOL_LIST_ORG_REPOSITORY_SECURITY_ADVISORIES_DESCRIPTION", "List repository security advisories for a GitHub organization.")),
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{
+				Title:        t("TOOL_LIST_ORG_REPOSITORY_SECURITY_ADVISORIES_USER_TITLE", "List org repository security advisories"),
+				ReadOnlyHint: ToBoolPtr(true),
+			}),
+			mcp.WithString("org",
+				mcp.Required(),
+				mcp.Description("The organization login."),
+			),
+			mcp.WithString("direction",
+				mcp.Description("Sort direction."),
+				mcp.Enum("asc", "desc"),
+			),
+			mcp.WithString("sort",
+				mcp.Description("Sort field."),
+				mcp.Enum("created", "updated", "published"),
+			),
+			mcp.WithString("state",
+				mcp.Description("Filter by advisory state."),
+				mcp.Enum("triage", "draft", "published", "closed"),
+			),
+		), func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			org, err := RequiredParam[string](request, "org")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			direction, err := OptionalParam[string](request, "direction")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			sortField, err := OptionalParam[string](request, "sort")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			state, err := OptionalParam[string](request, "state")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+
+			client, err := getClient(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+			}
+
+			opts := &github.ListRepositorySecurityAdvisoriesOptions{}
+			if direction != "" {
+				opts.Direction = direction
+			}
+			if sortField != "" {
+				opts.Sort = sortField
+			}
+			if state != "" {
+				opts.State = state
+			}
+
+			advisories, resp, err := client.SecurityAdvisories.ListRepositorySecurityAdvisoriesForOrg(ctx, org, opts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to list organization repository security advisories: %w", err)
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			if resp.StatusCode != http.StatusOK {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read response body: %w", err)
+				}
+				return mcp.NewToolResultError(fmt.Sprintf("failed to list organization repository advisories: %s", string(body))), nil
+			}
+
+			r, err := json.Marshal(advisories)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal advisories: %w", err)
 			}
 
 			return mcp.NewToolResultText(string(r)), nil
