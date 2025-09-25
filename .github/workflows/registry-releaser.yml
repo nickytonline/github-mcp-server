@@ -16,8 +16,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Fetch tags
+        run: git fetch --tags
 
       - name: Install MCP Publisher
         run: |
@@ -39,7 +39,7 @@ jobs:
             TAG_VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
             echo "Using latest tag: $LATEST_TAG"
           fi
-          jq ".version = \"$TAG_VERSION\" | .packages[].version = \"$TAG_VERSION\"" server.json > server.json.tmp && mv server.json.tmp server.json
+          sed -i "s/\${VERSION}/$TAG_VERSION/g" server.json
           echo "Updated server.json version to $TAG_VERSION"
 
       - name: Login to MCP Registry

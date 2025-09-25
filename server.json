@@ -7,13 +7,13 @@
     "url": "https://github.com/github/github-mcp-server",
     "source": "github"
   },
-  "version": "0.0.0",
+  "version": "${VERSION}",
   "packages": [
     {
       "registryType": "oci",
       "registryBaseUrl": "https://ghcr.io",
       "identifier": "ghcr.io/github/github-mcp-server",
-      "version": "0.0.0",
+      "version": "${VERSION}",
       "runtimeHint": "docker",
       "transport": {
         "type": "stdio"
