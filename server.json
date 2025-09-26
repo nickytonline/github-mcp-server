@@ -12,9 +12,8 @@
     {
       "registryType": "oci",
       "registryBaseUrl": "https://ghcr.io",
-      "identifier": "ghcr.io/github/github-mcp-server",
+      "identifier": "github/github-mcp-server",
       "version": "${VERSION}",
-      "runtimeHint": "docker",
       "transport": {
         "type": "stdio"
       },
@@ -61,12 +60,6 @@
           "name": "GITHUB_PERSONAL_ACCESS_TOKEN"
         }
       ]
-    }
-  ],
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://api.githubcopilot.com/mcp/"
     }
   ]
 }
