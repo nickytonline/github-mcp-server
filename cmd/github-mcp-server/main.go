@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -28,37 +27,11 @@ var (
 	}
 
 	stdioCmd = &cobra.Command{
-		Use:   "stdio",
-		Short: "Start stdio server",
-		Long:  `Start a server that communicates via standard input/output streams using JSON-RPC messages.`,
+		Use:    "stdio",
+		Short:  "Start stdio server",
+		Hidden: true,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			token := viper.GetString("personal_access_token")
-			if token == "" {
-				return errors.New("GITHUB_PERSONAL_ACCESS_TOKEN not set")
-			}
-
-			// If you're wondering why we're not using viper.GetStringSlice("toolsets"),
-			// it's because viper doesn't handle comma-separated values correctly for env
-			// vars when using GetStringSlice.
-			// https://github.com/spf13/viper/issues/380
-			var enabledToolsets []string
-			if err := viper.UnmarshalKey("toolsets", &enabledToolsets); err != nil {
-				return fmt.Errorf("failed to unmarshal toolsets: %w", err)
-			}
-
-			stdioServerConfig := ghmcp.StdioServerConfig{
-				Version:              version,
-				Host:                 viper.GetString("host"),
-				Token:                token,
-				EnabledToolsets:      enabledToolsets,
-				DynamicToolsets:      viper.GetBool("dynamic_toolsets"),
-				ReadOnly:             viper.GetBool("read-only"),
-				ExportTranslations:   viper.GetBool("export-translations"),
-				EnableCommandLogging: viper.GetBool("enable-command-logging"),
-				LogFilePath:          viper.GetString("log-file"),
-				ContentWindowSize:    viper.GetInt("content-window-size"),
-			}
-			return ghmcp.RunStdioServer(stdioServerConfig)
+			return fmt.Errorf("stdio transport has been removed; run `github-mcp-server http` behind your OAuth proxy")
 		},
 	}
 
