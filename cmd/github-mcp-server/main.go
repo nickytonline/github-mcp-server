@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/github/github-mcp-server/internal/ghmcp"
 	"github.com/github/github-mcp-server/pkg/github"
@@ -60,6 +61,33 @@ var (
 			return ghmcp.RunStdioServer(stdioServerConfig)
 		},
 	}
+
+	httpCmd = &cobra.Command{
+		Use:   "http",
+		Short: "Start HTTP server",
+		Long:  `Start a server that communicates over HTTP using the streamable transport.`,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			var enabledToolsets []string
+			if err := viper.UnmarshalKey("toolsets", &enabledToolsets); err != nil {
+				return fmt.Errorf("failed to unmarshal toolsets: %w", err)
+			}
+
+			httpServerConfig := ghmcp.HTTPServerConfig{
+				Version:           version,
+				Host:              viper.GetString("host"),
+				EnabledToolsets:   enabledToolsets,
+				DynamicToolsets:   viper.GetBool("dynamic_toolsets"),
+				ReadOnly:          viper.GetBool("read-only"),
+				ContentWindowSize: viper.GetInt("content-window-size"),
+				ListenAddress:     viper.GetString("listen-address"),
+				EndpointPath:      viper.GetString("http-path"),
+				HealthPath:        viper.GetString("health-path"),
+				ShutdownTimeout:   viper.GetDuration("shutdown-timeout"),
+				LogFilePath:       viper.GetString("log-file"),
+			}
+			return ghmcp.RunHTTPServer(httpServerConfig)
+		},
+	}
 )
 
 func init() {
@@ -88,8 +116,19 @@ func init() {
 	_ = viper.BindPFlag("host", rootCmd.PersistentFlags().Lookup("gh-host"))
 	_ = viper.BindPFlag("content-window-size", rootCmd.PersistentFlags().Lookup("content-window-size"))
 
+	httpCmd.Flags().String("listen", ":8080", "Address for the HTTP server to listen on")
+	httpCmd.Flags().String("http-path", "/mcp", "HTTP path for MCP requests")
+	httpCmd.Flags().String("health-path", "/health", "HTTP path for health checks")
+	httpCmd.Flags().Duration("shutdown-timeout", 10*time.Second, "Graceful shutdown timeout for the HTTP server")
+
+	_ = viper.BindPFlag("listen-address", httpCmd.Flags().Lookup("listen"))
+	_ = viper.BindPFlag("http-path", httpCmd.Flags().Lookup("http-path"))
+	_ = viper.BindPFlag("health-path", httpCmd.Flags().Lookup("health-path"))
+	_ = viper.BindPFlag("shutdown-timeout", httpCmd.Flags().Lookup("shutdown-timeout"))
+
 	// Add subcommands
 	rootCmd.AddCommand(stdioCmd)
+	rootCmd.AddCommand(httpCmd)
 }
 
 func initConfig() {

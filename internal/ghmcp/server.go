@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/github/github-mcp-server/pkg/errors"
@@ -34,6 +35,9 @@ type MCPServerConfig struct {
 	// GitHub Token to authenticate with the GitHub API
 	Token string
 
+	// TokenProvider resolves a GitHub token from the request context. When nil, Token is used.
+	TokenProvider TokenProviderFunc
+
 	// EnabledToolsets is a list of toolsets to enable
 	// See: https://github.com/github/github-mcp-server?tab=readme-ov-file#tool-configuration
 	EnabledToolsets []string
@@ -54,30 +58,29 @@ type MCPServerConfig struct {
 
 const stdioServerLogPrefix = "stdioserver"
 
+// TokenProviderFunc resolves an authentication token from the given context.
+type TokenProviderFunc func(context.Context) (string, error)
+
 func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 	apiHost, err := parseAPIHost(cfg.Host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse API host: %w", err)
 	}
 
-	// Construct our REST client
-	restClient := gogithub.NewClient(nil).WithAuthToken(cfg.Token)
-	restClient.UserAgent = fmt.Sprintf("github-mcp-server/%s", cfg.Version)
-	restClient.BaseURL = apiHost.baseRESTURL
-	restClient.UploadURL = apiHost.uploadURL
+	tokenProvider := cfg.TokenProvider
+	if tokenProvider == nil {
+		token := strings.TrimSpace(cfg.Token)
+		tokenProvider = func(context.Context) (string, error) {
+			if token == "" {
+				return "", fmt.Errorf("github token not provided")
+			}
+			return token, nil
+		}
+	}
 
-	// Construct our GraphQL client
-	// We're using NewEnterpriseClient here unconditionally as opposed to NewClient because we already
-	// did the necessary API host parsing so that github.com will return the correct URL anyway.
-	gqlHTTPClient := &http.Client{
-		Transport: &bearerAuthTransport{
-			transport: http.DefaultTransport,
-			token:     cfg.Token,
-		},
-	} // We're going to wrap the Transport later in beforeInit
-	gqlClient := githubv4.NewEnterpriseClient(apiHost.graphqlURL.String(), gqlHTTPClient)
+	clientFactory := newGitHubClientFactory(cfg.Version, apiHost, tokenProvider)
 
-	// When a client send an initialize request, update the user agent to include the client info.
+	// When a client sends an initialize request, update the user agent to include the client info.
 	beforeInit := func(_ context.Context, _ any, message *mcp.InitializeRequest) {
 		userAgent := fmt.Sprintf(
 			"github-mcp-server/%s (%s/%s)",
@@ -86,12 +89,7 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 			message.Params.ClientInfo.Version,
 		)
 
-		restClient.UserAgent = userAgent
-
-		gqlHTTPClient.Transport = &userAgentTransport{
-			transport: gqlHTTPClient.Transport,
-			agent:     userAgent,
-		}
+		clientFactory.setUserAgent(userAgent)
 	}
 
 	hooks := &server.Hooks{
@@ -124,24 +122,8 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 		server.WithHooks(hooks),
 	)
 
-	getClient := func(_ context.Context) (*gogithub.Client, error) {
-		return restClient, nil // closing over client
-	}
-
-	getGQLClient := func(_ context.Context) (*githubv4.Client, error) {
-		return gqlClient, nil // closing over client
-	}
-
-	getRawClient := func(ctx context.Context) (*raw.Client, error) {
-		client, err := getClient(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get GitHub client: %w", err)
-		}
-		return raw.NewClient(client, apiHost.rawURL), nil // closing over client
-	}
-
 	// Create default toolsets
-	tsg := github.DefaultToolsetGroup(cfg.ReadOnly, getClient, getGQLClient, getRawClient, cfg.Translator, cfg.ContentWindowSize)
+	tsg := github.DefaultToolsetGroup(cfg.ReadOnly, clientFactory.getRESTClient, clientFactory.getGraphQLClient, clientFactory.getRawClient, cfg.Translator, cfg.ContentWindowSize)
 	err = tsg.EnableToolsets(enabledToolsets)
 
 	if err != nil {
@@ -157,6 +139,95 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 	}
 
 	return ghServer, nil
+}
+
+type gitHubClientFactory struct {
+	tokenProvider     TokenProviderFunc
+	apiHost           apiHost
+	defaultUserAgent  string
+	userAgentOverride atomic.Pointer[string]
+}
+
+func newGitHubClientFactory(version string, host apiHost, provider TokenProviderFunc) *gitHubClientFactory {
+	factory := &gitHubClientFactory{
+		tokenProvider:    provider,
+		apiHost:          host,
+		defaultUserAgent: fmt.Sprintf("github-mcp-server/%s", version),
+	}
+	factory.setUserAgent(factory.defaultUserAgent)
+	return factory
+}
+
+func (f *gitHubClientFactory) setUserAgent(agent string) {
+	agent = strings.TrimSpace(agent)
+	if agent == "" {
+		agent = f.defaultUserAgent
+	}
+	factoryAgent := agent
+	f.userAgentOverride.Store(&factoryAgent)
+}
+
+func (f *gitHubClientFactory) currentUserAgent() string {
+	if ptr := f.userAgentOverride.Load(); ptr != nil && *ptr != "" {
+		return *ptr
+	}
+	return f.defaultUserAgent
+}
+
+func (f *gitHubClientFactory) resolveToken(ctx context.Context) (string, error) {
+	if f.tokenProvider == nil {
+		return "", fmt.Errorf("github token provider not configured")
+	}
+	token, err := f.tokenProvider(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve GitHub token: %w", err)
+	}
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return "", fmt.Errorf("github token not provided")
+	}
+	return token, nil
+}
+
+func (f *gitHubClientFactory) getRESTClient(ctx context.Context) (*gogithub.Client, error) {
+	token, err := f.resolveToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	baseClient := gogithub.NewClient(nil)
+	baseClient.BaseURL = f.apiHost.baseRESTURL
+	baseClient.UploadURL = f.apiHost.uploadURL
+	baseClient.UserAgent = f.currentUserAgent()
+	client := baseClient.WithAuthToken(token)
+	client.BaseURL = f.apiHost.baseRESTURL
+	client.UploadURL = f.apiHost.uploadURL
+	return client, nil
+}
+
+func (f *gitHubClientFactory) getGraphQLClient(ctx context.Context) (*githubv4.Client, error) {
+	token, err := f.resolveToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	transport := http.RoundTripper(http.DefaultTransport)
+	transport = &bearerAuthTransport{
+		transport: transport,
+		token:     token,
+	}
+	transport = &userAgentTransport{
+		transport: transport,
+		agent:     f.currentUserAgent(),
+	}
+	httpClient := &http.Client{Transport: transport}
+	return githubv4.NewEnterpriseClient(f.apiHost.graphqlURL.String(), httpClient), nil
+}
+
+func (f *gitHubClientFactory) getRawClient(ctx context.Context) (*raw.Client, error) {
+	client, err := f.getRESTClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get GitHub client: %w", err)
+	}
+	return raw.NewClient(client, f.apiHost.rawURL), nil
 }
 
 type StdioServerConfig struct {
