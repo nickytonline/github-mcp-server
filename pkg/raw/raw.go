@@ -20,9 +20,13 @@ type Client struct {
 
 // NewClient creates a new instance of the raw API Client with the provided GitHub client and provided URL.
 func NewClient(client *gogithub.Client, rawURL *url.URL) *Client {
-	client = gogithub.NewClient(client.Client())
-	client.BaseURL = rawURL
-	return &Client{client: client, url: rawURL}
+	originalUserAgent := client.UserAgent
+	newClient := gogithub.NewClient(client.Client())
+	newClient.BaseURL = rawURL
+	if originalUserAgent != "" {
+		newClient.UserAgent = originalUserAgent
+	}
+	return &Client{client: newClient, url: rawURL}
 }
 
 func (c *Client) newRequest(ctx context.Context, method string, urlStr string, body interface{}, opts ...gogithub.RequestOption) (*http.Request, error) {

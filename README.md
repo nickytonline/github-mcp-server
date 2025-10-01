@@ -265,6 +265,33 @@ If you don't have Docker, you can use `go build` to build the binary in the
 }
 ```
 
+### Run as an HTTP server
+
+The same binary can expose the MCP server over HTTP using the streamable transport. This mode is designed for deployments behind zero-trust proxies (for example, Pomerium) that exchange OAuth tokens with GitHub on a per-request basis.
+
+```bash
+github-mcp-server http \
+  --listen :8080 \
+  --http-path /mcp \
+  --health-path /health
+```
+
+- The `/health` endpoint is public and returns `200 OK` to signal readiness.
+- The MCP endpoint (default `/mcp`) requires every request to include an `Authorization: Bearer <token>` header carrying a GitHub OAuth access token. Tokens are not cached between requests.
+- Customize listening address, path, and graceful shutdown timeout via `--listen`, `--http-path`, `--health-path`, and `--shutdown-timeout`.
+
+For example, when testing locally with an OAuth token stored in `$GITHUB_OAUTH_TOKEN`:
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $GITHUB_OAUTH_TOKEN" \
+  --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{}}}' \
+  http://localhost:8080/mcp
+```
+
+See [docs/pomerium-http-example.md](docs/pomerium-http-example.md) for a reference configuration that forwards GitHub OAuth tokens from Pomerium to the server.
+
 ## Tool Configuration
 
 The GitHub MCP Server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools. Enabling only the toolsets that you need can help the LLM with tool choice and reduce the context size.
