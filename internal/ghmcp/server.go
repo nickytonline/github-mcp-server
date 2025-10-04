@@ -199,8 +199,7 @@ func (f *gitHubClientFactory) getRESTClient(ctx context.Context) (*gogithub.Clie
 	baseClient.UploadURL = f.apiHost.uploadURL
 	baseClient.UserAgent = f.currentUserAgent()
 	client := baseClient.WithAuthToken(token)
-	client.BaseURL = f.apiHost.baseRESTURL
-	client.UploadURL = f.apiHost.uploadURL
+	// WithAuthToken does a shallow copy, preserving BaseURL and UploadURL
 	return client, nil
 }
 
