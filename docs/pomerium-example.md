@@ -42,3 +42,45 @@ routes:
 3. Point your MCP host at `https://mcp.example.com/mcp` and omit the static `GITHUB_PERSONAL_ACCESS_TOKEN`. Each request will be authenticated with the user’s GitHub OAuth token issued by Pomerium.
 
 Refer to [Pomerium's MCP documentation](https://www.pomerium.com/docs/capabilities/mcp) for deployment details and advanced routing options.
+
+
+## Docker Compose Example
+
+```yaml
+services:
+  pomerium:
+    image: pomerium/pomerium:main
+    pull_policy: always
+    ports:
+      - "443:443"
+    restart: always
+    environment:
+      POMERIUM_ZERO_TOKEN: ${POMERIUM_ZERO_TOKEN}
+      XDG_CACHE_HOME: /var/cache
+    volumes:
+      - pomerium-cache:/var/cache
+    networks:
+      - main
+    healthcheck:
+      test: ["CMD-SHELL", "curl -kfsS https://127.0.0.1:443/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  github-mcp:
+    build:
+      context: https://github.com/nickytonline/github-mcp-server.git
+      dockerfile: Dockerfile
+    pull_policy: always
+    container_name: github-mcp
+    restart: unless-stopped
+    networks:
+      - main
+
+networks:
+  main:
+
+volumes:
+  pomerium-cache:
+```

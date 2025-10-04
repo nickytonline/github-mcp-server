@@ -1,291 +1,133 @@
-# GitHub MCP Server
+# GitHub MCP Server - HTTP Streamable Transport
 
-The GitHub MCP Server connects AI tools directly to GitHub's platform. This gives AI agents, assistants, and chatbots the ability to read repositories and code files, manage issues and PRs, analyze code, and automate workflows. All through natural language interactions.
+> **This is a fork** of the [official GitHub MCP Server](https://github.com/github/github-mcp-server). The official version only supports stdio transport. This fork implements **HTTP streamable transport with per-request OAuth authentication** for self-hosted enterprise deployments.
 
-### Use Cases
+## Why This Fork?
 
-- Repository Management: Browse and query code, search files, analyze commits, and understand project structure across any repository you have access to.
-- Issue & PR Automation: Create, update, and manage issues and pull requests. Let AI help triage bugs, review code changes, and maintain project boards.
-- CI/CD & Workflow Intelligence: Monitor GitHub Actions workflow runs, analyze build failures, manage releases, and get insights into your development pipeline.
-- Code Analysis: Examine security findings, review Dependabot alerts, understand code patterns, and get comprehensive insights into your codebase.
-- Team Collaboration: Access discussions, manage notifications, analyze team activity, and streamline processes for your team.
+GitHub offers a closed-source hosted HTTP MCP server with OAuth, but it cannot be self-hosted. The official open-source server only supports stdio with single-user PATs. This fork bridges the gap by providing:
 
-Built for developers who want to connect their AI tools to GitHub context and capabilities, from simple natural language queries to complex multi-step agent workflows.
+- **Self-Hosted HTTP + OAuth** - Get the benefits of GitHub's hosted server (HTTP transport, multi-user OAuth) while maintaining full control over your deployment
+- **Multi-User Support** - Different users authenticate with their own GitHub credentials via OAuth
+- **Zero-Trust Deployments** - Run behind proxies like Pomerium that handle OAuth flows and inject tokens per-request
+- **Stateless Architecture** - No token storage or OAuth complexity in the MCP server; a proxy, like Pomerium manages all OAuth flows, token refresh, and sessions
+- **Fine-Grained Authorization** - Pomerium policies can control access to individual MCP tools beyond OAuth scopes (e.g., allow `repo` scope but block `create_repository` tool)
+- **Audit & Compliance** - Every GitHub API call is attributable to a specific authenticated user
+
+## Architecture
+
+This fork uses an external OAuth proxy (Pomerium) to handle authentication and inject GitHub OAuth tokens into each request:
+
+```mermaid
+sequenceDiagram
+ actor U as User
+ participant C as MCP Client
+ participant O as GitHub OAuth
+ participant P as Pomerium
+ participant S as MCP Server
+ U ->> C: Adds server URL
+ C ->> P: Registers client, initiates auth
+ P ->> C: Sign-in URL
+ C ->> U: Redirect to sign-in URL
+ U ->> P: Sign-in
+ P ->> U: Redirect to GitHub OAuth
+ U ->> O: Authenticate with GitHub
+ O ->> P: Return GitHub Token
+ P ->> C: Redirect to client
+ C ->> P: Obtain External Token (TE)
+ C ->> P: GET https://mcp-server Authorization: Bearer (TE)
+ P ->> O: Refresh GitHub token if necessary
+ P ->> S: Proxy request to MCP Server with GitHub token
+```
+
+The MCP server receives GitHub tokens from Pomerium and uses them to make API calls on behalf of authenticated users. All OAuth flows, token refresh, and session management happen in Pomerium - the MCP server is stateless.
 
 ---
 
-## Remote GitHub MCP Server
-
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=github&config=%7B%22type%22%3A%20%22http%22%2C%22url%22%3A%20%22https%3A%2F%2Fapi.githubcopilot.com%2Fmcp%2F%22%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=github&config=%7B%22type%22%3A%20%22http%22%2C%22url%22%3A%20%22https%3A%2F%2Fapi.githubcopilot.com%2Fmcp%2F%22%7D&quality=insiders)
-
-The remote GitHub MCP Server is hosted by GitHub and provides the easiest method for getting up and running. If your MCP host does not support remote MCP servers, don't worry! You can use the [local version of the GitHub MCP Server](https://github.com/github/github-mcp-server?tab=readme-ov-file#local-github-mcp-server) instead.
+## Quick Start
 
 ### Prerequisites
 
-1. A compatible MCP host with remote server support (VS Code 1.101+, Claude Desktop, Cursor, Windsurf, etc.)
-2. Any applicable [policies enabled](https://github.com/github/github-mcp-server/blob/main/docs/policies-and-governance.md)
-
-### Install in VS Code
-
-For quick installation, use one of the one-click install buttons above. Once you complete that flow, toggle Agent mode (located by the Copilot Chat text input) and the server will start. Make sure you're using [VS Code 1.101](https://code.visualstudio.com/updates/v1_101) or [later](https://code.visualstudio.com/updates) for remote MCP and OAuth support.
-
-Alternatively, to manually configure VS Code, choose the appropriate JSON block from the examples below and add it to your host configuration:
-
-<table>
-<tr><th>Using OAuth</th><th>Using a GitHub PAT</th></tr>
-<tr><th align=left colspan=2>VS Code (version 1.101 or greater)</th></tr>
-<tr valign=top>
-<td>
-
-```json
-{
-  "servers": {
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/"
-    }
-  }
-}
-```
-
-</td>
-<td>
-
-```json
-{
-  "servers": {
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer ${input:github_mcp_pat}"
-      }
-    }
-  },
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "github_mcp_pat",
-      "description": "GitHub Personal Access Token",
-      "password": true
-    }
-  ]
-}
-```
-
-</td>
-</tr>
-</table>
-
-### Install in other MCP hosts
-- **[GitHub Copilot in other IDEs](/docs/installation-guides/install-other-copilot-ides.md)** - Installation for JetBrains, Visual Studio, Eclipse, and Xcode with GitHub Copilot
-- **[Claude Applications](/docs/installation-guides/install-claude.md)** - Installation guide for Claude Web, Claude Desktop and Claude Code CLI
-- **[Cursor](/docs/installation-guides/install-cursor.md)** - Installation guide for Cursor IDE
-- **[Windsurf](/docs/installation-guides/install-windsurf.md)** - Installation guide for Windsurf IDE
-
-> **Note:** Each MCP host application needs to configure a GitHub App or OAuth App to support remote access via OAuth. Any host application that supports remote MCP servers should support the remote GitHub server with PAT authentication. Configuration details and support levels vary by host. Make sure to refer to the host application's documentation for more info.
-
-### Configuration
-See [Remote Server Documentation](/docs/remote-server.md) on how to pass additional configuration settings to the remote GitHub MCP Server.
-
----
-
-## Local GitHub MCP Server
-
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=github&inputs=%5B%7B%22id%22%3A%22github_token%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22GitHub%20Personal%20Access%20Token%22%2C%22password%22%3Atrue%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22GITHUB_PERSONAL_ACCESS_TOKEN%22%2C%22ghcr.io%2Fgithub%2Fgithub-mcp-server%22%5D%2C%22env%22%3A%7B%22GITHUB_PERSONAL_ACCESS_TOKEN%22%3A%22%24%7Binput%3Agithub_token%7D%22%7D%7D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=github&inputs=%5B%7B%22id%22%3A%22github_token%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22GitHub%20Personal%20Access%20Token%22%2C%22password%22%3Atrue%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22GITHUB_PERSONAL_ACCESS_TOKEN%22%2C%22ghcr.io%2Fgithub%2Fgithub-mcp-server%22%5D%2C%22env%22%3A%7B%22GITHUB_PERSONAL_ACCESS_TOKEN%22%3A%22%24%7Binput%3Agithub_token%7D%22%7D%7D&quality=insiders)
-
-### Prerequisites
-
-1. To run the server in a container, you will need to have [Docker](https://www.docker.com/) installed.
-2. Once Docker is installed, you will also need to ensure Docker is running. The image is public; if you get errors on pull, you may have an expired token and need to `docker logout ghcr.io`.
-3. Lastly you will need to [Create a GitHub Personal Access Token](https://github.com/settings/personal-access-tokens/new).
-The MCP server can use many of the GitHub APIs, so enable the permissions that you feel comfortable granting your AI tools (to learn more about access tokens, please check out the [documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
-
-<details><summary><b>Handling PATs Securely</b></summary>
-
-### Environment Variables (Recommended)
-To keep your GitHub PAT secure and reusable across different MCP hosts:
-
-1. **Store your PAT in environment variables**
-   ```bash
-   export GITHUB_PAT=your_token_here
-   ```
-   Or create a `.env` file:
-   ```env
-   GITHUB_PAT=your_token_here
-   ```
-
-2. **Protect your `.env` file**
-   ```bash
-   # Add to .gitignore to prevent accidental commits
-   echo ".env" >> .gitignore
-   ```
-
-3. **Reference the token in configurations**
-   ```bash
-   # CLI usage
-   claude mcp update github -e GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PAT
-
-   # In config files (where supported)
-   "env": {
-     "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_PAT"
-   }
-   ```
-
-> **Note**: Environment variable support varies by host app and IDE. Some applications (like Windsurf) require hardcoded tokens in config files.
-
-### Token Security Best Practices
-
-- **Minimum scopes**: Only grant necessary permissions
-  - `repo` - Repository operations
-  - `read:packages` - Docker image access
-  - `read:org` - Organization team access
-- **Separate tokens**: Use different PATs for different projects/environments
-- **Regular rotation**: Update tokens periodically
-- **Never commit**: Keep tokens out of version control
-- **File permissions**: Restrict access to config files containing tokens
-  ```bash
-  chmod 600 ~/.your-app/config.json
-  ```
-
-</details>
-
-## Installation
-
-### Install in GitHub Copilot on VS Code
-
-For quick installation, use one of the one-click install buttons above. Once you complete that flow, toggle Agent mode (located by the Copilot Chat text input) and the server will start.
-
-More about using MCP server tools in VS Code's [agent mode documentation](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
-
-Install in GitHub Copilot on other IDEs (JetBrains, Visual Studio, Eclipse, etc.)
-
-Add the following JSON block to your IDE's MCP settings.
-
-```json
-{
-  "mcp": {
-    "inputs": [
-      {
-        "type": "promptString",
-        "id": "github_token",
-        "description": "GitHub Personal Access Token",
-        "password": true
-      }
-    ],
-    "servers": {
-      "github": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-e",
-          "GITHUB_PERSONAL_ACCESS_TOKEN",
-          "ghcr.io/github/github-mcp-server"
-        ],
-        "env": {
-          "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}"
-        }
-      }
-    }
-  }
-}
-```
-
-Optionally, you can add a similar example (i.e. without the mcp key) to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with other host applications that accept the same format.
-
-<details>
-<summary><b>Example JSON block without the MCP key included</b></summary>
-<br>
-
-```json
-{
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "github_token",
-      "description": "GitHub Personal Access Token",
-      "password": true
-    }
-  ],
-  "servers": {
-    "github": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e",
-        "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}"
-      }
-    }
-  }
-}
-```
-
-</details>
-
-### Install in Other MCP Hosts
-
-For other MCP host applications, please refer to our installation guides:
-
-- **[GitHub Copilot in other IDEs](/docs/installation-guides/install-other-copilot-ides.md)** - Installation for JetBrains, Visual Studio, Eclipse, and Xcode with GitHub Copilot
-- **[Claude Code & Claude Desktop](docs/installation-guides/install-claude.md)** - Installation guide for Claude Code and Claude Desktop
-- **[Cursor](docs/installation-guides/install-cursor.md)** - Installation guide for Cursor IDE
-- **[Google Gemini CLI](docs/installation-guides/install-gemini-cli.md)** - Installation guide for Google Gemini CLI
-- **[Windsurf](docs/installation-guides/install-windsurf.md)** - Installation guide for Windsurf IDE
-
-For a complete overview of all installation options, see our **[Installation Guides Index](docs/installation-guides)**.
-
-> **Note:** Any host application that supports local MCP servers should be able to access the local GitHub MCP server. However, the specific configuration process, syntax and stability of the integration will vary by host application. While many may follow a similar format to the examples above, this is not guaranteed. Please refer to your host application's documentation for the correct MCP configuration syntax and setup process.
+- Go 1.21+ (for building from source)
+- A [GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) configured in your GitHub organization
+- Pomerium or compatible OAuth proxy with [upstream OAuth support](https://www.pomerium.com/docs/capabilities/mcp#2-mcp-servers-with-upstream-oauth)
 
 ### Build from source
-
-If you don't have Docker, you can use `go build` to build the binary in the
-`cmd/github-mcp-server` directory and run the HTTP transport directly:
 
 ```bash
 go build -o github-mcp-server ./cmd/github-mcp-server
 ./github-mcp-server http --listen :8080
 ```
 
-> **Heads up:** Stdio transport and personal access tokens are no longer supported. The server must receive GitHub OAuth access tokens in the `Authorization` header on every request (for example, when running behind Pomerium).
+**Important:** This server does NOT manage OAuth tokens. It requires an external OAuth proxy (like Pomerium) to:
 
-### Run as an HTTP server
+1. **Handle GitHub OAuth flows** - Configure a GitHub OAuth App in your GitHub organization
+2. **Manage token lifecycle** - Handle token acquisition, refresh, and expiration
+3. **Inject tokens per-request** - Add `Authorization: Bearer <token>` headers to each request
+4. **Manage user sessions** - Track user authentication state
 
-The same binary can expose the MCP server over HTTP using the streamable transport. This mode is designed for deployments behind zero-trust proxies (for example, Pomerium) that exchange OAuth tokens with GitHub on a per-request basis.
+The MCP server is purely a **stateless token consumer** - it receives tokens in request headers and uses them to call GitHub APIs. Unlike GitHub's closed-source remote server which manages tokens internally, this server delegates all token management to the gateway/proxy layer.
 
-```bash
-github-mcp-server http \
-  --listen :8080 \
-  --http-path /mcp \
-  --health-path /health
+**Production deployment with Pomerium:**
+
+Configure Pomerium with upstream OAuth to GitHub. See [Pomerium's MCP with Upstream OAuth guide](https://www.pomerium.com/docs/capabilities/mcp#2-mcp-servers-with-upstream-oauth) for complete setup instructions.
+
+Example Pomerium route configuration:
+
+```yaml
+routes:
+  - from: https://mcp.example.com
+    to: http://github-mcp-server:8080
+
+    # Pomerium handles GitHub OAuth and injects tokens
+    upstream_oauth2:
+      client_id: ${GITHUB_OAUTH_CLIENT_ID}
+      client_secret: ${GITHUB_OAUTH_CLIENT_SECRET}
+      scopes:
+        - read:user
+        - user:email
+        - repo
+        - read:org
+      endpoint:
+        auth_url: https://github.com/login/oauth/authorize
+        token_url: https://github.com/login/oauth/access_token
 ```
 
-- The `/health` endpoint is public and returns `200 OK` to signal readiness.
-- The MCP endpoint (default `/mcp`) requires every request to include an `Authorization: Bearer <token>` header carrying a GitHub OAuth access token. Tokens are not cached between requests.
-- Customize listening address, path, and graceful shutdown timeout via `--listen`, `--http-path`, `--health-path`, and `--shutdown-timeout`.
+### Docker Compose
 
-For example, when testing locally with an OAuth token stored in `$GITHUB_OAUTH_TOKEN`:
+```yaml
+services:
+  github-mcp:
+    build:
+      context: https://github.com/nickytonline/github-mcp-server.git
+      dockerfile: Dockerfile
+    pull_policy: always
+    container_name: github-mcp
+    restart: unless-stopped
+    networks:
+      - main
 
-```bash
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $GITHUB_OAUTH_TOKEN" \
-  --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{}}}' \
-  http://localhost:8080/mcp
+networks:
+  main:
 ```
 
-See [docs/pomerium-http-example.md](docs/pomerium-http-example.md) for a reference configuration that forwards GitHub OAuth tokens from Pomerium to the server.
+> **Note**: This example shows only the MCP server. You'll need to add Pomerium to the same compose file with the upstream OAuth configuration shown above. See [docs/pomerium-example.md](docs/pomerium-example.md) for a complete reference configuration with both services.
+
+---
+
+## Additional Documentation
+
+For detailed information about specific features and deployment scenarios, see:
+
+- **[blog.md](blog.md)** - Full technical explanation of the HTTP transport implementation and architecture
+- **[docs/pomerium-example.md](docs/pomerium-example.md)** - Complete Pomerium integration guide for enterprise deployments
+- **[Pomerium MCP Documentation](https://www.pomerium.com/docs/capabilities/mcp)** - Pomerium's official MCP support documentation
+- **[MCP Security Best Practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices)** - Model Context Protocol security guidelines
+
+---
 
 ## Tool Configuration
 
-The GitHub MCP Server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools. Enabling only the toolsets that you need can help the LLM with tool choice and reduce the context size.
+This fork inherits all toolset configuration options from the official GitHub MCP Server. The server supports enabling or disabling specific groups of functionalities via the `--toolsets` flag. This allows you to control which GitHub API capabilities are available to your AI tools. Enabling only the toolsets that you need can help the LLM with tool choice and reduce the context size.
 
 _Toolsets are not limited to Tools. Relevant MCP Resources and Prompts are also included where applicable._
 
@@ -1117,10 +959,11 @@ When using Docker, you can pass the toolsets as environment variables:
 
 ```bash
 docker run -i --rm \
-  -e GITHUB_PERSONAL_ACCESS_TOKEN=<your-token> \
   -e GITHUB_TOOLSETS="repos,issues,pull_requests,actions,code_security,experiments" \
-  ghcr.io/github/github-mcp-server
+  <your-docker-image>
 ```
+
+Note: This fork is designed to run behind an OAuth proxy like Pomerium. The MCP server itself does not require GitHub tokens directly - Pomerium injects them per-request.
 
 ### The "all" Toolset
 
@@ -1142,6 +985,8 @@ GITHUB_TOOLSETS="all" ./github-mcp-server
 
 Instead of starting with all tools enabled, you can turn on dynamic toolset discovery. Dynamic toolsets allow the MCP host to list and enable toolsets in response to a user prompt. This should help to avoid situations where the model gets confused by the sheer number of tools available.
 
+> **Alternative with Pomerium**: Instead of using this hard-coded flag, you can use [Pomerium's dynamic authorization policies for MCP tools](https://www.pomerium.com/docs/capabilities/mcp#the-mcp_tool-criterion) to control tool access at a more granular level, including per-tool restrictions.
+
 ### Using Dynamic Tool Discovery
 
 When using the binary, you can pass the `--dynamic-toolsets` flag.
@@ -1154,14 +999,15 @@ When using Docker, you can pass the toolsets as environment variables:
 
 ```bash
 docker run -i --rm \
-  -e GITHUB_PERSONAL_ACCESS_TOKEN=<your-token> \
   -e GITHUB_DYNAMIC_TOOLSETS=1 \
-  ghcr.io/github/github-mcp-server
+  <your-docker-image>
 ```
 
 ## Read-Only Mode
 
 To run the server in read-only mode, you can use the `--read-only` flag. This will only offer read-only tools, preventing any modifications to repositories, issues, pull requests, etc.
+
+> **Alternative with Pomerium**: Instead of using this hard-coded flag, you can use [Pomerium's dynamic authorization policies](https://www.pomerium.com/docs/capabilities/mcp#authorization-policies) to control which tools are accessible on a per-user or per-group basis, offering more flexibility than a global read-only mode.
 
 ```bash
 ./github-mcp-server --read-only
@@ -1171,9 +1017,8 @@ When using Docker, you can pass the read-only mode as an environment variable:
 
 ```bash
 docker run -i --rm \
-  -e GITHUB_PERSONAL_ACCESS_TOKEN=<your-token> \
   -e GITHUB_READ_ONLY=1 \
-  ghcr.io/github/github-mcp-server
+  <your-docker-image>
 ```
 
 ## GitHub Enterprise Server and Enterprise Cloud with data residency (ghe.com)
@@ -1191,13 +1036,10 @@ the hostname for GitHub Enterprise Server or GitHub Enterprise Cloud with data r
     "-i",
     "--rm",
     "-e",
-    "GITHUB_PERSONAL_ACCESS_TOKEN",
-    "-e",
     "GITHUB_HOST",
-    "ghcr.io/github/github-mcp-server"
+    "<your-docker-image>"
     ],
     "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}",
         "GITHUB_HOST": "https://<your GHES or ghe.com domain name>"
     }
 }
@@ -1245,6 +1087,38 @@ export GITHUB_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION="an alternative description
 
 The exported Go API of this module should currently be considered unstable, and subject to breaking changes. In the future, we may offer stability; please file an issue if there is a use case where this would be valuable.
 
+## Comparison: This Fork vs. Official Servers
+
+GitHub provides two official MCP server options:
+
+1. **GitHub's Remote Server** (Closed-Source, Hosted) - Available at https:api.githubcopilot.com/mcp/, this is GitHub's official hosted HTTP MCP server with built-in OAuth support
+2. **GitHub's Open-Source Server** - The [official open-source repository](https://github.com/github/github-mcp-server) supports stdio transport only for local development with Personal Access Tokens (PATs)
+
+This fork provides an open-source HTTP alternative for self-hosted enterprise deployments:
+
+| Feature | This Fork | Official Stdio Server | GitHub's Remote Server |
+|---------|-----------|----------------------|------------------------|
+| **Transport** | HTTP streamable | stdio only | HTTP |
+| **Authentication** | OAuth (via external proxy) | PAT only | OAuth (built-in) |
+| **Token Management** | External (Pomerium manages tokens) | N/A (static PAT) | Built-in (manages tokens) |
+| **OAuth Provider** | External (Pomerium + GitHub OAuth App) | ❌ N/A | Built-in |
+| **Multi-user** | ✅ Yes | ❌ No | ✅ Yes |
+| **Self-hosted** | ✅ Yes | ✅ Yes | ❌ No |
+| **Fine-grained authz** | ✅ Via Pomerium policies | ❌ No | ❌ No |
+| **Open source** | ✅ Yes | ✅ Yes | ❌ No |
+
+**Key Requirement:** You must create a [GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) in your GitHub organization and configure it in Pomerium's upstream OAuth settings.
+
+## Contributing
+
+This is a fork for demonstrating HTTP streamable transport with per-request OAuth. For issues with the core GitHub MCP functionality, please refer to the [official repository](https://github.com/github/github-mcp-server).
+
+For issues specific to the HTTP transport implementation, feel free to open an issue in this repository.
+
 ## License
 
 This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE) for the full terms.
+
+## Acknowledgments
+
+This fork builds upon the excellent work by the GitHub team on the [official GitHub MCP Server](https://github.com/github/github-mcp-server). The HTTP streamable transport additions demonstrate patterns for enterprise MCP deployments with OAuth-based multi-user authentication and fine-grained authorization.
