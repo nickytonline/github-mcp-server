@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	pkgErrors "github.com/github/github-mcp-server/pkg/errors"
-	"github.com/github/github-mcp-server/pkg/translations"
+	pkgErrors "github.com/github/github-mcp-http/pkg/errors"
+	"github.com/github/github-mcp-http/pkg/translations"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -208,6 +208,6 @@ func tokenMiddleware(next http.Handler) http.Handler {
 }
 
 func unauthorized(w http.ResponseWriter, message string) {
-	w.Header().Set("WWW-Authenticate", "Bearer realm=\"github-mcp-server\"")
+	w.Header().Set("WWW-Authenticate", "Bearer realm=\"github-mcp-http\"")
 	http.Error(w, message, http.StatusUnauthorized)
 }

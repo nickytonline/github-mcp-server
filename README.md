@@ -1,6 +1,6 @@
 # GitHub MCP Server - HTTP Streamable Transport
 
-> **This is a fork** of the [official GitHub MCP Server](https://github.com/github/github-mcp-server). The official version only supports stdio transport. This fork implements **HTTP streamable transport with per-request OAuth authentication** for self-hosted enterprise deployments.
+> **This is a fork** of the [official GitHub MCP Server](https://github.com/github/github-mcp-http). The official version only supports stdio transport. This fork implements **HTTP streamable transport with per-request OAuth authentication** for self-hosted enterprise deployments.
 
 ## Why This Fork?
 
@@ -54,8 +54,8 @@ The MCP server receives GitHub tokens from Pomerium and uses them to make API ca
 ### Build from source
 
 ```bash
-go build -o github-mcp-server ./cmd/github-mcp-server
-./github-mcp-server http --listen :8080
+go build -o github-mcp-http ./cmd/github-mcp-http
+./github-mcp-http http --listen :8080
 ```
 
 **Important:** This server does NOT manage OAuth tokens. It requires an external OAuth proxy (like Pomerium) to:
@@ -76,7 +76,7 @@ Example Pomerium route configuration:
 ```yaml
 routes:
   - from: https://mcp.example.com
-    to: http://github-mcp-server:8080
+    to: http://github-mcp-http:8080
 
     # Pomerium handles GitHub OAuth and injects tokens
     upstream_oauth2:
@@ -824,7 +824,7 @@ The following sets of tools are available (all are on by default):
   - `order`: Sort order for results (string, optional)
   - `page`: Page number for pagination (min 1) (number, optional)
   - `perPage`: Results per page for pagination (min 1, max 100) (number, optional)
-  - `query`: Search query using GitHub's powerful code search syntax. Examples: 'content:Skill language:Java org:github', 'NOT is:archived language:Python OR language:go', 'repo:github/github-mcp-server'. Supports exact matching, language filters, path filters, and more. (string, required)
+  - `query`: Search query using GitHub's powerful code search syntax. Examples: 'content:Skill language:Java org:github', 'NOT is:archived language:Python OR language:go', 'repo:github/github-mcp-http'. Supports exact matching, language filters, path filters, and more. (string, required)
   - `sort`: Sort field ('indexed' only) (string, optional)
 
 - **search_repositories** - Search repositories
@@ -943,12 +943,12 @@ To specify toolsets you want available to the LLM, you can pass an allow-list in
 1. **Using Command Line Argument**:
 
    ```bash
-   github-mcp-server --toolsets repos,issues,pull_requests,actions,code_security
+   github-mcp-http --toolsets repos,issues,pull_requests,actions,code_security
    ```
 
 2. **Using Environment Variable**:
    ```bash
-   GITHUB_TOOLSETS="repos,issues,pull_requests,actions,code_security" ./github-mcp-server
+   GITHUB_TOOLSETS="repos,issues,pull_requests,actions,code_security" ./github-mcp-http
    ```
 
 The environment variable `GITHUB_TOOLSETS` takes precedence over the command line argument if both are provided.
@@ -970,13 +970,13 @@ Note: This fork is designed to run behind an OAuth proxy like Pomerium. The MCP 
 The special toolset `all` can be provided to enable all available toolsets regardless of any other configuration:
 
 ```bash
-./github-mcp-server --toolsets all
+./github-mcp-http --toolsets all
 ```
 
 Or using the environment variable:
 
 ```bash
-GITHUB_TOOLSETS="all" ./github-mcp-server
+GITHUB_TOOLSETS="all" ./github-mcp-http
 ```
 
 ## Dynamic Tool Discovery
@@ -992,7 +992,7 @@ Instead of starting with all tools enabled, you can turn on dynamic toolset disc
 When using the binary, you can pass the `--dynamic-toolsets` flag.
 
 ```bash
-./github-mcp-server --dynamic-toolsets
+./github-mcp-http --dynamic-toolsets
 ```
 
 When using Docker, you can pass the toolsets as environment variables:
@@ -1010,7 +1010,7 @@ To run the server in read-only mode, you can use the `--read-only` flag. This wi
 > **Alternative with Pomerium**: Instead of using this hard-coded flag, you can use [Pomerium's dynamic authorization policies](https://www.pomerium.com/docs/capabilities/mcp#authorization-policies) to control which tools are accessible on a per-user or per-group basis, offering more flexibility than a global read-only mode.
 
 ```bash
-./github-mcp-server --read-only
+./github-mcp-http --read-only
 ```
 
 When using Docker, you can pass the read-only mode as an environment variable:
@@ -1048,7 +1048,7 @@ the hostname for GitHub Enterprise Server or GitHub Enterprise Cloud with data r
 ## i18n / Overriding Descriptions
 
 The descriptions of the tools can be overridden by creating a
-`github-mcp-server-config.json` file in the same directory as the binary.
+`github-mcp-http-config.json` file in the same directory as the binary.
 
 The file should contain a JSON object with the tool names as keys and the new
 descriptions as values. For example:
@@ -1068,8 +1068,8 @@ any new translations that have been added to the binary since the last time you
 exported.
 
 ```sh
-./github-mcp-server --export-translations
-cat github-mcp-server-config.json
+./github-mcp-http --export-translations
+cat github-mcp-http-config.json
 ```
 
 You can also use ENV vars to override the descriptions. The environment
@@ -1092,7 +1092,7 @@ The exported Go API of this module should currently be considered unstable, and 
 GitHub provides two official MCP server options:
 
 1. **GitHub's Remote Server** (Closed-Source, Hosted) - Available at https:api.githubcopilot.com/mcp/, this is GitHub's official hosted HTTP MCP server with built-in OAuth support
-2. **GitHub's Open-Source Server** - The [official open-source repository](https://github.com/github/github-mcp-server) supports stdio transport only for local development with Personal Access Tokens (PATs)
+2. **GitHub's Open-Source Server** - The [official open-source repository](https://github.com/github/github-mcp-http) supports stdio transport only for local development with Personal Access Tokens (PATs)
 
 This fork provides an open-source HTTP alternative for self-hosted enterprise deployments:
 
@@ -1111,7 +1111,7 @@ This fork provides an open-source HTTP alternative for self-hosted enterprise de
 
 ## Contributing
 
-This is a fork for demonstrating HTTP streamable transport with per-request OAuth. For issues with the core GitHub MCP functionality, please refer to the [official repository](https://github.com/github/github-mcp-server).
+This is a fork for demonstrating HTTP streamable transport with per-request OAuth. For issues with the core GitHub MCP functionality, please refer to the [official repository](https://github.com/github/github-mcp-http).
 
 For issues specific to the HTTP transport implementation, feel free to open an issue in this repository.
 
@@ -1121,4 +1121,4 @@ This project is licensed under the terms of the MIT open source license. Please 
 
 ## Acknowledgments
 
-This fork builds upon the excellent work by the GitHub team on the [official GitHub MCP Server](https://github.com/github/github-mcp-server). The HTTP streamable transport additions demonstrate patterns for enterprise MCP deployments with OAuth-based multi-user authentication and fine-grained authorization.
+This fork builds upon the excellent work by the GitHub team on the [official GitHub MCP Server](https://github.com/github/github-mcp-http). The HTTP streamable transport additions demonstrate patterns for enterprise MCP deployments with OAuth-based multi-user authentication and fine-grained authorization.

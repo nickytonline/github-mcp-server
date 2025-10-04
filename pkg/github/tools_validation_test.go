@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/github/github-mcp-server/pkg/translations"
+	"github.com/github/github-mcp-http/pkg/translations"
 	"github.com/stretchr/testify/require"
 )
 

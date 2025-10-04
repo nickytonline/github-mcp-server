@@ -9,7 +9,7 @@ The goal is to explain the architecture at a high-level, define key requirements
 ## Table of Contents
 
 - [Understanding MCP Architecture](#understanding-mcp-architecture)
-- [Connecting to the Remote GitHub MCP Server](#connecting-to-the-remote-github-mcp-server)
+- [Connecting to the Remote GitHub MCP Server](#connecting-to-the-remote-github-mcp-http)
   - [Authentication and Authorization](#authentication-and-authorization)
   - [OAuth Support on GitHub](#oauth-support-on-github)
   - [Create an OAuth-enabled App Using the GitHub UI](#create-an-oauth-enabled-app-using-the-github-ui)

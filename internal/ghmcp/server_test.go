@@ -16,7 +16,7 @@ func TestGitHubClientFactory_UsesContextTokenAndUserAgent(t *testing.T) {
 	const (
 		version   = "test-version"
 		token     = "token-123"
-		defaultUA = "github-mcp-server/" + version
+		defaultUA = "github-mcp-http/" + version
 		customUA  = "custom-agent/1.0"
 	)
 

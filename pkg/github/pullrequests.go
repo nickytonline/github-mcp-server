@@ -13,8 +13,8 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/shurcooL/githubv4"
 
-	ghErrors "github.com/github/github-mcp-server/pkg/errors"
-	"github.com/github/github-mcp-server/pkg/translations"
+	ghErrors "github.com/github/github-mcp-http/pkg/errors"
+	"github.com/github/github-mcp-http/pkg/translations"
 )
 
 // GetPullRequest creates a tool to get details of a specific pull request.

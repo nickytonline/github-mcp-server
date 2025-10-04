@@ -5,7 +5,7 @@ This example demonstrates how to run the GitHub MCP Server in HTTP mode behind [
 1. Start the server in HTTP mode:
 
 ```bash
-github-mcp-server http \
+github-mcp-http http \
   --listen :8080 \
   --http-path /mcp \
   --health-path /health
@@ -16,7 +16,7 @@ github-mcp-server http \
 ```yaml
 routes:
   - from: https://mcp.example.com
-    to: http://github-mcp-server:8080
+    to: http://github-mcp-http:8080
     preserve_host_header: true
 
     enable_google_cloud_serverless_authentication: false

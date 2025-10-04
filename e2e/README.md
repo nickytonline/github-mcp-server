@@ -1,7 +1,7 @@
 # End To End (e2e) Tests
 
 The purpose of the E2E tests is to have a simple (currently) test that gives maintainers some confidence in the black box behavior of our artifacts. It does this by:
- * Building the `github-mcp-server` docker image
+ * Building the `github-mcp-http` docker image
  * Running the image
  * Interacting with the server via stdio
  * Issuing requests that interact with the live GitHub API
@@ -56,7 +56,7 @@ Running the tests:
 === RUN   TestE2E/Initialize
 === RUN   TestE2E/CallTool_get_me
     e2e_test.go:85:
-                Error Trace:    /Users/williammartin/workspace/github-mcp-server/e2e/e2e_test.go:85
+                Error Trace:    /Users/williammartin/workspace/github-mcp-http/e2e/e2e_test.go:85
                 Error:          Not equal:
                                 expected: "foobar"
                                 actual  : "williammartin"
@@ -73,7 +73,7 @@ Running the tests:
     --- PASS: TestE2E/Initialize (0.09s)
     --- FAIL: TestE2E/CallTool_get_me (0.46s)
 FAIL
-FAIL    github.com/github/github-mcp-server/e2e 1.433s
+FAIL    github.com/github/github-mcp-http/e2e 1.433s
 FAIL
 ```
 

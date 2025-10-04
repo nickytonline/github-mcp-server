@@ -1,5 +1,5 @@
 version: 2
-project_name: github-mcp-server
+project_name: github-mcp-http
 before:
   hooks:
     - go mod tidy
@@ -14,7 +14,7 @@ builds:
       - linux
       - windows
       - darwin
-    main: ./cmd/github-mcp-server
+    main: ./cmd/github-mcp-http
 
 archives:
   - formats: tar.gz

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	ghErrors "github.com/github/github-mcp-server/pkg/errors"
-	"github.com/github/github-mcp-server/pkg/translations"
+	ghErrors "github.com/github/github-mcp-http/pkg/errors"
+	"github.com/github/github-mcp-http/pkg/translations"
 	"github.com/google/go-github/v74/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -139,7 +139,7 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
 			}),
 			mcp.WithString("query",
 				mcp.Required(),
-				mcp.Description("Search query using GitHub's powerful code search syntax. Examples: 'content:Skill language:Java org:github', 'NOT is:archived language:Python OR language:go', 'repo:github/github-mcp-server'. Supports exact matching, language filters, path filters, and more."),
+				mcp.Description("Search query using GitHub's powerful code search syntax. Examples: 'content:Skill language:Java org:github', 'NOT is:archived language:Python OR language:go', 'repo:github/github-mcp-http'. Supports exact matching, language filters, path filters, and more."),
 			),
 			mcp.WithString("sort",
 				mcp.Description("Sort field ('indexed' only)"),

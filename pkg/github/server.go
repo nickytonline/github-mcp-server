@@ -23,7 +23,7 @@ func NewServer(version string, opts ...server.ServerOption) *server.MCPServer {
 
 	// Create a new MCP server
 	s := server.NewMCPServer(
-		"github-mcp-server",
+		"github-mcp-http",
 		version,
 		opts...,
 	)

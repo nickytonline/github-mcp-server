@@ -14,19 +14,19 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=bind,target=. \
     CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=${VERSION} -X main.commit=$(git rev-parse HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-    -o /bin/github-mcp-server cmd/github-mcp-server/main.go
+    -o /bin/github-mcp-http cmd/github-mcp-http/main.go
 
 # Make a stage to run the app
 FROM gcr.io/distroless/base-debian12
 
 # Add required MCP server annotation
-LABEL io.modelcontextprotocol.server.name="io.github.github/github-mcp-server"
+LABEL io.modelcontextprotocol.server.name="io.github.github/github-mcp-http"
 
 # Set the working directory
 WORKDIR /server
 # Copy the binary from the build stage
-COPY --from=build /bin/github-mcp-server .
+COPY --from=build /bin/github-mcp-http .
 # Set the entrypoint to the server binary
-ENTRYPOINT ["/server/github-mcp-server"]
+ENTRYPOINT ["/server/github-mcp-http"]
 # Default arguments for ENTRYPOINT
 CMD ["http"]

@@ -57,7 +57,7 @@ For users who prefer to run the GitHub MCP server locally. Requires Docker insta
       "command": "docker",
       "args": [
         "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
+        "ghcr.io/github/github-mcp-http"
       ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_pat}"
@@ -115,9 +115,9 @@ For users who prefer to run the GitHub MCP server locally. Requires Docker insta
     "github": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", 
+        "run", "-i", "--rm",
         "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
+        "ghcr.io/github/github-mcp-http"
       ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT"
@@ -171,9 +171,9 @@ For users who prefer to run the GitHub MCP server locally. Requires Docker insta
     "github": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", 
+        "run", "-i", "--rm",
         "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
+        "ghcr.io/github/github-mcp-http"
       ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT"
@@ -228,9 +228,9 @@ For users who prefer to run the GitHub MCP server locally. Requires Docker insta
     "github": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", 
+        "run", "-i", "--rm",
         "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
+        "ghcr.io/github/github-mcp-http"
       ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT"

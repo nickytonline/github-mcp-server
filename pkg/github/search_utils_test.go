@@ -21,7 +21,7 @@ func Test_hasFilter(t *testing.T) {
 		},
 		{
 			name:       "query has repo: filter",
-			query:      "repo:github/github-mcp-server critical bug",
+			query:      "repo:github/github-mcp-http critical bug",
 			filterType: "repo",
 			expected:   true,
 		},
@@ -81,13 +81,13 @@ func Test_hasFilter(t *testing.T) {
 		},
 		{
 			name:       "query with complex OR expression",
-			query:      "repo:github/github-mcp-server is:issue (label:critical OR label:urgent)",
+			query:      "repo:github/github-mcp-http is:issue (label:critical OR label:urgent)",
 			filterType: "is",
 			expected:   true,
 		},
 		{
 			name:       "query with complex OR expression checking repo",
-			query:      "repo:github/github-mcp-server is:issue (label:critical OR label:urgent)",
+			query:      "repo:github/github-mcp-http is:issue (label:critical OR label:urgent)",
 			filterType: "repo",
 			expected:   true,
 		},
@@ -121,7 +121,7 @@ func Test_hasRepoFilter(t *testing.T) {
 	}{
 		{
 			name:     "query with repo: filter at beginning",
-			query:    "repo:github/github-mcp-server is:issue",
+			query:    "repo:github/github-mcp-http is:issue",
 			expected: true,
 		},
 		{
@@ -166,7 +166,7 @@ func Test_hasRepoFilter(t *testing.T) {
 		},
 		{
 			name:     "query with complex OR expression",
-			query:    "repo:github/github-mcp-server is:issue (label:critical OR label:urgent)",
+			query:    "repo:github/github-mcp-http is:issue (label:critical OR label:urgent)",
 			expected: true,
 		},
 	}
@@ -266,7 +266,7 @@ func Test_hasSpecificFilter(t *testing.T) {
 		},
 		{
 			name:        "complex query with parentheses",
-			query:       "repo:github/github-mcp-server is:issue (label:critical OR label:urgent)",
+			query:       "repo:github/github-mcp-http is:issue (label:critical OR label:urgent)",
 			filterType:  "is",
 			filterValue: "issue",
 			expected:    true,

@@ -65,7 +65,7 @@ With docker running, you can run the GitHub MCP server in a container:
                 "--rm",
                 "-e",
                 "GITHUB_PERSONAL_ACCESS_TOKEN",
-                "ghcr.io/github/github-mcp-server"
+                "ghcr.io/github/github-mcp-http"
             ],
             "env": {
                 "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_PAT"
@@ -77,7 +77,7 @@ With docker running, you can run the GitHub MCP server in a container:
 
 ### Method 3: Binary
 
-You can download the latest binary release from the [GitHub releases page](https://github.com/github/github-mcp-server/releases) or build it from source by running `go build -o github-mcp-server ./cmd/github-mcp-server`.
+You can download the latest binary release from the [GitHub releases page](https://github.com/github/github-mcp-http/releases) or build it from source by running `go build -o github-mcp-http ./cmd/github-mcp-http`.
 
 Then, replacing `/path/to/binary` with the actual path to your binary, configure Gemini CLI with:
 

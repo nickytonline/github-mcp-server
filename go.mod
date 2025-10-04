@@ -1,4 +1,4 @@
-module github.com/github/github-mcp-server
+module github.com/github/github-mcp-http
 
 go 1.23.7
 

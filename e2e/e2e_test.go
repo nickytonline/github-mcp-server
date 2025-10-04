@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/github/github-mcp-server/internal/ghmcp"
-	"github.com/github/github-mcp-server/pkg/github"
-	"github.com/github/github-mcp-server/pkg/translations"
+	"github.com/github/github-mcp-http/internal/ghmcp"
+	"github.com/github/github-mcp-http/pkg/github"
+	"github.com/github/github-mcp-http/pkg/translations"
 	gogithub "github.com/google/go-github/v74/github"
 	mcpClient "github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -77,7 +77,7 @@ func getRESTClient(t *testing.T) *gogithub.Client {
 func ensureDockerImageBuilt(t *testing.T) {
 	buildOnce.Do(func() {
 		t.Log("Building Docker image for e2e tests...")
-		cmd := exec.Command("docker", "build", "-t", "github/e2e-github-mcp-server", ".")
+		cmd := exec.Command("docker", "build", "-t", "github/e2e-github-mcp-http", ".")
 		cmd.Dir = ".." // Run this in the context of the root, where the Dockerfile is located.
 		output, err := cmd.CombinedOutput()
 		buildError = err
@@ -146,7 +146,7 @@ func setupMCPClient(t *testing.T, options ...clientOption) *mcpClient.Client {
 		}
 
 		// Add the image name
-		args = append(args, "github/e2e-github-mcp-server")
+		args = append(args, "github/e2e-github-mcp-http")
 
 		// Construct the env vars for the MCP Client to execute docker with
 		dockerEnvVars := []string{
@@ -202,7 +202,7 @@ func setupMCPClient(t *testing.T, options ...clientOption) *mcpClient.Client {
 
 	result, err := client.Initialize(ctx, request)
 	require.NoError(t, err, "failed to initialize client")
-	require.Equal(t, "github-mcp-server", result.ServerInfo.Name, "unexpected server name")
+	require.Equal(t, "github-mcp-http", result.ServerInfo.Name, "unexpected server name")
 
 	return client
 }
@@ -300,7 +300,7 @@ func TestTags(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{
@@ -438,7 +438,7 @@ func TestFileDeletion(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{
@@ -627,7 +627,7 @@ func TestDirectoryDeletion(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{
@@ -822,7 +822,7 @@ func TestRequestCopilotReview(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{
@@ -970,7 +970,7 @@ func TestAssignCopilotToIssue(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{
@@ -1073,7 +1073,7 @@ func TestPullRequestAtomicCreateAndSubmit(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{
@@ -1233,7 +1233,7 @@ func TestPullRequestReviewCommentSubmit(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{
@@ -1478,7 +1478,7 @@ func TestPullRequestReviewDeletion(t *testing.T) {
 	currentOwner := trimmedGetMeText.Login
 
 	// Then create a repository with a README (via autoInit)
-	repoName := fmt.Sprintf("github-mcp-server-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
+	repoName := fmt.Sprintf("github-mcp-http-e2e-%s-%d", t.Name(), time.Now().UnixMilli())
 	createRepoRequest := mcp.CallToolRequest{}
 	createRepoRequest.Params.Name = "create_repository"
 	createRepoRequest.Params.Arguments = map[string]any{

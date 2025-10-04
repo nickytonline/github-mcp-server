@@ -1,6 +1,6 @@
 # GitHub MCP Server dependencies
 
-The following open source dependencies are used to build the [github/github-mcp-server][] GitHub Model Context Protocol Server.
+The following open source dependencies are used to build the [github/github-mcp-http][] GitHub Model Context Protocol Server.
 
 ## Go Packages
 
@@ -10,7 +10,7 @@ Some packages may only be included on certain architectures or operating systems
  - [github.com/bahlo/generic-list-go](https://pkg.go.dev/github.com/bahlo/generic-list-go) ([BSD-3-Clause](https://github.com/bahlo/generic-list-go/blob/v0.2.0/LICENSE))
  - [github.com/buger/jsonparser](https://pkg.go.dev/github.com/buger/jsonparser) ([MIT](https://github.com/buger/jsonparser/blob/v1.1.1/LICENSE))
  - [github.com/fsnotify/fsnotify](https://pkg.go.dev/github.com/fsnotify/fsnotify) ([BSD-3-Clause](https://github.com/fsnotify/fsnotify/blob/v1.8.0/LICENSE))
- - [github.com/github/github-mcp-server](https://pkg.go.dev/github.com/github/github-mcp-server) ([MIT](https://github.com/github/github-mcp-server/blob/HEAD/LICENSE))
+ - [github.com/github/github-mcp-http](https://pkg.go.dev/github.com/github/github-mcp-http) ([MIT](https://github.com/github/github-mcp-http/blob/HEAD/LICENSE))
  - [github.com/go-openapi/jsonpointer](https://pkg.go.dev/github.com/go-openapi/jsonpointer) ([Apache-2.0](https://github.com/go-openapi/jsonpointer/blob/v0.19.5/LICENSE))
  - [github.com/go-openapi/swag](https://pkg.go.dev/github.com/go-openapi/swag) ([Apache-2.0](https://github.com/go-openapi/swag/blob/v0.21.1/LICENSE))
  - [github.com/go-viper/mapstructure/v2](https://pkg.go.dev/github.com/go-viper/mapstructure/v2) ([MIT](https://github.com/go-viper/mapstructure/blob/v2.4.0/LICENSE))
@@ -46,4 +46,4 @@ Some packages may only be included on certain architectures or operating systems
  - [gopkg.in/yaml.v2](https://pkg.go.dev/gopkg.in/yaml.v2) ([Apache-2.0](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE))
  - [gopkg.in/yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) ([MIT](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE))
 
-[github/github-mcp-server]: https://github.com/github/github-mcp-server
+[github/github-mcp-http]: https://github.com/github/github-mcp-http

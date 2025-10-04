@@ -62,7 +62,7 @@ The local GitHub MCP server runs via Docker and requires Docker Desktop to be in
         "--rm",
         "-e",
         "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
+        "ghcr.io/github/github-mcp-http"
       ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT"
@@ -72,7 +72,7 @@ The local GitHub MCP server runs via Docker and requires Docker Desktop to be in
 }
 ```
 
-> **Important**: The npm package `@modelcontextprotocol/server-github` is no longer supported as of April 2025. Use the official Docker image `ghcr.io/github/github-mcp-server` instead.
+> **Important**: The npm package `@modelcontextprotocol/server-github` is no longer supported as of April 2025. Use the official Docker image `ghcr.io/github/github-mcp-http` instead.
 
 ## Configuration Files
 
@@ -109,6 +109,6 @@ The local GitHub MCP server runs via Docker and requires Docker Desktop to be in
 
 ## Important Notes
 
-- **Docker image**: `ghcr.io/github/github-mcp-server` (official and supported)
+- **Docker image**: `ghcr.io/github/github-mcp-http` (official and supported)
 - **npm package**: `@modelcontextprotocol/server-github` (deprecated as of April 2025 - no longer functional)
 - **Cursor specifics**: Supports both project and global configurations, uses `mcpServers` key

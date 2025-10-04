@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/github/github-mcp-server/pkg/toolsets"
-	"github.com/github/github-mcp-server/pkg/translations"
+	"github.com/github/github-mcp-http/pkg/toolsets"
+	"github.com/github/github-mcp-http/pkg/translations"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )

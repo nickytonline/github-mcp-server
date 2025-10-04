@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/github/github-mcp-server/internal/githubv4mock"
-	"github.com/github/github-mcp-server/internal/toolsnaps"
-	"github.com/github/github-mcp-server/pkg/translations"
+	"github.com/github/github-mcp-http/internal/githubv4mock"
+	"github.com/github/github-mcp-http/internal/toolsnaps"
+	"github.com/github/github-mcp-http/pkg/translations"
 	"github.com/google/go-github/v74/github"
 	"github.com/shurcooL/githubv4"
 
@@ -1002,7 +1002,7 @@ func Test_SearchPullRequests(t *testing.T) {
 					expectQueryParams(
 						t,
 						map[string]string{
-							"q":        "is:pr repo:github/github-mcp-server is:open draft:false",
+							"q":        "is:pr repo:github/github-mcp-http is:open draft:false",
 							"page":     "1",
 							"per_page": "30",
 						},
@@ -1012,7 +1012,7 @@ func Test_SearchPullRequests(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"query": "is:pr repo:github/github-mcp-server is:open draft:false",
+				"query": "is:pr repo:github/github-mcp-http is:open draft:false",
 			},
 			expectError:    false,
 			expectedResult: mockSearchResult,
@@ -1025,7 +1025,7 @@ func Test_SearchPullRequests(t *testing.T) {
 					expectQueryParams(
 						t,
 						map[string]string{
-							"q":        "is:pr repo:github/github-mcp-server author:octocat",
+							"q":        "is:pr repo:github/github-mcp-http author:octocat",
 							"page":     "1",
 							"per_page": "30",
 						},
@@ -1035,7 +1035,7 @@ func Test_SearchPullRequests(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"query": "repo:github/github-mcp-server author:octocat",
+				"query": "repo:github/github-mcp-http author:octocat",
 				"owner": "different-owner",
 				"repo":  "different-repo",
 			},
@@ -1050,7 +1050,7 @@ func Test_SearchPullRequests(t *testing.T) {
 					expectQueryParams(
 						t,
 						map[string]string{
-							"q":        "is:pr repo:github/github-mcp-server (label:bug OR label:enhancement OR label:feature)",
+							"q":        "is:pr repo:github/github-mcp-http (label:bug OR label:enhancement OR label:feature)",
 							"page":     "1",
 							"per_page": "30",
 						},
@@ -1060,7 +1060,7 @@ func Test_SearchPullRequests(t *testing.T) {
 				),
 			),
 			requestArgs: map[string]interface{}{
-				"query": "is:pr repo:github/github-mcp-server (label:bug OR label:enhancement OR label:feature)",
+				"query": "is:pr repo:github/github-mcp-http (label:bug OR label:enhancement OR label:feature)",
 			},
 			expectError:    false,
 			expectedResult: mockSearchResult,

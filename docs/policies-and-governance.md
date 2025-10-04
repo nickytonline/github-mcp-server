@@ -18,7 +18,7 @@ The GitHub MCP Server provides access to GitHub resources and capabilities throu
 * **Runs:** Locally alongside your IDE or application
 * **Authentication & Controls:** Requires Personal Access Tokens (PATs). Users must generate and configure a PAT to connect. Managed via [PAT policies](https://docs.github.com/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization#restricting-access-by-personal-access-tokens).
   * Can optionally use GitHub App installation tokens when embedded in a GitHub App-based tool (rare).
- 
+
 **Supported SKUs:** Can be used with GitHub Enterprise Server (GHES) and GitHub Enterprise Cloud (GHEC).
 
 ### 2. Remote GitHub MCP Server
@@ -36,7 +36,7 @@ The GitHub MCP Server provides access to GitHub resources and capabilities throu
 #### Enterprise Install Considerations
 
 - When using the Remote GitHub MCP Server, if authenticating with OAuth instead of PAT, each host application must have a registered GitHub App (or OAuth App) to authenticate on behalf of the user.
-- Enterprises may choose to install these apps in multiple organizations (e.g., per team or department) to scope access narrowly, or at the enterprise level to centralize access control across all child organizations. 
+- Enterprises may choose to install these apps in multiple organizations (e.g., per team or department) to scope access narrowly, or at the enterprise level to centralize access control across all child organizations.
 - Enterprise installation is only supported for GitHub Apps. OAuth Apps can only be installed on a per organization basis in multi-org enterprises.
 
 ### Security Principles for Both Modes
@@ -47,7 +47,7 @@ The GitHub MCP Server provides access to GitHub resources and capabilities throu
 * **Token Storage:** Tokens should be stored securely using platform-appropriate credential storage
 * **Audit Trail:** All underlying API calls are logged in GitHub's audit log when available
 
-For integration architecture and implementation details, see the [Host Integration Guide](https://github.com/github/github-mcp-server/blob/main/docs/host-integration.md).
+For integration architecture and implementation details, see the [Host Integration Guide](https://github.com/github/github-mcp-http/blob/main/docs/host-integration.md).
 
 ## Where It's Used
 
@@ -84,7 +84,7 @@ Access is always constrained by GitHub's public API permission model and the aut
 
 #### Temporary: Copilot Editor Preview Policy
 
-* **Policy:** Editor Preview Features  
+* **Policy:** Editor Preview Features
 * **Status:** Being phased out as editors migrate to the "MCP servers in Copilot" policy above, and once the Remote GitHub MCP server goes GA
 * **What it controls:** When disabled, prevents remaining Copilot editors from using the Remote GitHub MCP Server through OAuth connections in all first-party and third-party host applications (does not affect local deployments or PAT authentication)
 
@@ -211,6 +211,6 @@ Until those arrive, teams can continue to monitor MCP activity through existing 
 
 **Questions or Feedback?**
 
-Open an [issue in the github-mcp-server repository](https://github.com/github/github-mcp-server/issues) with the label "policies & governance" attached.
+Open an [issue in the github-mcp-http repository](https://github.com/github/github-mcp-http/issues) with the label "policies & governance" attached.
 
 This document reflects GitHub MCP Server policies as of July 2025. Policies and capabilities continue to evolve based on customer feedback and security best practices.

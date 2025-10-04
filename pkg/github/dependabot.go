@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	ghErrors "github.com/github/github-mcp-server/pkg/errors"
-	"github.com/github/github-mcp-server/pkg/translations"
+	ghErrors "github.com/github/github-mcp-http/pkg/errors"
+	"github.com/github/github-mcp-http/pkg/translations"
 	"github.com/google/go-github/v74/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"

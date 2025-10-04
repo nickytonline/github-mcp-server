@@ -14,11 +14,11 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/github/github-mcp-server/pkg/errors"
-	"github.com/github/github-mcp-server/pkg/github"
-	mcplog "github.com/github/github-mcp-server/pkg/log"
-	"github.com/github/github-mcp-server/pkg/raw"
-	"github.com/github/github-mcp-server/pkg/translations"
+	"github.com/github/github-mcp-http/pkg/errors"
+	"github.com/github/github-mcp-http/pkg/github"
+	mcplog "github.com/github/github-mcp-http/pkg/log"
+	"github.com/github/github-mcp-http/pkg/raw"
+	"github.com/github/github-mcp-http/pkg/translations"
 	gogithub "github.com/google/go-github/v74/github"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -39,11 +39,11 @@ type MCPServerConfig struct {
 	TokenProvider TokenProviderFunc
 
 	// EnabledToolsets is a list of toolsets to enable
-	// See: https://github.com/github/github-mcp-server?tab=readme-ov-file#tool-configuration
+	// See: https://github.com/github/github-mcp-http?tab=readme-ov-file#tool-configuration
 	EnabledToolsets []string
 
 	// Whether to enable dynamic toolsets
-	// See: https://github.com/github/github-mcp-server?tab=readme-ov-file#dynamic-tool-discovery
+	// See: https://github.com/github/github-mcp-http?tab=readme-ov-file#dynamic-tool-discovery
 	DynamicToolsets bool
 
 	// ReadOnly indicates if we should only offer read-only tools
@@ -83,7 +83,7 @@ func NewMCPServer(cfg MCPServerConfig) (*server.MCPServer, error) {
 	// When a client sends an initialize request, update the user agent to include the client info.
 	beforeInit := func(_ context.Context, _ any, message *mcp.InitializeRequest) {
 		userAgent := fmt.Sprintf(
-			"github-mcp-server/%s (%s/%s)",
+			"github-mcp-http/%s (%s/%s)",
 			cfg.Version,
 			message.Params.ClientInfo.Name,
 			message.Params.ClientInfo.Version,
@@ -152,7 +152,7 @@ func newGitHubClientFactory(version string, host apiHost, provider TokenProvider
 	factory := &gitHubClientFactory{
 		tokenProvider:    provider,
 		apiHost:          host,
-		defaultUserAgent: fmt.Sprintf("github-mcp-server/%s", version),
+		defaultUserAgent: fmt.Sprintf("github-mcp-http/%s", version),
 	}
 	factory.setUserAgent(factory.defaultUserAgent)
 	return factory
@@ -240,18 +240,18 @@ type StdioServerConfig struct {
 	Token string
 
 	// EnabledToolsets is a list of toolsets to enable
-	// See: https://github.com/github/github-mcp-server?tab=readme-ov-file#tool-configuration
+	// See: https://github.com/github/github-mcp-http?tab=readme-ov-file#tool-configuration
 	EnabledToolsets []string
 
 	// Whether to enable dynamic toolsets
-	// See: https://github.com/github/github-mcp-server?tab=readme-ov-file#dynamic-tool-discovery
+	// See: https://github.com/github/github-mcp-http?tab=readme-ov-file#dynamic-tool-discovery
 	DynamicToolsets bool
 
 	// ReadOnly indicates if we should only register read-only tools
 	ReadOnly bool
 
 	// ExportTranslations indicates if we should export translations
-	// See: https://github.com/github/github-mcp-server?tab=readme-ov-file#i18n--overriding-descriptions
+	// See: https://github.com/github/github-mcp-http?tab=readme-ov-file#i18n--overriding-descriptions
 	ExportTranslations bool
 
 	// EnableCommandLogging indicates if we should log commands
@@ -325,7 +325,7 @@ func RunStdioServer(cfg StdioServerConfig) error {
 		errC <- stdioServer.Listen(ctx, in, out)
 	}()
 
-	// Output github-mcp-server string
+	// Output github-mcp-http string
 	_, _ = fmt.Fprintf(os.Stderr, "GitHub MCP Server running on stdio\n")
 
 	// Wait for shutdown signal

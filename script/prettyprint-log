@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to pretty print the output of the github-mcp-server
+# Script to pretty print the output of the github-mcp-http
 # log.
 #
 # It uses colored output when running on a terminal.

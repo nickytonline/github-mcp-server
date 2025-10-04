@@ -1,5 +1,5 @@
 .idea
-cmd/github-mcp-server/github-mcp-server
+cmd/github-mcp-http/github-mcp-http
 
 # VSCode
 .vscode/*
@@ -17,7 +17,7 @@ bin/
 .DS_Store
 
 # binary
-github-mcp-server
+github-mcp-http
 
 # Claude Code
 .claude/
