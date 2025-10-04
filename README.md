@@ -98,7 +98,7 @@ routes:
 services:
   github-mcp:
     build:
-      context: https://github.com/nickytonline/github-mcp-server.git
+      context: https://github.com/nickytonline/github-mcp-http.git
       dockerfile: Dockerfile
     pull_policy: always
     container_name: github-mcp
